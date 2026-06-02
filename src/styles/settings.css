@@ -195,10 +195,20 @@
   font-size: 18px;
   flex-shrink: 0;
 }
+.budget-edit-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .budget-edit-name {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text);
+}
+.budget-edit-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.3;
 }
 .budget-edit-right {
   display: flex;

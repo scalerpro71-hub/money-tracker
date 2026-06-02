@@ -376,7 +376,10 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
                 <span className="budget-edit-icon" style={{ background: c.color + '22', color: c.color }}>
                   {c.icon}
                 </span>
-                <span className="budget-edit-name">{c.name}</span>
+                <div className="budget-edit-name-wrap">
+                  <span className="budget-edit-name">{c.name}</span>
+                  {(() => { const meta = SUGGESTED_CATEGORIES.find(s => s.name === c.name); return meta ? <span className="budget-edit-hint">{meta.desc}</span> : null; })()}
+                </div>
               </div>
               <div className="budget-edit-right">
                 <span className="budget-edit-rupee" style={filled ? { color: c.color } : {}}>₹</span>
