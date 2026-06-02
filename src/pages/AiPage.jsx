@@ -1,122 +1,290 @@
-import { AiFeatureCard } from '../components/ai/AiFeatureCard';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { callAiChat } from '../lib/claudeApi';
+import { Icon } from '../components/layout/Icon';
+import { cur, fmtK } from '../lib/formatUtils';
+import { startOfMonthStr, daysAgoStr, daysRemainingInMonth } from '../lib/dateUtils';
 import { useAiSuggestions } from '../hooks/useAiSuggestions';
-import { getLast30Days, daysAgoStr, startOfMonthStr, daysRemainingInMonth } from '../lib/dateUtils';
 
-export function AiPage({ userId, expenses, budgets, goals, profile }) {
-  const { suggestions, loading, error, generate } = useAiSuggestions(userId);
+const SUGGESTIONS = [
+  "Can I afford a ₹15,000 trip this month?",
+  "What's eating my budget most?",
+  "How long to reach my goals?",
+  "Am I saving enough?",
+  "Where should I cut spending?",
+];
 
-  function buildSpendingPatternsData() {
-    const last30 = daysAgoStr(30);
-    const recent = expenses.filter(e => e.date >= last30);
-    const byCategory = {};
-    for (const e of recent) {
-      const name = e.category?.name || 'Other';
-      byCategory[name] = (byCategory[name] || 0) + Number(e.amount);
+const COACH = {
+  afford: "Based on your current spending rate, you have {left} left for the month. A ₹15,000 trip would {result}.",
+  budget: "Your biggest category this month is {top} at {amt}. That's {pct}% of total spend.",
+  goal: "At your current savings rate of {rate}%, you'd reach your goals in roughly {months} months.",
+  save: "You're saving {rate}% of income this month. Aim for 30%+ by trimming {suggestion}.",
+  default: "Based on your finances, you're spending {total} this month on {count} transactions. Your savings rate is {rate}%.",
+};
+
+function coachFallback(q, context) {
+  const q2 = q.toLowerCase();
+  const rate = context.savingsRate;
+  const total = cur(context.monthTotal);
+  const count = context.txCount;
+
+  if (q2.includes('afford') || q2.includes('trip') || q2.includes('buy')) {
+    const left = cur(context.spendable);
+    return `You have ${left} left in your budget this month. Factor in any upcoming bills before committing.`;
+  }
+  if (q2.includes('budget') || q2.includes('eat') || q2.includes('top')) {
+    return context.topCat
+      ? `${context.topCat.icon} ${context.topCat.name} is your biggest category at ${cur(context.topCat.amt)}.`
+      : 'Add budget categories in Settings to track your spending better.';
+  }
+  if (q2.includes('goal') || q2.includes('reach')) {
+    return context.goals?.length
+      ? `You have ${context.goals.length} active goal(s). Keep saving consistently!`
+      : 'Set savings goals in the Goals tab to track your progress.';
+  }
+  if (q2.includes('save') || q2.includes('saving')) {
+    return rate !== null
+      ? `You're saving ${rate}% of income. The 30% rule suggests saving ₹${Math.round((context.income * 0.3) - (context.income - context.monthTotal))} more each month.`
+      : 'Set your monthly income in Settings for personalised savings advice.';
+  }
+  return `You've spent ${total} across ${count} transaction${count !== 1 ? 's' : ''} this month${rate !== null ? `, saving ${rate}% of income` : ''}.`;
+}
+
+function buildCoachPrompt(q, context) {
+  const { income, monthTotal, spendable, savingsRate, netWorth, portfolioValue, sipMonthly,
+    topCategories, goals, upcomingBills, txCount } = context;
+  const budgetPct = income > 0 ? Math.round((monthTotal / income) * 100) : 0;
+
+  const topCats = (topCategories || []).slice(0, 4)
+    .map(c => `${c.name} ₹${fmtK(c.amt)}${c.budget ? ` (budget ₹${fmtK(c.budget)})` : ''}`).join(', ');
+
+  const goalLines = (goals || []).slice(0, 3)
+    .map(g => `${g.name}: ₹${fmtK(g.current_amount || 0)} of ₹${fmtK(g.target_amount)}`).join('; ');
+
+  const billLines = (upcomingBills || []).slice(0, 3)
+    .map(b => `${b.name} ₹${fmtK(b.amount)} due ${b.due_day}`).join('; ');
+
+  return `You are Rupee Coach, a personal finance assistant grounded in the user's real data.
+
+User's finances:
+- Monthly income: ₹${fmtK(income || 0)}
+- Spent this month: ₹${fmtK(monthTotal)} (${budgetPct}% of income)
+- Savings rate: ${savingsRate !== null ? savingsRate + '%' : 'unknown'}
+- Spendable left: ₹${fmtK(spendable)}
+- Net worth: ₹${fmtK(netWorth || 0)}
+- Portfolio value: ₹${fmtK(portfolioValue || 0)}${sipMonthly ? `, SIP ₹${fmtK(sipMonthly)}/mo` : ''}
+- Top spending: ${topCats || 'no data'}
+- Goals: ${goalLines || 'none'}
+- Upcoming bills: ${billLines || 'none'}
+
+Answer only from the above data. Use ₹ Indian formatting. Keep to 2-4 short sentences. No markdown. If asked something outside personal finance, politely steer back.
+
+User: ${q}`;
+}
+
+function healthScore(savingsRate, budgetAdherence, monthTotal, income) {
+  let score = 60;
+  if (savingsRate !== null) {
+    if (savingsRate >= 30) score += 20;
+    else if (savingsRate >= 20) score += 12;
+    else if (savingsRate >= 10) score += 5;
+    else if (savingsRate < 0) score -= 20;
+  }
+  if (budgetAdherence > 0.8) score += 15;
+  else if (budgetAdherence > 0.5) score += 7;
+  return Math.max(10, Math.min(99, score));
+}
+
+export function AiPage({ userId, expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
+  const { suggestions, loading: sugLoading, error: sugError, generate } = useAiSuggestions(userId);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, typing]);
+
+  const monthStart = startOfMonthStr();
+  const monthExpenses = useMemo(() =>
+    expenses.filter(e => e.date >= monthStart && e.type !== 'income'), [expenses, monthStart]);
+  const monthIncome = useMemo(() =>
+    expenses.filter(e => e.date >= monthStart && e.type === 'income')
+      .reduce((a, e) => a + Number(e.amount), 0), [expenses, monthStart]);
+
+  const income = Number(profile?.monthly_income) || monthIncome;
+  const monthTotal = monthExpenses.reduce((a, e) => a + Number(e.amount), 0);
+  const totalBudget = budgets.reduce((a, b) => a + b.limit_amount, 0);
+  const spendable = totalBudget > 0 ? totalBudget - monthTotal : income - monthTotal;
+  const savingsRate = income > 0 ? Math.round(((income - monthTotal) / income) * 100) : null;
+  const totalAssets = (assets || []).reduce((a, x) => a + Number(x.value), 0);
+  const totalLiabilities = (liabilities || []).reduce((a, x) => a + Number(x.amount), 0);
+  const netWorth = totalAssets - totalLiabilities;
+  const portfolioValue = (investments || []).reduce((a, i) => a + Number(i.current_value || i.invested_amount), 0);
+  const sipMonthly = (investments || []).filter(i => i.type === 'sip').reduce((a, i) => a + Number(i.monthly_amount || 0), 0);
+
+  const catMap = {};
+  for (const e of monthExpenses) {
+    const id = e.category_id || 'other';
+    if (!catMap[id]) catMap[id] = { amt: 0, name: e.category?.name || 'Other', icon: e.category?.icon || '💰', catId: id };
+    catMap[id].amt += Number(e.amount);
+  }
+  const topCategories = Object.values(catMap).sort((a, b) => b.amt - a.amt).map(c => {
+    const b = budgets.find(x => x.category_id === c.catId);
+    return { ...c, budget: b?.limit_amount || 0 };
+  });
+  const topCat = topCategories[0];
+
+  const budgetAdherence = budgets.length > 0
+    ? budgets.filter(b => (catMap[b.category_id]?.amt || 0) <= b.limit_amount).length / budgets.length
+    : 0;
+  const score = healthScore(savingsRate, budgetAdherence, monthTotal, income);
+
+  const context = {
+    income, monthTotal, spendable, savingsRate, netWorth, portfolioValue, sipMonthly,
+    topCategories, topCat, goals, upcomingBills: bills, txCount: monthExpenses.length,
+  };
+
+  const insightCards = useMemo(() => {
+    const cards = [];
+    if (savingsRate !== null) {
+      if (savingsRate >= 30) cards.push({ tag: 'good', emoji: '💚', title: 'Strong savings rate', body: `${savingsRate}% of income saved this month. On track to build wealth.` });
+      else if (savingsRate >= 10) cards.push({ tag: 'tip', emoji: '💡', title: 'Savings on track', body: `${savingsRate}% saved. Push to 30%+ for faster wealth building.` });
+      else cards.push({ tag: 'warn', emoji: '⚠️', title: 'Low savings rate', body: `Only ${savingsRate}% saved this month. Review biggest spend categories.` });
     }
-    const days = getLast30Days();
-    const dailyTotals = days.map(d => ({
-      date: d,
-      amount: recent.filter(e => e.date === d).reduce((a, e) => a + Number(e.amount), 0),
-    }));
-    const top5 = [...recent].sort((a, b) => b.amount - a.amount).slice(0, 5)
-      .map(e => ({ note: e.note || e.category?.name, amount: e.amount, category: e.category?.name }));
-    return {
-      last_30_days_by_category: byCategory,
-      daily_totals_last_30_days: dailyTotals,
-      top_5_expenses: top5,
-      monthly_income_estimate: profile?.monthly_income || 'Not set',
-    };
+    if (topCat && monthTotal > 0) {
+      const pct = Math.round((topCat.amt / monthTotal) * 100);
+      if (pct > 40) cards.push({ tag: 'tip', emoji: '🎯', title: `${topCat.name} dominates`, body: `${pct}% of spend. Consider setting a budget cap for balance.` });
+    }
+    if (budgets.length > 0) {
+      const over = budgets.filter(b => (catMap[b.category_id]?.amt || 0) > b.limit_amount).length;
+      if (over > 0) cards.push({ tag: 'warn', emoji: '🚨', title: `${over} budget${over > 1 ? 's' : ''} exceeded`, body: 'Review overspent categories to get back on track.' });
+    }
+    cards.push({ tag: 'tip', emoji: '💬', title: 'Ask the Coach', body: 'Type a question below to get personalised advice based on your real data.' });
+    return cards.slice(0, 4);
+  }, [savingsRate, topCat, budgets, catMap, monthTotal]);
+
+  async function ask(q) {
+    if (!q.trim()) return;
+    setInput('');
+    setMessages(m => [...m, { role: 'user', content: q }]);
+    setTyping(true);
+    try {
+      const prompt = buildCoachPrompt(q, context);
+      const reply = await callAiChat(prompt, {}, []);
+      setMessages(m => [...m, { role: 'ai', content: reply }]);
+    } catch {
+      setMessages(m => [...m, { role: 'ai', content: coachFallback(q, context) }]);
+    } finally {
+      setTyping(false);
+    }
   }
 
-  function buildBudgetAdviceData() {
-    const monthStart = startOfMonthStr();
-    const thisMonth = expenses.filter(e => e.date >= monthStart);
-    const spending = {};
-    for (const e of thisMonth) {
-      const name = e.category?.name || 'Other';
-      spending[name] = (spending[name] || 0) + Number(e.amount);
-    }
-    const budgetMap = {};
-    for (const b of budgets) budgetMap[b.category?.name || b.category_id] = b.limit_amount;
-    return {
-      current_month_spending: spending,
-      current_budgets: budgetMap,
-      monthly_income_estimate: profile?.monthly_income || 'Not set',
-      days_remaining_in_month: daysRemainingInMonth(),
-    };
-  }
-
-  function buildAnomalyData() {
-    const last7Start = daysAgoStr(7);
-    const last30Start = daysAgoStr(30);
-    const last7 = expenses.filter(e => e.date >= last7Start);
-    const last30 = expenses.filter(e => e.date >= last30Start);
-
-    const avgByCategory = {};
-    for (const e of last30) {
-      const name = e.category?.name || 'Other';
-      if (!avgByCategory[name]) avgByCategory[name] = { total: 0, count: 0 };
-      avgByCategory[name].total += Number(e.amount);
-      avgByCategory[name].count++;
-    }
-    const averages = {};
-    for (const [k, v] of Object.entries(avgByCategory)) {
-      averages[k] = Math.round(v.total / 30);
-    }
-    const totalLast30 = last30.reduce((a, e) => a + Number(e.amount), 0);
-    return {
-      last_7_days: last7.map(e => ({ date: e.date, amount: e.amount, category: e.category?.name, note: e.note })),
-      avg_daily_spend_last_30_days: Math.round(totalLast30 / 30),
-      category_averages: averages,
-    };
-  }
-
-  function buildSavingsPlanData() {
-    const last3months = daysAgoStr(90);
-    const recent = expenses.filter(e => e.date >= last3months);
-    const avgMonthly = Math.round(recent.reduce((a, e) => a + Number(e.amount), 0) / 3);
-    const income = profile?.monthly_income || 0;
-    const savingsRate = income > 0 ? ((income - avgMonthly) / income) : null;
-    return {
-      goals: goals.map(g => ({ name: g.name, target: g.target_amount, current: g.current_amount, target_date: g.target_date })),
-      monthly_income_estimate: income || 'Not set',
-      avg_monthly_spend_last_3_months: avgMonthly,
-      current_savings_rate: savingsRate !== null ? `${Math.round(savingsRate * 100)}%` : 'Unknown',
-    };
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input); }
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>AI Insights</h2>
-        <p className="page-sub">Powered by Claude — personalized for your spending</p>
+    <div className="coach-layout">
+      {/* LEFT: Score + insights */}
+      <div>
+        <div className="score-hero rise" style={{ '--d': '0ms' }}>
+          <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>FINANCIAL HEALTH</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <div className="score-big num">{score}</div>
+            <div className="score-denom">/100</div>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 'var(--r-pill)', padding: '5px 12px', fontSize: 12, fontWeight: 700 }}>
+              {score >= 75 ? '✓ Excellent' : score >= 50 ? '↑ Good' : '⚠ Needs attention'}
+            </span>
+          </div>
+          <div className="score-splits">
+            {savingsRate !== null && (
+              <div className="score-split">
+                <div className="ss-label">Savings rate</div>
+                <div className="ss-val num">{savingsRate}%</div>
+              </div>
+            )}
+            <div className="score-split">
+              <div className="ss-label">Budgets kept</div>
+              <div className="ss-val num">{Math.round(budgetAdherence * 100)}%</div>
+            </div>
+            <div className="score-split">
+              <div className="ss-label">Streak</div>
+              <div className="ss-val num">{profile?.current_streak || 0}d</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="sec-head" style={{ marginTop: 24 }}><h3>What I noticed</h3></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {insightCards.map((ins, i) => (
+            <div key={i} className="ins-card rise" style={{ '--d': `${(i + 1) * 80}ms` }}>
+              <div className={`ins-tag ${ins.tag}`}>{ins.emoji} {ins.tag === 'good' ? 'Great' : ins.tag === 'warn' ? 'Watch out' : 'Tip'}</div>
+              <div className="ins-title">{ins.title}</div>
+              <div className="ins-body">{ins.body}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {!profile?.monthly_income && (
-        <div className="ai-notice">
-          💡 Set your monthly income in Settings for more accurate AI advice.
+      {/* RIGHT: Chat panel */}
+      <div>
+        <div className="chat-panel rise" style={{ '--d': '100ms' }}>
+          <div className="chat-header">
+            <div className="brand-mark" style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(150deg, var(--accent), var(--accent-2))', display: 'grid', placeItems: 'center', color: 'var(--on-accent)', flexShrink: 0 }}>
+              <Icon name="sparkle" size={17} />
+            </div>
+            <div>
+              <div className="chat-header-title">Rupee Coach</div>
+              <div className="chat-header-sub">Powered by Claude</div>
+            </div>
+          </div>
+
+          <div className="chat-messages">
+            {messages.length === 0 && (
+              <div className="chat-bubble ai" style={{ maxWidth: '90%' }}>
+                Hey! I'm your Rupee Coach. Ask me anything about your finances — affordability, savings, goals, or where your money's going.
+              </div>
+            )}
+            {messages.map((msg, i) => (
+              <div key={i} className={`chat-bubble ${msg.role}`}>{msg.content}</div>
+            ))}
+            {typing && (
+              <div className="chat-typing">
+                <span /><span /><span />
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="chat-suggestions">
+            {SUGGESTIONS.map((s, i) => (
+              <button key={i} className="chat-suggestion" onClick={() => ask(s)}>{s}</button>
+            ))}
+          </div>
+
+          <div className="chat-input-row">
+            <input
+              className="chat-input"
+              placeholder="Ask about your finances…"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              disabled={typing}
+            />
+            <button
+              className="btn-accent"
+              style={{ padding: '10px 14px', borderRadius: 'var(--r-pill)' }}
+              onClick={() => ask(input)}
+              disabled={typing || !input.trim()}
+            >
+              <Icon name="send" size={16} />
+            </button>
+          </div>
         </div>
-      )}
-
-      <AiFeatureCard title="Spending Patterns" icon="🔍"
-        description="Claude will analyze where your money is going and find patterns in your last 30 days of spending."
-        suggestion={suggestions.spending_patterns} loading={loading.spending_patterns} error={error.spending_patterns}
-        onGenerate={() => generate('spending_patterns', buildSpendingPatternsData())} />
-
-      <AiFeatureCard title="Budget Advice" icon="📊"
-        description="Claude will look at your budgets vs actual spending and suggest specific cuts for next month."
-        suggestion={suggestions.budget_advice} loading={loading.budget_advice} error={error.budget_advice}
-        onGenerate={() => generate('budget_advice', buildBudgetAdviceData())} />
-
-      <AiFeatureCard title="Anomaly Alerts" icon="⚠️"
-        description="Claude will flag unusual spends in the last 7 days — anything that's 3x your normal for that category."
-        suggestion={suggestions.anomaly_alerts} loading={loading.anomaly_alerts} error={error.anomaly_alerts}
-        onGenerate={() => generate('anomaly_alerts', buildAnomalyData())} />
-
-      <AiFeatureCard title="Savings Plan" icon="🎯"
-        description="Claude will build a month-by-month savings plan to reach your goals based on your income and spending."
-        suggestion={suggestions.savings_plan} loading={loading.savings_plan} error={error.savings_plan}
-        onGenerate={() => generate('savings_plan', buildSavingsPlanData())} />
+      </div>
     </div>
   );
 }

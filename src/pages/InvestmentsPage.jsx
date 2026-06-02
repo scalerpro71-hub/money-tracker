@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { formatINR } from '../lib/dateUtils';
 import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
+import { Icon } from '../components/layout/Icon';
+import { cur, fmtK } from '../lib/formatUtils';
 
 const TYPES = [
   { id: 'sip', icon: '📈', label: 'SIP (Mutual Fund)' },
@@ -24,9 +25,7 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
   const totalCurrent = investments.reduce((a, i) => a + Number(i.current_value || i.invested_amount), 0);
   const gain = totalCurrent - totalInvested;
   const gainPct = totalInvested > 0 ? ((gain / totalInvested) * 100).toFixed(1) : 0;
-
-  const bySip = investments.filter(i => i.type === 'sip');
-  const sipMonthly = bySip.reduce((a, i) => a + Number(i.monthly_amount || 0), 0);
+  const sipMonthly = investments.filter(i => i.type === 'sip').reduce((a, i) => a + Number(i.monthly_amount || 0), 0);
 
   function saveCurrentValue(inv) {
     onUpdate(inv.id, { current_value: Number(editValue) });
@@ -35,113 +34,94 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Investments</h2>
-        <p className="page-sub">SIP, MF, FD, Stocks — all in one place</p>
-      </div>
-
-      {/* Summary card */}
-      <div className="section-card">
-        <div className="inv-summary">
-          <div className="inv-summary-item">
-            <div className="inv-summary-val">{formatINR(totalInvested)}</div>
-            <div className="inv-summary-label">Total Invested</div>
+    <div>
+      {/* Hero */}
+      <div className="invest-hero rise" style={{ '--d': '0ms' }}>
+        <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>PORTFOLIO VALUE</div>
+        <div className="invest-hero-amt num">{fmtK(totalCurrent)}</div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 'var(--r-pill)', padding: '5px 12px', fontSize: 12, fontWeight: 700, color: gain >= 0 ? '#6ff0c4' : '#ffb4a6' }}>
+          {gain >= 0 ? '▲' : '▼'} {gain >= 0 ? '+' : ''}{gainPct}% all-time
+        </span>
+        <div className="invest-splits">
+          <div className="invest-split">
+            <div className="is-label">Invested</div>
+            <div className="is-val num">{fmtK(totalInvested)}</div>
           </div>
-          <div className="inv-summary-item">
-            <div className="inv-summary-val" style={{ color: gain >= 0 ? '#10b981' : '#ef4444' }}>{formatINR(totalCurrent)}</div>
-            <div className="inv-summary-label">Current Value</div>
+          <div className="invest-split">
+            <div className="is-label">Returns</div>
+            <div className="is-val num" style={{ color: gain >= 0 ? '#6ff0c4' : '#ffb4a6' }}>{gain >= 0 ? '+' : ''}{fmtK(gain)}</div>
           </div>
-          <div className="inv-summary-item">
-            <div className="inv-summary-val" style={{ color: gain >= 0 ? '#10b981' : '#ef4444' }}>
-              {gain >= 0 ? '+' : ''}{formatINR(gain)}
+          {sipMonthly > 0 && (
+            <div className="invest-split">
+              <div className="is-label">SIP/month</div>
+              <div className="is-val num">{fmtK(sipMonthly)}</div>
             </div>
-            <div className="inv-summary-label">{gain >= 0 ? '+' : ''}{gainPct}% Returns</div>
-          </div>
+          )}
         </div>
-        {sipMonthly > 0 && (
-          <div className="inv-sip-banner">
-            <span>📈 Monthly SIP commitment: <strong>{formatINR(sipMonthly)}</strong></span>
-          </div>
-        )}
-
-        {/* Performance insight */}
-        {investments.length > 0 && (
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-muted)' }}>
-            {(() => {
-              const withReturns = investments.filter(i => Number(i.current_value || i.invested_amount) !== Number(i.invested_amount));
-              if (withReturns.length === 0) return null;
-              const best = withReturns.reduce((a, b) => {
-                const aRet = (Number(b.current_value || b.invested_amount) - Number(b.invested_amount)) / Number(b.invested_amount);
-                const bRet = (Number(b.current_value || b.invested_amount) - Number(b.invested_amount)) / Number(b.invested_amount);
-                return aRet > bRet ? a : b;
-              });
-              const bestPct = (((Number(best.current_value || best.invested_amount) - Number(best.invested_amount)) / Number(best.invested_amount)) * 100).toFixed(1);
-              return <div>🏆 Best: {best.name} ({bestPct > 0 ? '+' : ''}{bestPct}%)</div>;
-            })()}
-          </div>
-        )}
       </div>
 
-      {/* Group by type */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button className="btn-accent" onClick={() => setShowAdd(true)}>
+          <Icon name="plus" size={15} />Add investment
+        </button>
+      </div>
+
+      {investments.length === 0 && (
+        <div className="card pad" style={{ color: 'var(--ink-3)', fontSize: 13, fontWeight: 600 }}>
+          Track your SIPs, FDs, and stocks here. Tap "Add investment" to start.
+        </div>
+      )}
+
       {TYPES.map(type => {
         const group = investments.filter(i => i.type === type.id);
         if (!group.length) return null;
-        const groupTotal = group.reduce((a, i) => a + Number(i.invested_amount), 0);
+        const groupTotal = group.reduce((a, i) => a + Number(i.current_value || i.invested_amount), 0);
         return (
-          <div key={type.id} className="section-card">
-            <div className="section-header">
-              <h4>{type.icon} {type.label}</h4>
-              <span className="section-badge">{formatINR(groupTotal)}</span>
+          <div key={type.id} className="card pad rise" style={{ marginBottom: 14, '--d': '60ms' }}>
+            <div className="inv-type-head">
+              <div className="inv-type-label">{type.icon} {type.label}</div>
+              <span className="chip">{fmtK(groupTotal)}</span>
             </div>
             {group.map(inv => {
               const current = Number(inv.current_value || inv.invested_amount);
               const invGain = current - Number(inv.invested_amount);
+              const gainP = Number(inv.invested_amount) > 0 ? ((invGain / Number(inv.invested_amount)) * 100).toFixed(1) : '0';
               return (
                 <div key={inv.id} className="inv-row">
-                  <div className="inv-row-header">
-                    <span className="inv-name">{inv.name}</span>
-                    <button className="btn-icon" onClick={() => onDelete(inv.id)}>🗑️</button>
-                  </div>
-                  <div className="inv-row-nums">
-                    <div>
-                      <div className="inv-num-val">{formatINR(inv.invested_amount)}</div>
-                      <div className="inv-num-label">Invested</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="inv-name">{inv.name}</div>
+                    {inv.type === 'sip' && inv.monthly_amount && (
+                      <div className="inv-sub">{fmtK(inv.monthly_amount)}/mo · auto-debit</div>
+                    )}
+                    <div className={`inv-pl ${invGain >= 0 ? 'pos' : 'neg'}`}>
+                      {invGain >= 0 ? '+' : ''}{fmtK(invGain)} · {invGain >= 0 ? '+' : ''}{gainP}%
                     </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 2 }}>Invested</div>
+                    <div className="num" style={{ fontSize: 14, fontWeight: 700 }}>{fmtK(inv.invested_amount)}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 14 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 2 }}>Current</div>
                     {editingId === inv.id ? (
-                      <div className="inv-edit-val">
-                        <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} style={{ width: 90, fontSize: 13 }} autoFocus />
-                        <button className="btn-primary btn-sm" onClick={() => saveCurrentValue(inv)}>Save</button>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} style={{ width: 80, fontSize: 13, padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--hair-2)', background: 'var(--surface-2)', color: 'var(--ink)' }} autoFocus />
+                        <button className="btn-accent" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => saveCurrentValue(inv)}>Save</button>
                       </div>
                     ) : (
-                      <div onClick={() => { setEditingId(inv.id); setEditValue(current.toString()); }} style={{ cursor: 'pointer' }}>
-                        <div className="inv-num-val" style={{ color: invGain >= 0 ? '#10b981' : '#ef4444' }}>{formatINR(current)}</div>
-                        <div className="inv-num-label">Current ✏️</div>
+                      <div className="num" style={{ fontSize: 14, fontWeight: 700, color: invGain >= 0 ? 'var(--pos)' : 'var(--neg)', cursor: 'pointer' }}
+                        onClick={() => { setEditingId(inv.id); setEditValue(current.toString()); }}>
+                        {fmtK(current)} ✏️
                       </div>
                     )}
-                    <div>
-                      <div className="inv-num-val" style={{ color: invGain >= 0 ? '#10b981' : '#ef4444' }}>
-                        {invGain >= 0 ? '+' : ''}{formatINR(invGain)}
-                      </div>
-                      <div className="inv-num-label">P&L</div>
-                    </div>
                   </div>
-                  {inv.type === 'sip' && inv.monthly_amount && (
-                    <div className="inv-sip-row">📅 SIP: {formatINR(inv.monthly_amount)}/mo</div>
-                  )}
-                  {inv.notes && <div className="inv-notes">{inv.notes}</div>}
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 10, color: 'var(--neg)' }} onClick={() => onDelete(inv.id)}>×</button>
                 </div>
               );
             })}
           </div>
         );
       })}
-
-      {investments.length === 0 && (
-        <div className="empty-hint">💡 Track your SIPs, FDs, and stocks here. Tap + Add to start.</div>
-      )}
-
-      <button className="btn-primary" style={{ width: '100%', marginBottom: 16 }} onClick={() => setShowAdd(true)}>+ Add Investment</button>
 
       {showAdd && (
         <Modal title="Add Investment" onClose={() => setShowAdd(false)}>
@@ -160,45 +140,19 @@ function InvForm({ onSave }) {
   const [monthly, setMonthly] = useState('');
   const [notes, setNotes] = useState('');
   const [startDate, setStartDate] = useState('');
-
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, type, invested_amount: Number(invested), current_value: Number(current) || null, monthly_amount: Number(monthly) || null, notes: notes || null, start_date: startDate || null }); }} className="expense-form">
-      <div className="form-group">
-        <label>Name</label>
-        <input type="text" placeholder="e.g. Parag Parikh Flexi Cap, Reliance" value={name} onChange={e => setName(e.target.value)} required />
-      </div>
-      <div className="form-group">
-        <label>Type</label>
-        <select value={type} onChange={e => setType(e.target.value)}>
-          {TYPES.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
-        </select>
-      </div>
+      <div className="form-group"><label>Name</label><input type="text" placeholder="e.g. Parag Parikh Flexi Cap" value={name} onChange={e => setName(e.target.value)} required /></div>
+      <div className="form-group"><label>Type</label><select value={type} onChange={e => setType(e.target.value)}>{TYPES.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}</select></div>
       <div className="form-row">
-        <div className="form-group">
-          <label>Amount Invested (₹)</label>
-          <input type="number" inputMode="decimal" value={invested} onChange={e => setInvested(e.target.value)} min="0" required />
-        </div>
-        <div className="form-group">
-          <label>Current Value (₹)</label>
-          <input type="number" inputMode="decimal" value={current} onChange={e => setCurrent(e.target.value)} min="0" placeholder="Same as invested" />
-        </div>
+        <div className="form-group"><label>Invested (₹)</label><input type="number" inputMode="decimal" value={invested} onChange={e => setInvested(e.target.value)} min="0" required /></div>
+        <div className="form-group"><label>Current Value (₹)</label><input type="number" inputMode="decimal" value={current} onChange={e => setCurrent(e.target.value)} min="0" placeholder="Same as invested" /></div>
       </div>
-      {(type === 'sip') && (
-        <div className="form-group">
-          <label>Monthly SIP Amount (₹)</label>
-          <input type="number" inputMode="decimal" value={monthly} onChange={e => setMonthly(e.target.value)} min="0" />
-        </div>
+      {type === 'sip' && (
+        <div className="form-group"><label>Monthly SIP (₹)</label><input type="number" inputMode="decimal" value={monthly} onChange={e => setMonthly(e.target.value)} min="0" /></div>
       )}
-      <div className="form-row">
-        <div className="form-group">
-          <label>Start Date</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        </div>
-      </div>
-      <div className="form-group">
-        <label>Notes (optional)</label>
-        <input type="text" placeholder="e.g. HDFC Bank Demat" value={notes} onChange={e => setNotes(e.target.value)} />
-      </div>
+      <div className="form-group"><label>Start Date</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
+      <div className="form-group"><label>Notes</label><input type="text" placeholder="Optional" value={notes} onChange={e => setNotes(e.target.value)} /></div>
       <button type="submit" className="btn-primary">Add Investment</button>
     </form>
   );

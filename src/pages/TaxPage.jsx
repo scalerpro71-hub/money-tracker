@@ -1,198 +1,119 @@
 import { useState } from 'react';
-import { formatINR } from '../lib/dateUtils';
 import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
+import { Icon } from '../components/layout/Icon';
+import { cur, fmtK } from '../lib/formatUtils';
 
 const SECTIONS = [
-  {
-    id: '80C',
-    label: '80C — Investments & Insurance',
-    limit: 150000,
-    color: '#6366f1',
-    examples: 'PPF, ELSS, LIC, NSC, Home Loan Principal, Tuition Fees, ULIP',
-    items: ['PPF', 'ELSS Mutual Fund', 'LIC Premium', 'NSC', 'Home Loan Principal', 'Tuition Fees', 'ULIP', '5-yr FD', 'NPS (employee)', 'SCSS'],
-  },
-  {
-    id: '80CCD(1B)',
-    label: '80CCD(1B) — NPS Extra',
-    limit: 50000,
-    color: '#0ea5e9',
-    examples: 'Additional NPS contribution over 80C limit',
-    items: ['NPS (self)'],
-  },
-  {
-    id: '80D',
-    label: '80D — Health Insurance',
-    limit: 25000,
-    color: '#10b981',
-    examples: 'Health insurance premium for self + family. ₹50,000 for senior citizens.',
-    items: ['Self Health Insurance', 'Family Health Insurance', 'Parent Health Insurance', 'Preventive Health Checkup'],
-  },
-  {
-    id: '80G',
-    label: '80G — Donations',
-    limit: null,
-    color: '#f59e0b',
-    examples: 'Donations to approved charities. 50% or 100% deduction depending on charity.',
-    items: ['PM CARES', 'National Relief Fund', 'Charity Donation'],
-  },
-  {
-    id: 'HRA',
-    label: 'HRA — House Rent Allowance',
-    limit: null,
-    color: '#ec4899',
-    examples: 'Rent paid if you are salaried and living in rented accommodation',
-    items: ['Rent Paid'],
-  },
+  { id: '80C', label: '80C — Investments & Insurance', limit: 150000, examples: 'PPF, ELSS, LIC, NSC, Home Loan Principal, Tuition Fees', items: ['PPF', 'ELSS Mutual Fund', 'LIC Premium', 'NSC', 'Home Loan Principal', 'Tuition Fees', 'ULIP', '5-yr FD', 'NPS (employee)', 'SCSS'] },
+  { id: '80CCD(1B)', label: '80CCD(1B) — NPS Extra', limit: 50000, examples: 'Additional NPS contribution over 80C limit', items: ['NPS (self)'] },
+  { id: '80D', label: '80D — Health Insurance', limit: 25000, examples: 'Health insurance premium for self + family (₹50k for senior citizens)', items: ['Self Health Insurance', 'Family Health Insurance', 'Parent Health Insurance', 'Preventive Health Checkup'] },
+  { id: '80G', label: '80G — Donations', limit: null, examples: 'Donations to approved charities. 50% or 100% deduction.', items: ['PM CARES', 'National Relief Fund', 'Charity Donation'] },
+  { id: 'HRA', label: 'HRA — House Rent Allowance', limit: null, examples: 'Rent paid if you are salaried and in rented accommodation', items: ['Rent Paid'] },
 ];
-
-function SectionProgress({ section, total }) {
-  if (!section.limit) return null;
-  const pct = Math.min(100, Math.round((total / section.limit) * 100));
-  const remaining = section.limit - total;
-  const over = total > section.limit;
-
-  return (
-    <div className="tax-progress">
-      <div className="tax-bar-bg">
-        <div className="tax-bar-fill" style={{ width: `${pct}%`, background: over ? '#ef4444' : section.color }} />
-      </div>
-      <div className="tax-bar-meta">
-        <span>{formatINR(total)} declared</span>
-        <span style={{ color: over ? '#ef4444' : 'var(--color-success)', fontWeight: 600 }}>
-          {over ? `₹${formatINR(Math.abs(remaining))} over limit` : `₹${formatINR(remaining)} remaining`}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
   const toast = useToast();
-  const [showAdd, setShowAdd] = useState(null); // section id
+  const [showAdd, setShowAdd] = useState(null);
   const [editingDecl, setEditingDecl] = useState(null);
   const [fy, setFy] = useState('2024-25');
 
   const filtered = declarations.filter(d => d.financial_year === fy);
-
   const totalSaved = SECTIONS.reduce((acc, s) => {
     if (!s.limit) return acc;
     const sTotal = filtered.filter(d => d.section === s.id).reduce((a, d) => a + Number(d.amount), 0);
     return acc + Math.min(sTotal, s.limit);
   }, 0);
-
-  // Assumed tax bracket (30%)
   const taxSaved = Math.round(totalSaved * 0.3);
+  const totalLimit = SECTIONS.filter(s => s.limit).reduce((a, s) => a + s.limit, 0);
+  const roomLeft = Math.max(0, 150000 - (filtered.filter(d => d.section === '80C').reduce((a, d) => a + Number(d.amount), 0)));
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Tax Planner</h2>
-        <p className="page-sub">Track 80C, 80D, HRA deductions</p>
-      </div>
-
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Financial Year</h4>
-          <select value={fy} onChange={e => setFy(e.target.value)} style={{ fontSize: 13, padding: '4px 8px', borderRadius: 8, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
-            <option value="2024-25">2024–25</option>
-            <option value="2025-26">2025–26</option>
-            <option value="2023-24">2023–24</option>
+    <div>
+      {/* Summary card */}
+      <div className="card pad rise" style={{ '--d': '0ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.015em' }}>Tax Planner</h3>
+          <select value={fy} onChange={e => setFy(e.target.value)} className="mini-select">
+            <option value="2024-25">FY 2024–25</option>
+            <option value="2025-26">FY 2025–26</option>
+            <option value="2023-24">FY 2023–24</option>
           </select>
         </div>
-        <div className="tax-summary">
-          <div className="tax-summary-item">
-            <div className="tax-summary-val">{formatINR(totalSaved)}</div>
-            <div className="tax-summary-label">Total Deductions Declared</div>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Deductions declared</div>
+            <div className="num" style={{ fontSize: 26, fontWeight: 700 }}>{fmtK(totalSaved)}</div>
           </div>
-          <div className="tax-summary-item">
-            <div className="tax-summary-val" style={{ color: '#10b981' }}>{formatINR(taxSaved)}</div>
-            <div className="tax-summary-label">Est. Tax Saved (30% slab)</div>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Est. tax saved · 30% slab</div>
+            <div className="num" style={{ fontSize: 26, fontWeight: 700, color: 'var(--pos)' }}>{fmtK(taxSaved)}</div>
           </div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8, textAlign: 'center' }}>
-          Actual savings depend on your income slab. Consult a CA for filing.
-        </div>
-
-        {/* Deduction insight */}
-        {(() => {
-          const totalLimit = SECTIONS.filter(s => s.limit).reduce((a, s) => a + s.limit, 0);
-          const remaining = totalLimit - totalSaved;
-          if (totalLimit > 0) {
-            const utilisationPct = Math.round((totalSaved / totalLimit) * 100);
-            return (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-muted)' }}>
-                {utilisationPct < 30 && <div>💡 You've used only {utilisationPct}% of available deductions. Explore more ways to maximize savings.</div>}
-                {utilisationPct >= 30 && utilisationPct < 80 && <div>🎯 {utilisationPct}% utilised. {remaining > 0 && `₹${remaining.toLocaleString('en-IN')} room left.`}</div>}
-                {utilisationPct >= 80 && <div>🔥 Excellent! {utilisationPct}% utilised.</div>}
-              </div>
-            );
-          }
-          return null;
-        })()}
+        {roomLeft > 0 && (
+          <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--warn-soft)', borderRadius: 'var(--r-sm)', fontSize: 13, fontWeight: 600, color: 'var(--warn)' }}>
+            💡 80C room available — <span className="num">{fmtK(roomLeft)}</span> more can be declared
+          </div>
+        )}
+        <div style={{ marginTop: 10, fontSize: 11, color: 'var(--ink-3)' }}>Consult a CA for actual filing. Estimates only.</div>
       </div>
 
-      {SECTIONS.map(section => {
+      {SECTIONS.map((section, si) => {
         const sectionDecls = filtered.filter(d => d.section === section.id);
         const total = sectionDecls.reduce((a, d) => a + Number(d.amount), 0);
+        const pct = section.limit ? Math.min(100, Math.round((total / section.limit) * 100)) : 0;
+        const over = section.limit && total > section.limit;
+        const remaining = section.limit ? section.limit - total : null;
         return (
-          <div key={section.id} className="section-card">
-            <div className="section-header">
+          <div key={section.id} className="tax-section-card rise" style={{ '--d': `${(si + 1) * 60}ms` }}>
+            <div className="tax-section-head">
               <div>
-                <h4 style={{ color: section.color }}>{section.label}</h4>
-                {section.limit && <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Limit: {formatINR(section.limit)}/year</div>}
+                <div className="tax-section-title">{section.label}</div>
+                <div className="tax-section-sub">{section.examples}</div>
               </div>
-              <button className="btn-secondary btn-sm" onClick={() => setShowAdd(section.id)}>+ Add</button>
+              <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13, whiteSpace: 'nowrap' }} onClick={() => setShowAdd(section.id)}>
+                <Icon name="plus" size={13} />Add
+              </button>
             </div>
-
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 10 }}>{section.examples}</div>
-
-            <SectionProgress section={section} total={total} />
-
-            {sectionDecls.length === 0 ? (
-              <p className="empty-hint" style={{ margin: '8px 0 0' }}>Nothing declared yet</p>
-            ) : (
-              <div className="tax-list">
-                {sectionDecls.map(d => (
-                  <div key={d.id} className="tax-row">
-                    <span className="tax-name">{d.name}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="tax-amt">{formatINR(d.amount)}</span>
-                      <button className="btn-icon" onClick={() => setEditingDecl(d)}>✏️</button>
-                      <button className="btn-icon" onClick={() => { onDelete(d.id); toast('Removed'); }}>🗑️</button>
-                    </div>
-                  </div>
-                ))}
-                <div className="tax-row tax-row--total">
-                  <span>Total</span>
-                  <span style={{ color: section.color, fontWeight: 800 }}>{formatINR(total)}</span>
+            {section.limit && (
+              <>
+                <div className="tax-limit-bar">
+                  <div className={`tax-limit-fill${over ? ' over' : ''}`} style={{ width: pct + '%' }} />
                 </div>
-              </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 20px 14px', fontSize: 12, fontWeight: 700 }}>
+                  <span className="num" style={{ color: 'var(--ink-2)' }}>{fmtK(total)} declared</span>
+                  <span style={{ color: over ? 'var(--neg)' : 'var(--pos)' }}>
+                    {over ? `${fmtK(Math.abs(remaining))} over` : `${fmtK(remaining)} left`}
+                  </span>
+                </div>
+              </>
             )}
+            {sectionDecls.length === 0 ? (
+              <div style={{ padding: '0 20px 16px', fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>Nothing declared yet</div>
+            ) : sectionDecls.map(d => (
+              <div key={d.id} className="tax-item">
+                <div className="tax-item-name">{d.name}</div>
+                <div className="tax-item-amt num">{fmtK(d.amount)}</div>
+                <button className="icon-btn" style={{ width: 28, height: 28, marginLeft: 8 }} onClick={() => setEditingDecl(d)}><Icon name="gear" size={13} /></button>
+                <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => { onDelete(d.id); toast('Removed'); }}>×</button>
+              </div>
+            ))}
           </div>
         );
       })}
 
       {showAdd && (
         <Modal title={`Add ${showAdd} Declaration`} onClose={() => setShowAdd(null)}>
-          <TaxForm
-            section={showAdd}
-            fy={fy}
-            items={SECTIONS.find(s => s.id === showAdd)?.items || []}
-            onSave={async d => { await onAdd(d); toast('Declaration added'); setShowAdd(null); }}
-          />
+          <TaxForm section={showAdd} fy={fy} items={SECTIONS.find(s => s.id === showAdd)?.items || []}
+            onSave={async d => { await onAdd(d); toast('Declaration added'); setShowAdd(null); }} />
         </Modal>
       )}
       {editingDecl && (
         <Modal title="Edit Declaration" onClose={() => setEditingDecl(null)}>
-          <TaxForm
-            section={editingDecl.section}
-            fy={editingDecl.financial_year}
+          <TaxForm section={editingDecl.section} fy={editingDecl.financial_year}
             items={SECTIONS.find(s => s.id === editingDecl.section)?.items || []}
-            initial={editingDecl}
-            submitLabel="Save Changes"
-            onSave={async d => { await onUpdate(editingDecl.id, { name: d.name, amount: d.amount }); toast('Updated'); setEditingDecl(null); }}
-          />
+            initial={editingDecl} submitLabel="Save Changes"
+            onSave={async d => { await onUpdate(editingDecl.id, { name: d.name, amount: d.amount }); toast('Updated'); setEditingDecl(null); }} />
         </Modal>
       )}
     </div>
@@ -203,29 +124,13 @@ function TaxForm({ section, fy, items, onSave, initial, submitLabel = 'Add Decla
   const [name, setName] = useState(initial?.name || items[0] || '');
   const [customName, setCustomName] = useState('');
   const [amount, setAmount] = useState(initial?.amount?.toString() || '');
-
   const finalName = name === 'custom' ? customName : name;
-
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name: finalName, section, amount: Number(amount), financial_year: fy }); }} className="expense-form">
-      <div className="form-group">
-        <label>Investment / Expense Type</label>
-        <select value={name} onChange={e => setName(e.target.value)}>
-          {items.map(i => <option key={i} value={i}>{i}</option>)}
-          <option value="custom">Other (type below)</option>
-        </select>
-      </div>
-      {name === 'custom' && (
-        <div className="form-group">
-          <label>Custom Name</label>
-          <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder="e.g. Sukanya Samriddhi" required />
-        </div>
-      )}
-      <div className="form-group">
-        <label>Amount Declared (₹)</label>
-        <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="1" required />
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>Financial Year: {fy}</div>
+      <div className="form-group"><label>Type</label><select value={name} onChange={e => setName(e.target.value)}>{items.map(i => <option key={i} value={i}>{i}</option>)}<option value="custom">Other (custom)</option></select></div>
+      {name === 'custom' && <div className="form-group"><label>Custom Name</label><input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder="e.g. Sukanya Samriddhi" required /></div>}
+      <div className="form-group"><label>Amount Declared (₹)</label><input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="1" required /></div>
+      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>Financial Year: {fy}</div>
       <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );

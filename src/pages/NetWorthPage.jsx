@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { formatINR } from '../lib/dateUtils';
 import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
+import { Icon } from '../components/layout/Icon';
+import { cur, fmtK } from '../lib/formatUtils';
 
 const ASSET_CATS = [
   { id: 'bank', icon: '🏦', label: 'Bank / Savings' },
@@ -19,39 +20,6 @@ const LIAB_CATS = [
   { id: 'other', icon: '💸', label: 'Other Liability' },
 ];
 
-function NetWorthRing({ netWorth, totalAssets, totalLiabilities }) {
-  const pct = totalAssets > 0 ? Math.max(0, Math.min(100, (netWorth / totalAssets) * 100)) : 0;
-  const R = 52, CX = 64, CY = 64, SW = 10;
-  const CIRC = 2 * Math.PI * R;
-  const dash = (pct / 100) * CIRC;
-  const color = netWorth >= 0 ? '#10b981' : '#ef4444';
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0 8px' }}>
-      <svg width={128} height={128} viewBox="0 0 128 128">
-        <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--color-surface-2)" strokeWidth={SW} />
-        <circle cx={CX} cy={CY} r={R} fill="none" stroke={color} strokeWidth={SW}
-          strokeDasharray={`${dash} ${CIRC}`} strokeLinecap="round"
-          transform={`rotate(-90 ${CX} ${CY})`} style={{ transition: 'stroke-dasharray 0.8s ease' }} />
-        <text x={CX} y={CY - 6} textAnchor="middle" fill="var(--color-text)" fontSize="11" fontWeight="600">Net Worth</text>
-        <text x={CX} y={CY + 10} textAnchor="middle" fill={color} fontSize="13" fontWeight="800">
-          {netWorth >= 0 ? '' : '−'}₹{Math.abs(netWorth / 100000).toFixed(1)}L
-        </text>
-      </svg>
-      <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ color: '#10b981', fontWeight: 700 }}>{formatINR(totalAssets)}</div>
-          <div style={{ color: 'var(--color-text-muted)' }}>Assets</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ color: '#ef4444', fontWeight: 700 }}>{formatINR(totalLiabilities)}</div>
-          <div style={{ color: 'var(--color-text-muted)' }}>Liabilities</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, onDeleteAsset, onAddLiability, onUpdateLiability, onDeleteLiability }) {
   const toast = useToast();
   const [showAddAsset, setShowAddAsset] = useState(false);
@@ -64,95 +32,85 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
   const netWorth = totalAssets - totalLiabilities;
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Net Worth</h2>
-        <p className="page-sub">Assets − Liabilities = Your financial position</p>
-      </div>
-
-      <div className="section-card">
-        <NetWorthRing netWorth={netWorth} totalAssets={totalAssets} totalLiabilities={totalLiabilities} />
-        <div className="nw-summary-row">
-          <div className={`nw-total ${netWorth >= 0 ? 'nw-total--pos' : 'nw-total--neg'}`}>
-            {netWorth >= 0 ? '✅' : '⚠️'} Net Worth: <strong>{formatINR(netWorth)}</strong>
+    <div>
+      {/* Hero */}
+      <div className="nw-hero rise" style={{ '--d': '0ms' }}>
+        <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>NET WORTH</div>
+        <div className="nw-hero-amt num" style={{ color: netWorth >= 0 ? '#6ff0c4' : '#ffb4a6' }}>
+          {netWorth >= 0 ? '' : '−'}{fmtK(Math.abs(netWorth))}
+        </div>
+        <div className="nw-splits">
+          <div className="nw-split">
+            <div className="ns-label">Total assets</div>
+            <div className="ns-val num">{fmtK(totalAssets)}</div>
+          </div>
+          <div className="nw-split">
+            <div className="ns-label">Total liabilities</div>
+            <div className="ns-val num" style={{ color: '#ffb4a6' }}>{fmtK(totalLiabilities)}</div>
           </div>
         </div>
-
-        {/* Asset/Liability Insight */}
-        {(assets.length > 0 || liabilities.length > 0) && (
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-muted)' }}>
-            {totalAssets > 0 && totalLiabilities > 0 && (
-              <div>
-                <div>Debt-to-Assets: {((totalLiabilities / totalAssets) * 100).toFixed(0)}%</div>
-                <div style={{ marginTop: 4 }}>
-                  {((totalLiabilities / totalAssets) * 100) < 30
-                    ? '✅ Healthy debt level — you\'re in good shape'
-                    : ((totalLiabilities / totalAssets) * 100) < 60
-                      ? '🟡 Moderate debt — monitor growth'
-                      : '🔴 High debt — focus on paydown'}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Assets */}
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Assets <span className="section-badge" style={{ background: '#10b981' }}>{formatINR(totalAssets)}</span></h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowAddAsset(true)}>+ Add</button>
-        </div>
-        {assets.length === 0 ? <p className="empty-hint">Add your bank balances, FDs, property etc.</p> : (
-          <div className="nw-list">
-            {assets.map(a => {
+      <div className="nw-cols" style={{ marginTop: 18 }}>
+        {/* Assets */}
+        <div className="rise" style={{ '--d': '60ms' }}>
+          <div className="sec-head" style={{ marginTop: 0 }}>
+            <h3>Assets</h3>
+            <button className="btn-ghost" style={{ padding: '7px 14px', fontSize: 13 }} onClick={() => setShowAddAsset(true)}>
+              <Icon name="plus" size={14} />Add
+            </button>
+          </div>
+          <div className="card">
+            {assets.length === 0 ? (
+              <div className="pad" style={{ color: 'var(--ink-3)', fontSize: 13, fontWeight: 600 }}>Add banks, FDs, property…</div>
+            ) : assets.map(a => {
               const cat = ASSET_CATS.find(c => c.id === a.category) || ASSET_CATS[5];
               return (
-                <div key={a.id} className="nw-row">
-                  <span className="nw-icon">{cat.icon}</span>
-                  <div className="nw-info">
-                    <span className="nw-name">{a.name}</span>
-                    <span className="nw-cat">{cat.label}</span>
+                <div key={a.id} className="nw-row pad" style={{ paddingTop: 12, paddingBottom: 12 }}>
+                  <div className="nw-ico">{cat.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="nw-name">{a.name}</div>
+                    <div className="nw-sub">{cat.label}</div>
                   </div>
-                  <div className="nw-right">
-                    <span className="nw-amt nw-amt--asset">{formatINR(a.value)}</span>
-                    <button className="btn-icon" onClick={() => setEditingAsset(a)}>✏️</button>
-                    <button className="btn-icon" onClick={() => onDeleteAsset(a.id)}>🗑️</button>
-                  </div>
+                  <div className="nw-amt num">{fmtK(a.value)}</div>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 8 }} onClick={() => setEditingAsset(a)}>
+                    <Icon name="gear" size={14} />
+                  </button>
                 </div>
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* Liabilities */}
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Liabilities <span className="section-badge" style={{ background: '#ef4444' }}>{formatINR(totalLiabilities)}</span></h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowAddLiab(true)}>+ Add</button>
         </div>
-        {liabilities.length === 0 ? <p className="empty-hint">Add loans, credit card balances etc.</p> : (
-          <div className="nw-list">
-            {liabilities.map(l => {
+
+        {/* Liabilities */}
+        <div className="rise" style={{ '--d': '120ms' }}>
+          <div className="sec-head" style={{ marginTop: 0 }}>
+            <h3>Liabilities</h3>
+            <button className="btn-ghost" style={{ padding: '7px 14px', fontSize: 13 }} onClick={() => setShowAddLiab(true)}>
+              <Icon name="plus" size={14} />Add
+            </button>
+          </div>
+          <div className="card">
+            {liabilities.length === 0 ? (
+              <div className="pad" style={{ color: 'var(--ink-3)', fontSize: 13, fontWeight: 600 }}>Add loans, credit cards…</div>
+            ) : liabilities.map(l => {
               const cat = LIAB_CATS.find(c => c.id === l.category) || LIAB_CATS[4];
               return (
-                <div key={l.id} className="nw-row">
-                  <span className="nw-icon">{cat.icon}</span>
-                  <div className="nw-info">
-                    <span className="nw-name">{l.name}</span>
-                    <span className="nw-cat">{cat.label}</span>
+                <div key={l.id} className="nw-row pad" style={{ paddingTop: 12, paddingBottom: 12 }}>
+                  <div className="nw-ico">{cat.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="nw-name">{l.name}</div>
+                    <div className="nw-sub">{cat.label}</div>
                   </div>
-                  <div className="nw-right">
-                    <span className="nw-amt nw-amt--liab">{formatINR(l.amount)}</span>
-                    <button className="btn-icon" onClick={() => setEditingLiab(l)}>✏️</button>
-                    <button className="btn-icon" onClick={() => onDeleteLiability(l.id)}>🗑️</button>
-                  </div>
+                  <div className="nw-amt neg num">{fmtK(l.amount)}</div>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 8 }} onClick={() => setEditingLiab(l)}>
+                    <Icon name="gear" size={14} />
+                  </button>
                 </div>
               );
             })}
           </div>
-        )}
+        </div>
       </div>
 
       {showAddAsset && (
@@ -185,20 +143,9 @@ function AssetForm({ cats, onSave, initial, submitLabel = 'Add Asset' }) {
   const [value, setValue] = useState(initial?.value?.toString() || '');
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, category, value: Number(value) }); }} className="expense-form">
-      <div className="form-group">
-        <label>Asset Name</label>
-        <input type="text" placeholder="e.g. SBI Savings, Gold Ring" value={name} onChange={e => setName(e.target.value)} required />
-      </div>
-      <div className="form-group">
-        <label>Type</label>
-        <select value={category} onChange={e => setCategory(e.target.value)}>
-          {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>Current Value (₹)</label>
-        <input type="number" inputMode="decimal" value={value} onChange={e => setValue(e.target.value)} min="0" required />
-      </div>
+      <div className="form-group"><label>Asset Name</label><input type="text" placeholder="e.g. SBI Savings, Gold Ring" value={name} onChange={e => setName(e.target.value)} required /></div>
+      <div className="form-group"><label>Type</label><select value={category} onChange={e => setCategory(e.target.value)}>{cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}</select></div>
+      <div className="form-group"><label>Current Value (₹)</label><input type="number" inputMode="decimal" value={value} onChange={e => setValue(e.target.value)} min="0" required /></div>
       <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );
@@ -210,20 +157,9 @@ function LiabForm({ cats, onSave, initial, submitLabel = 'Add Liability' }) {
   const [amount, setAmount] = useState(initial?.amount?.toString() || '');
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, category, amount: Number(amount) }); }} className="expense-form">
-      <div className="form-group">
-        <label>Liability Name</label>
-        <input type="text" placeholder="e.g. Home Loan Outstanding" value={name} onChange={e => setName(e.target.value)} required />
-      </div>
-      <div className="form-group">
-        <label>Type</label>
-        <select value={category} onChange={e => setCategory(e.target.value)}>
-          {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>Outstanding Amount (₹)</label>
-        <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="0" required />
-      </div>
+      <div className="form-group"><label>Liability Name</label><input type="text" placeholder="e.g. Home Loan Outstanding" value={name} onChange={e => setName(e.target.value)} required /></div>
+      <div className="form-group"><label>Type</label><select value={category} onChange={e => setCategory(e.target.value)}>{cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}</select></div>
+      <div className="form-group"><label>Outstanding Amount (₹)</label><input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="0" required /></div>
       <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );
