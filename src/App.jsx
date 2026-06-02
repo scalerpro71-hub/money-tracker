@@ -18,7 +18,6 @@ import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { AiPage } from './pages/AiPage';
-import { AiChatPage } from './pages/AiChatPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
@@ -26,40 +25,63 @@ import { NetWorthPage } from './pages/NetWorthPage';
 import { InvestmentsPage } from './pages/InvestmentsPage';
 import { EventsPage } from './pages/EventsPage';
 import { TaxPage } from './pages/TaxPage';
+import { MorePage } from './pages/MorePage';
 import { ToastProvider, useToast } from './components/layout/Toast';
 import { Spinner } from './components/layout/Spinner';
+import { Icon } from './components/layout/Icon';
 
-const TABS = [
-  { id: 'dashboard', label: 'Home', icon: '📊' },
-  { id: 'expenses', label: 'Expenses', icon: '📝' },
-  { id: 'networth', label: 'Net Worth', icon: '💎' },
-  { id: 'invest', label: 'Invest', icon: '📈' },
-  { id: 'events', label: 'Events', icon: '🎉' },
-  { id: 'goals', label: 'Goals', icon: '🎯' },
-  { id: 'tax', label: 'Tax', icon: '🧾' },
-  { id: 'import', label: 'Import', icon: '📂' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+const NAV_GROUPS = [
+  { label: 'Overview', items: [
+    { id: 'home',     label: 'Home',        icon: 'home' },
+    { id: 'insights', label: 'Coach',       icon: 'sparkle' },
+    { id: 'txns',     label: 'Activity',    icon: 'list' },
+  ]},
+  { label: 'Grow', items: [
+    { id: 'invest',   label: 'Investments', icon: 'trend' },
+    { id: 'goals',    label: 'Goals',       icon: 'target' },
+    { id: 'networth', label: 'Net Worth',   icon: 'gem' },
+    { id: 'events',   label: 'Events',      icon: 'calendar' },
+  ]},
+  { label: 'Plan', items: [
+    { id: 'tax',      label: 'Tax',         icon: 'shield' },
+    { id: 'import',   label: 'Import',      icon: 'download' },
+    { id: 'settings', label: 'Settings',    icon: 'gear' },
+  ]},
 ];
 
-function ThemeToggle() {
-  const { theme, toggle } = useTheme();
-  return (
-    <button className="btn-theme-toggle" onClick={toggle} aria-label="Toggle theme">
-      {theme === 'light' ? '🌙' : '☀️'}
-    </button>
-  );
+const MOBILE_NAV = [
+  { id: 'home',     label: 'Home',     icon: 'home' },
+  { id: 'insights', label: 'Coach',    icon: 'sparkle' },
+  { id: 'txns',     label: 'Activity', icon: 'list' },
+  { id: 'goals',    label: 'Goals',    icon: 'target' },
+  { id: 'more',     label: 'More',     icon: 'grip' },
+];
+
+const PAGE_TITLES = {
+  home: 'Dashboard', insights: 'AI Coach', txns: 'Activity', goals: 'Goals',
+  networth: 'Net Worth', invest: 'Investments', events: 'Events',
+  tax: 'Tax Planner', import: 'Import', settings: 'Settings', more: 'More',
+};
+
+const MOBILE_IDS = new Set(MOBILE_NAV.map(n => n.id));
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
 function AppInner() {
   const { session, user, signIn, signUp, signInWithMagicLink, signOut } = useAuth();
-  const [tab, setTab] = useState('dashboard');
+  const { theme, toggle: toggleTheme } = useTheme();
+  const [tab, setTab] = useState('home');
   const [showAdd, setShowAdd] = useState(false);
   const toast = useToast();
 
   const userId = user?.id;
   const { expenses, loading: expLoading, addExpense, updateExpense, deleteExpense } = useExpenses(userId);
 
-  // Auto-log recurring expenses on mount
   useEffect(() => { if (userId) autoLogRecurring(userId); }, [userId]);
   const { categories, addCategory, deleteCategory } = useCategories(userId);
   const { budgets, upsertBudget } = useBudgets(userId);
@@ -72,11 +94,17 @@ function AppInner() {
   const { events, addEvent, updateEvent, deleteEvent } = useEvents(userId);
   const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useTax(userId);
 
+  // Sync data-theme and data-accent on root element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-accent', 'green');
+  }, [theme]);
+
   if (session === undefined) {
     return (
       <div className="loading-screen">
         <Spinner size={48} />
-        <p>Loading...</p>
+        <p>Loading…</p>
       </div>
     );
   }
@@ -120,86 +148,140 @@ function AppInner() {
     }
   }
 
+  const userName = profile?.name || user?.email?.split('@')[0] || 'there';
+  const userInitial = userName.charAt(0).toUpperCase();
+  const mobileActive = MOBILE_IDS.has(tab) ? tab : 'more';
+
+  function renderPage() {
+    switch (tab) {
+      case 'home':
+        return <DashboardPage expenses={expenses} budgets={budgets} profile={profile} bills={bills} emis={emis} investments={investments} goals={goals} assets={assets} liabilities={liabilities} onAddExpense={() => setShowAdd(true)} />;
+      case 'insights':
+        return <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} investments={investments} assets={assets} liabilities={liabilities} bills={bills} />;
+      case 'txns':
+        return <ExpensesPage expenses={expenses} categories={categories} onAdd={handleAddExpense} onUpdate={updateExpense} onDelete={deleteExpense} />;
+      case 'invest':
+        return <InvestmentsPage investments={investments} onAdd={addInvestment} onUpdate={updateInvestment} onDelete={deleteInvestment} />;
+      case 'goals':
+        return <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />;
+      case 'networth':
+        return <NetWorthPage assets={assets} liabilities={liabilities} onAddAsset={addAsset} onUpdateAsset={updateAsset} onDeleteAsset={deleteAsset} onAddLiability={addLiability} onUpdateLiability={updateLiability} onDeleteLiability={deleteLiability} />;
+      case 'events':
+        return <EventsPage events={events} onAdd={addEvent} onUpdate={updateEvent} onDelete={deleteEvent} expenses={expenses} />;
+      case 'tax':
+        return <TaxPage declarations={declarations} onAdd={addDeclaration} onUpdate={updateDeclaration} onDelete={deleteDeclaration} />;
+      case 'import':
+        return <ImportPage categories={categories} onAdd={handleAddExpense} />;
+      case 'settings':
+        return (
+          <SettingsPage
+            profile={profile} onUpdateProfile={updateProfile}
+            categories={categories} onAddCategory={addCategory} onDeleteCategory={deleteCategory}
+            budgets={budgets} onUpsertBudget={upsertBudget}
+            emis={emis} onAddEmi={addEmi} onUpdateEmi={updateEmi} onDeleteEmi={deleteEmi}
+            bills={bills} onAddBill={addBill} onUpdateBill={updateBill} onDeleteBill={deleteBill}
+            expenses={expenses} userId={userId} onSignOut={signOut}
+          />
+        );
+      case 'more':
+        return <MorePage onNav={setTab} />;
+      default:
+        return null;
+    }
+  }
+
   return (
-    <div className="app">
-      <header className="top-bar">
-        <div className="app-title">💰 Rupee Tracker</div>
-        <div className="top-bar-actions">
-          <ThemeToggle />
-          <button className="btn-add" onClick={() => setShowAdd(true)}>+ Add</button>
+    <div className="app" data-theme={theme} data-accent="green">
+      {/* SIDEBAR */}
+      <aside className="rail">
+        <div className="brand">
+          <div className="brand-mark"><Icon name="wallet" size={19} /></div>
+          <div className="brand-name">Rupee<span>.</span></div>
         </div>
-      </header>
+        <nav className="rail-nav">
+          {NAV_GROUPS.map(group => (
+            <div key={group.label}>
+              <div className="rail-group">{group.label}</div>
+              {group.items.map(item => (
+                <button
+                  key={item.id}
+                  className={`rail-link${tab === item.id ? ' on' : ''}`}
+                  onClick={() => setTab(item.id)}
+                >
+                  <Icon name={item.icon} size={20} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <div className="rail-spacer" />
+        <button className="rail-link" onClick={toggleTheme}>
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={20} />
+          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        </button>
+        <div className="rail-card">
+          <div className="rail-user">
+            <div className="avatar">{userInitial}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userName}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontWeight: 600 }}>✦ Premium</div>
+            </div>
+          </div>
+        </div>
+      </aside>
 
-      <main className="main-content">
-        {expLoading && tab === 'dashboard' ? (
-          <div className="loading-screen"><Spinner size={32} /><p>Loading...</p></div>
-        ) : (
-          <>
-            {tab === 'dashboard' && <DashboardPage expenses={expenses} budgets={budgets} profile={profile} bills={bills} emis={emis} />}
-            {tab === 'expenses' && (
-              <ExpensesPage
-                expenses={expenses}
-                categories={categories}
-                onAdd={handleAddExpense}
-                onUpdate={updateExpense}
-                onDelete={deleteExpense}
-              />
+      {/* MAIN COLUMN */}
+      <div className="main">
+        <header className="topbar">
+          <div className="tb-title">
+            {tab === 'home' ? (
+              <>
+                <span className="tb-hi">{getGreeting()},</span>
+                <span className="tb-name">{userName} 👋</span>
+              </>
+            ) : (
+              <span className="tb-name">{PAGE_TITLES[tab] || ''}</span>
             )}
-            {tab === 'ai' && (
-              <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} />
-            )}
-            {tab === 'chat' && (
-              <AiChatPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} />
-            )}
-            {tab === 'networth' && (
-              <NetWorthPage assets={assets} liabilities={liabilities} onAddAsset={addAsset} onUpdateAsset={updateAsset} onDeleteAsset={deleteAsset} onAddLiability={addLiability} onUpdateLiability={updateLiability} onDeleteLiability={deleteLiability} />
-            )}
-            {tab === 'invest' && (
-              <InvestmentsPage investments={investments} onAdd={addInvestment} onUpdate={updateInvestment} onDelete={deleteInvestment} />
-            )}
-            {tab === 'events' && (
-              <EventsPage events={events} onAdd={addEvent} onUpdate={updateEvent} onDelete={deleteEvent} expenses={expenses} />
-            )}
-            {tab === 'goals' && (
-              <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />
-            )}
-            {tab === 'tax' && (
-              <TaxPage declarations={declarations} onAdd={addDeclaration} onUpdate={updateDeclaration} onDelete={deleteDeclaration} />
-            )}
-            {tab === 'import' && (
-              <ImportPage categories={categories} onAdd={handleAddExpense} />
-            )}
-            {tab === 'settings' && (
-              <SettingsPage
-                profile={profile}
-                onUpdateProfile={updateProfile}
-                categories={categories}
-                onAddCategory={addCategory}
-                onDeleteCategory={deleteCategory}
-                budgets={budgets}
-                onUpsertBudget={upsertBudget}
-                emis={emis}
-                onAddEmi={addEmi}
-                onUpdateEmi={updateEmi}
-                onDeleteEmi={deleteEmi}
-                bills={bills}
-                onAddBill={addBill}
-                onUpdateBill={updateBill}
-                onDeleteBill={deleteBill}
-                expenses={expenses}
-                userId={userId}
-                onSignOut={signOut}
-              />
-            )}
-          </>
-        )}
-      </main>
+          </div>
+          <div className="tb-grow" />
+          <div className="tb-actions">
+            <button className="icon-btn" onClick={toggleTheme} title="Toggle theme">
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            </button>
+            <button className="icon-btn tb-search" title="Search">
+              <Icon name="search" size={18} />
+            </button>
+            <button className="icon-btn tb-bell" title="Notifications">
+              <Icon name="bell" size={18} />
+            </button>
+            <button className="btn-accent" onClick={() => setShowAdd(true)}>
+              <Icon name="plus" size={16} />Add
+            </button>
+          </div>
+        </header>
 
-      <nav className="tab-bar">
-        {TABS.map(t => (
-          <button key={t.id} className={`tab-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
-            <span className="tab-icon">{t.icon}</span>
-            <span className="tab-label">{t.label}</span>
+        <main className="content">
+          <div className="wrap">
+            {expLoading && tab === 'home' ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <Spinner size={32} />
+              </div>
+            ) : renderPage()}
+          </div>
+        </main>
+      </div>
+
+      {/* MOBILE BOTTOM NAV */}
+      <nav className="botnav">
+        {MOBILE_NAV.map(item => (
+          <button
+            key={item.id}
+            className={mobileActive === item.id ? 'on' : ''}
+            onClick={() => setTab(item.id)}
+          >
+            <Icon name={item.icon} size={22} />
+            <span className="bn-label">{item.label}</span>
           </button>
         ))}
       </nav>

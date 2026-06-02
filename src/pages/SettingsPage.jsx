@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { Modal } from '../components/layout/Modal';
+import { Icon } from '../components/layout/Icon';
 import { useRecurring } from '../hooks/useRecurring';
 import { formatINR } from '../lib/dateUtils';
+import { fmtK } from '../lib/formatUtils';
 import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
 
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
@@ -54,179 +56,210 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
     setCatName(''); setCatIcon('💰'); setCatColor('#6366F1');
   }
 
-  return (
-    <div className="page">
-      <div className="page-header"><h2>Settings</h2></div>
+  const initials = (profile?.full_name || profile?.email || 'U').slice(0, 2).toUpperCase();
 
-      <div className="section-card">
-        <h4>Profile</h4>
-        <p className="section-desc">Income is used for savings rate. Payday enables the salary countdown.</p>
-        <form onSubmit={saveIncome} className="expense-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Monthly Income (₹)</label>
-              <input type="number" inputMode="decimal" placeholder="e.g. 50000" value={income} onChange={e => setIncome(e.target.value)} min="1" />
+  return (
+    <div>
+      {/* Profile card */}
+      <div className="card pad rise" style={{ '--d': '0ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="avatar" style={{ width: 56, height: 56, fontSize: 20, borderRadius: 18, flexShrink: 0 }}>{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {profile?.full_name || 'Your Name'}
             </div>
-            <div className="form-group">
-              <label>Salary Day (1–31)</label>
-              <input type="number" inputMode="numeric" placeholder="e.g. 1" value={payday} onChange={e => setPayday(e.target.value)} min="1" max="31" />
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {profile?.email || ''}
             </div>
           </div>
-          <button type="submit" className="btn-primary btn-sm">Save Profile</button>
+          <span className="chip" style={{ background: 'linear-gradient(135deg,#0a9d72,#0a8a86)', color: '#fff', fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', padding: '4px 10px' }}>PRO</span>
+        </div>
+      </div>
+
+      {/* Money setup */}
+      <div className="card pad rise" style={{ '--d': '60ms', marginBottom: 18 }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Money Setup</div>
+        <form onSubmit={saveIncome}>
+          <div className="set-row" style={{ borderTop: '1px solid var(--hair)', paddingTop: 14, paddingBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Monthly Income</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>₹</span>
+              <input
+                type="number" inputMode="decimal" placeholder="e.g. 50000" value={income}
+                onChange={e => setIncome(e.target.value)} min="1"
+                style={{ width: 120, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'right' }}
+              />
+            </div>
+          </div>
+          <div className="set-row" style={{ paddingBottom: 14 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>Salary Day</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>Enables salary countdown</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="number" inputMode="numeric" placeholder="1" value={payday}
+                onChange={e => setPayday(e.target.value)} min="1" max="31"
+                style={{ width: 64, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'center' }}
+              />
+              <span style={{ color: 'var(--ink-3)', fontWeight: 600, fontSize: 13 }}>of month</span>
+            </div>
+          </div>
+          <button type="submit" className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '11px' }}>Save Setup</button>
         </form>
       </div>
 
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Monthly Budgets</h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowBudgets(true)}>Edit Budgets</button>
+      {/* Monthly Budgets */}
+      <div className="card pad rise" style={{ '--d': '120ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div className="eyebrow">Monthly Budgets</div>
+          <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setShowBudgets(true)}>
+            <Icon name="gear" size={13} />Edit
+          </button>
         </div>
-        <p className="section-desc">Set spending limits per category for budget progress bars</p>
-        {budgets.length === 0 ? <p className="empty-hint">No budgets set</p> : (
-          <div className="budget-summary">
-            {budgets.map(b => (
-              <div key={b.id} className="budget-summary-row">
-                <span>{b.category?.icon} {b.category?.name}</span>
-                <span>{formatINR(b.limit_amount)}/mo</span>
-              </div>
-            ))}
+        {budgets.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>No budgets set — tap Edit to add limits</div>
+        ) : budgets.map(b => (
+          <div key={b.id} className="set-row" style={{ borderTop: '1px solid var(--hair)' }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{b.category?.icon} {b.category?.name}</span>
+            <span className="num" style={{ fontWeight: 700, fontSize: 14, color: 'var(--pos)' }}>{fmtK(b.limit_amount)}/mo</span>
           </div>
-        )}
+        ))}
       </div>
 
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Recurring Expenses</h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowAddRec(true)}>+ Add</button>
+      {/* Recurring Expenses */}
+      <div className="card pad rise" style={{ '--d': '180ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div className="eyebrow">Recurring Expenses</div>
+          <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setShowAddRec(true)}>
+            <Icon name="plus" size={13} />Add
+          </button>
         </div>
-        <p className="section-desc">Auto-logged on their scheduled day each month/week</p>
-        {recurring.length === 0 ? <p className="empty-hint">No recurring expenses</p> : (
-          <div className="recurring-list">
-            {recurring.map(r => (
-              <div key={r.id} className="recurring-item">
-                <div>
-                  <span>{r.category?.icon} <strong>{r.name}</strong></span>
-                  <span className="recurring-meta">
-                    {formatINR(r.amount)} · {r.frequency === 'monthly' ? `${r.day_of_month}th of month` : `Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][r.day_of_week]}`}
-                  </span>
-                </div>
-                <div className="recurring-actions">
-                  <label className="toggle">
-                    <input type="checkbox" checked={r.is_active} onChange={e => toggleRecurring(r.id, e.target.checked)} />
-                    <span className="toggle-slider" />
-                  </label>
-                  <button className="btn-icon" onClick={() => deleteRecurring(r.id)}>🗑️</button>
-                </div>
+        {recurring.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>No recurring expenses — auto-logged monthly/weekly</div>
+        ) : recurring.map(r => (
+          <div key={r.id} className="set-row" style={{ borderTop: '1px solid var(--hair)' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{r.category?.icon} {r.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>
+                {fmtK(r.amount)} · {r.frequency === 'monthly' ? `${r.day_of_month}th of month` : `Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][r.day_of_week]}`}
               </div>
-            ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input type="checkbox" checked={r.is_active} onChange={e => toggleRecurring(r.id, e.target.checked)} style={{ width: 36, height: 20, accentColor: 'var(--accent)' }} />
+              </label>
+              <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => deleteRecurring(r.id)}>×</button>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Categories</h4>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-secondary btn-sm" onClick={() => setShowSuggestedCats(true)}>+ From List</button>
-            <button className="btn-secondary btn-sm" onClick={() => setShowAddCat(true)}>+ Custom</button>
+      {/* Categories */}
+      <div className="card pad rise" style={{ '--d': '240ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div className="eyebrow">Categories</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setShowSuggestedCats(true)}>+ From List</button>
+            <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setShowAddCat(true)}>
+              <Icon name="plus" size={13} />Custom
+            </button>
           </div>
         </div>
-        <p className="section-desc">Tap "From List" to pick from 40 preset categories</p>
-        <div className="cat-list">
-          {categories.map(c => {
-            const meta = SUGGESTED_CATEGORIES.find(s => s.name === c.name);
-            return (
-              <div key={c.id} className="cat-item">
-                <span style={{ color: c.color }}>{c.icon} {c.name}</span>
-                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                  {meta && (
-                    <button
-                      className="btn-icon"
-                      title={meta.desc}
-                      onClick={() => alert(`${c.icon} ${c.name}\n\n${meta.desc}`)}
-                    >ℹ️</button>
-                  )}
-                  <button className="btn-icon" onClick={() => onDeleteCategory(c.id)}>🗑️</button>
-                </div>
-              </div>
-            );
-          })}
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 12 }}>Tap "From List" for 13 preset categories</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {categories.map(c => (
+            <div key={c.id} className="chip" style={{ background: c.color + '18', border: `1px solid ${c.color}44`, color: c.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {c.icon} {c.name}
+              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 0 0 4px', fontSize: 13, opacity: 0.7 }} onClick={() => onDeleteCategory(c.id)}>×</button>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Bills */}
-      <div className="section-card">
-        <div className="section-header">
-          <h4>Bill Reminders</h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowAddBill(true)}>+ Add</button>
-        </div>
-        <p className="section-desc">Get alerted on Dashboard when a bill is due within 7 days</p>
-        {bills.length === 0 ? <p className="empty-hint">No bills set</p> : (
-          <div className="recurring-list">
-            {bills.map(b => (
-              <div key={b.id} className="recurring-item">
-                <div>
-                  <span>{b.category?.icon || '💳'} <strong>{b.name}</strong></span>
-                  <span className="recurring-meta">{formatINR(b.amount)} · Due {b.due_day}th of month</span>
-                </div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button className="btn-icon" onClick={() => setEditingBill(b)}>✏️</button>
-                  <button className="btn-icon" onClick={() => onDeleteBill(b.id)}>🗑️</button>
-                </div>
-              </div>
-            ))}
+      {/* Bill Reminders */}
+      <div className="card pad rise" style={{ '--d': '300ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <div className="eyebrow">Bill Reminders</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 3 }}>Alerts on Dashboard when due within 7 days</div>
           </div>
-        )}
+          <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setShowAddBill(true)}>
+            <Icon name="plus" size={13} />Add
+          </button>
+        </div>
+        {bills.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>No bills set</div>
+        ) : bills.map(b => (
+          <div key={b.id} className="set-row" style={{ borderTop: '1px solid var(--hair)' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{b.category?.icon || '💳'} {b.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{fmtK(b.amount)} · Due {b.due_day}th of month</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setEditingBill(b)}><Icon name="gear" size={13} /></button>
+              <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => onDeleteBill(b.id)}>×</button>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* EMIs */}
-      <div className="section-card">
-        <div className="section-header">
-          <h4>EMI Tracker</h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowAddEmi(true)}>+ Add</button>
-        </div>
-        <p className="section-desc">Track car loans, home loans, phone EMIs — see progress and end dates</p>
-        {emis.length === 0 ? <p className="empty-hint">No EMIs tracked</p> : (
-          <div className="recurring-list">
-            {emis.map(e => {
-              const start = new Date(e.start_date + 'T00:00:00');
-              const end = new Date(start);
-              end.setMonth(end.getMonth() + e.tenure_months);
-              return (
-                <div key={e.id} className="recurring-item">
-                  <div>
-                    <span><strong>{e.name}</strong></span>
-                    <span className="recurring-meta">
-                      {formatINR(e.emi_amount)}/mo · {e.tenure_months} months · Ends {end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button className="btn-icon" onClick={() => setEditingEmi(e)}>✏️</button>
-                    <button className="btn-icon" onClick={() => onDeleteEmi(e.id)}>🗑️</button>
-                  </div>
-                </div>
-              );
-            })}
+      {/* EMI Tracker */}
+      <div className="card pad rise" style={{ '--d': '360ms', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <div className="eyebrow">EMI Tracker</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 3 }}>Car loans, home loans, phone EMIs</div>
           </div>
-        )}
+          <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setShowAddEmi(true)}>
+            <Icon name="plus" size={13} />Add
+          </button>
+        </div>
+        {emis.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>No EMIs tracked</div>
+        ) : emis.map(e => {
+          const start = new Date(e.start_date + 'T00:00:00');
+          const end = new Date(start);
+          end.setMonth(end.getMonth() + e.tenure_months);
+          return (
+            <div key={e.id} className="set-row" style={{ borderTop: '1px solid var(--hair)' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{e.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>
+                  {fmtK(e.emi_amount)}/mo · {e.tenure_months} months · Ends {end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setEditingEmi(e)}><Icon name="gear" size={13} /></button>
+                <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => onDeleteEmi(e.id)}>×</button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Export */}
-      <div className="section-card">
-        <h4>Export Data</h4>
-        <p className="section-desc">Download your expenses as CSV for use in Excel or Google Sheets</p>
-        <div className="export-btns">
-          <button className="btn-secondary" onClick={() => { exportMonthlyReportCSV(expenses, budgets, profile); toast('Report downloaded'); }}>
-            📊 Monthly Report CSV
+      <div className="card pad rise" style={{ '--d': '420ms', marginBottom: 18 }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Export Data</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button className="btn-ghost" style={{ flex: 1 }} onClick={() => { exportMonthlyReportCSV(expenses, budgets, profile); toast('Report downloaded'); }}>
+            📊 Monthly Report
           </button>
-          <button className="btn-secondary" onClick={() => { exportExpensesCSV(expenses); toast('Expenses downloaded'); }}>
-            📋 All Expenses CSV
+          <button className="btn-ghost" style={{ flex: 1 }} onClick={() => { exportExpensesCSV(expenses); toast('Expenses downloaded'); }}>
+            📋 All Expenses
           </button>
         </div>
       </div>
 
-      <button className="btn-danger" onClick={onSignOut}>Sign Out</button>
+      {/* Sign out */}
+      <button
+        onClick={onSignOut}
+        style={{ width: '100%', padding: '13px', border: '1px solid var(--neg)', borderRadius: 'var(--r-md)', background: 'transparent', color: 'var(--neg)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+      >
+        Sign Out
+      </button>
 
+      {/* Modals */}
       {showAddCat && (
         <Modal title="Add Category" onClose={() => setShowAddCat(false)}>
           <form onSubmit={handleAddCat} className="expense-form">
@@ -240,10 +273,11 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
             </div>
             <div className="form-group">
               <label>Color</label>
-              <div className="color-picker">
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {COLORS.map(c => (
-                  <button key={c} type="button" className={`color-dot ${catColor === c ? 'selected' : ''}`}
-                    style={{ background: c }} onClick={() => setCatColor(c)} />
+                  <button key={c} type="button"
+                    style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: catColor === c ? '3px solid var(--ink)' : '2px solid transparent', cursor: 'pointer' }}
+                    onClick={() => setCatColor(c)} />
                 ))}
               </div>
             </div>
@@ -376,7 +410,7 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
 
   return (
     <Modal title="Monthly Budgets" onClose={onClose}>
-      <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 14 }}>
+      <p style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 14 }}>
         Set a monthly spending limit per category. Leave blank for no limit.
       </p>
       <div className="budget-edit-list">
@@ -556,7 +590,7 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
 
   return (
     <Modal title="Pick Categories" onClose={onClose}>
-      <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+      <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 12 }}>
         Tap to select. Already added ones are greyed out.
       </p>
       <div className="suggested-cats-list">
@@ -588,7 +622,7 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
         })}
       </div>
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>{selected.size} selected</span>
+        <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{selected.size} selected</span>
         <button className="btn-primary" onClick={handleAdd} disabled={selected.size === 0 || adding}>
           {adding ? 'Adding...' : `Add ${selected.size} Categories`}
         </button>
