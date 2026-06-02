@@ -513,7 +513,8 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
     let count = 0;
     for (const cat of toAdd) {
       try {
-        await onAdd(cat);
+        const { desc: _desc, ...catData } = cat;
+        await onAdd(catData);
         count++;
       } catch (err) {
         toast(`Failed to add ${cat.name}: ${err.message}`, 'error');
