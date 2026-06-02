@@ -21,7 +21,7 @@ export function GoalCard({ goal, onEdit, onDelete }) {
         <span className="goal-target">of {formatINR(goal.target_amount)}</span>
       </div>
       <div className="budget-bar-bg">
-        <div className="budget-bar-fill" style={{ width: `${pct}%`, background: '#6366f1' }} />
+        <div className="goal-bar-fill" style={{ width: `${pct}%` }} />
       </div>
       <div className="goal-footer">
         <span className="goal-pct">{pct.toFixed(0)}% complete</span>

@@ -51,7 +51,7 @@ export function ExpensesPage({ expenses, categories, onAdd, onUpdate, onDelete }
 
       {filtered.length === 0 ? (
         <div className="empty-state">
-          <div style={{ fontSize: 48 }}>📝</div>
+          <div className="empty-icon">📝</div>
           <p>No expenses found</p>
           <p className="empty-sub">Use the + button to add your first expense</p>
         </div>

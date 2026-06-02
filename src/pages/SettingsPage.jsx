@@ -236,8 +236,8 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
     <Modal title="Edit Budgets" onClose={onClose}>
       <div className="expense-form">
         {categories.map(c => (
-          <div key={c.id} className="form-row" style={{ alignItems: 'center' }}>
-            <label style={{ minWidth: 120 }}>{c.icon} {c.name}</label>
+          <div key={c.id} className="form-row form-row--center">
+            <label className="budget-label-col">{c.icon} {c.name}</label>
             <input type="number" inputMode="decimal" placeholder="No limit" value={values[c.id] || ''}
               onChange={e => setValues(v => ({ ...v, [c.id]: e.target.value }))} min="1" />
           </div>

@@ -45,7 +45,7 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
 
         {mode === 'magic' && magicSent ? (
           <div className="magic-sent">
-            <div style={{ fontSize: 48 }}>📧</div>
+            <div className="empty-icon">📧</div>
             <p>Check your email for the login link!</p>
             <button className="btn-secondary" onClick={() => { setMagicSent(false); setMode('login'); }}>
               Back to login

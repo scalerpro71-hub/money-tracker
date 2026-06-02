@@ -1,0 +1,92 @@
+/* ── Stat Cards ── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.stat-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+.stat-label { font-size: 11px; color: var(--color-text-3); font-weight: 500; }
+.stat-amount { font-size: 14px; font-weight: 700; }
+.stat-sub { font-size: 11px; color: var(--color-text-muted); }
+
+/* ── Charts ── */
+.chart-card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.chart-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--color-text-2); }
+.empty-chart { text-align: center; color: var(--color-text-muted); padding: 20px; }
+
+/* ── Section Card ── */
+.section-card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.section-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--color-text-2); }
+
+/* ── Budget bars ── */
+.budget-row { margin-bottom: 14px; }
+.budget-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+.budget-bar-bg { height: 8px; background: var(--color-surface-2); border-radius: 4px; overflow: hidden; }
+.budget-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.budget-warning { font-size: 11px; margin-top: 4px; font-weight: 600; }
+
+/* ── Range toggle ── */
+.range-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface-2);
+  border-radius: 8px;
+  padding: 3px;
+}
+.range-toggle button {
+  padding: 5px 10px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--color-text-3);
+  font-weight: 500;
+}
+.range-toggle button.active {
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+/* ── Recharts dark mode overrides ── */
+[data-theme="dark"] .recharts-default-tooltip {
+  background: var(--color-surface-2) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+[data-theme="dark"] .recharts-legend-item-text {
+  color: var(--color-text-3) !important;
+}
+[data-theme="dark"] .recharts-cartesian-axis-tick-value {
+  fill: var(--color-text-muted);
+}
+[data-theme="dark"] .recharts-tooltip-label {
+  color: var(--color-text) !important;
+}

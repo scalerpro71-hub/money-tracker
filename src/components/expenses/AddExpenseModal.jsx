@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../layout/Modal';
 import { todayStr } from '../../lib/dateUtils';
+import { hexWithAlpha } from '../../lib/colorUtils';
 
 const PAYMENT_MODES = [
   { value: 'upi', label: '📱 UPI' },
@@ -63,7 +64,7 @@ export function AddExpenseModal({ categories, onAdd, onClose, initialData = null
                 key={cat.id}
                 type="button"
                 className={`cat-btn ${categoryId === cat.id ? 'selected' : ''}`}
-                style={categoryId === cat.id ? { background: cat.color + '33', borderColor: cat.color } : {}}
+                style={categoryId === cat.id ? { background: hexWithAlpha(cat.color, '33'), borderColor: cat.color } : {}}
                 onClick={() => setCategoryId(cat.id)}
               >
                 <span>{cat.icon}</span>

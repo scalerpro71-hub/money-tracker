@@ -25,7 +25,7 @@ export function GoalsPage({ goals, onAdd, onUpdate, onDelete }) {
 
       {goals.length === 0 ? (
         <div className="empty-state">
-          <div style={{ fontSize: 48 }}>🎯</div>
+          <div className="empty-icon">🎯</div>
           <p>No goals yet</p>
           <p className="empty-sub">Set a savings goal and let AI build your plan</p>
           <button className="btn-primary" onClick={() => setShowAdd(true)}>Add your first goal</button>

@@ -1,16 +1,16 @@
 import { formatINR } from '../../lib/dateUtils';
 
-function getColor(pct) {
-  if (pct >= 90) return '#ef4444';
-  if (pct >= 70) return '#f59e0b';
-  return '#10b981';
+function getColorVar(pct) {
+  if (pct >= 90) return 'var(--color-danger)';
+  if (pct >= 70) return 'var(--color-warning)';
+  return 'var(--color-success)';
 }
 
 export function BudgetProgressBar({ budget, spent }) {
   const cat = budget.category;
   const limit = Number(budget.limit_amount);
   const pct = Math.min((spent / limit) * 100, 100);
-  const color = getColor(pct);
+  const color = getColorVar(pct);
 
   return (
     <div className="budget-row">

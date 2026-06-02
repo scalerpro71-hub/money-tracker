@@ -1,0 +1,69 @@
+/* ── Light theme (default) ── */
+:root {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-surface-3: #e2e8f0;
+  --color-border: #e2e8f0;
+  --color-border-2: #f1f5f9;
+  --color-text: #1e293b;
+  --color-text-2: #475569;
+  --color-text-3: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-brand: #6366f1;
+  --color-brand-bg: #eef2ff;
+  --color-brand-text: #6366f1;
+  --color-danger: #ef4444;
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #991b1b;
+  --color-success: #10b981;
+  --color-success-bg: #dcfce7;
+  --color-success-text: #166534;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+  --color-uncategorized-bg: #e5e7eb;
+  --color-uncategorized-text: #6b7280;
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.15);
+  --glass-bg: rgba(255,255,255,0.8);
+  --glass-border: rgba(255,255,255,0.6);
+  --glass-blur: blur(12px);
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-2: #293548;
+  --color-surface-3: #334155;
+  --color-border: #334155;
+  --color-border-2: #293548;
+  --color-text: #f1f5f9;
+  --color-text-2: #cbd5e1;
+  --color-text-3: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-brand: #818cf8;
+  --color-brand-bg: rgba(99,102,241,0.15);
+  --color-brand-text: #a5b4fc;
+  --color-danger: #f87171;
+  --color-danger-bg: rgba(239,68,68,0.12);
+  --color-danger-border: rgba(239,68,68,0.3);
+  --color-danger-text: #fca5a5;
+  --color-success: #34d399;
+  --color-success-bg: rgba(16,185,129,0.12);
+  --color-success-text: #6ee7b7;
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(245,158,11,0.12);
+  --color-warning-border: rgba(245,158,11,0.3);
+  --color-warning-text: #fcd34d;
+  --color-uncategorized-bg: #334155;
+  --color-uncategorized-text: #94a3b8;
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.6);
+  --glass-bg: rgba(30,41,59,0.8);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-blur: blur(12px);
+}

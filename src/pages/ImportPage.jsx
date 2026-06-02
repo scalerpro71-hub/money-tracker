@@ -115,7 +115,7 @@ export function ImportPage({ categories, onAdd }) {
 
       <div className="import-upload" onClick={() => fileRef.current.click()}>
         <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} hidden />
-        <div style={{ fontSize: 48 }}>📂</div>
+        <div className="empty-icon">📂</div>
         <p>Click to upload CSV file</p>
         <p className="empty-sub">or drag and drop</p>
       </div>

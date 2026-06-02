@@ -1,5 +1,6 @@
 import { CategoryBadge } from './CategoryBadge';
 import { formatINR, formatShortDate } from '../../lib/dateUtils';
+import { hexWithAlpha } from '../../lib/colorUtils';
 
 const MODE_ICONS = { upi: '📱', cash: '💵', card: '💳', netbanking: '🏦' };
 
@@ -7,7 +8,7 @@ export function ExpenseItem({ expense, onEdit, onDelete }) {
   return (
     <div className="expense-item">
       <div className="expense-left">
-        <div className="expense-icon" style={{ background: expense.category?.color + '22' }}>
+        <div className="expense-icon" style={{ background: hexWithAlpha(expense.category?.color, '22') }}>
           {expense.category?.icon || '💰'}
         </div>
         <div className="expense-info">

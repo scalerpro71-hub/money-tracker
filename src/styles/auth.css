@@ -1,0 +1,55 @@
+/* ── Auth ── */
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  padding: 16px;
+}
+.auth-card {
+  background: var(--color-surface);
+  border-radius: 20px;
+  padding: 32px 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+.auth-logo { font-size: 48px; text-align: center; margin-bottom: 8px; }
+.auth-icon-lg { font-size: 48px; }
+.auth-card h1 { text-align: center; font-size: 24px; font-weight: 700; }
+.auth-subtitle { text-align: center; color: var(--color-text-3); font-size: 14px; margin: 4px 0 20px; }
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface-2);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.auth-tabs button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--color-text-3);
+}
+.auth-tabs button.active {
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.auth-form { display: flex; flex-direction: column; gap: 4px; }
+.magic-sent {
+  text-align: center;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}

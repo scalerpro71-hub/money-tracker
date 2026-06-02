@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useAuth } from './hooks/useAuth';
 import { useExpenses } from './hooks/useExpenses';
 import { useCategories } from './hooks/useCategories';
@@ -15,7 +16,6 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
 import { ToastProvider, useToast } from './components/layout/Toast';
 import { Spinner } from './components/layout/Spinner';
-import './App.css';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -25,6 +25,15 @@ const TABS = [
   { id: 'import', label: 'Import', icon: '📂' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ];
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button className="btn-theme-toggle" onClick={toggle} aria-label="Toggle theme">
+      {theme === 'light' ? '🌙' : '☀️'}
+    </button>
+  );
+}
 
 function AppInner() {
   const { session, user, signIn, signUp, signInWithMagicLink, signOut } = useAuth();
@@ -66,7 +75,10 @@ function AppInner() {
     <div className="app">
       <header className="top-bar">
         <div className="app-title">💰 Rupee Tracker</div>
-        <button className="btn-add" onClick={() => setShowAdd(true)}>+ Add</button>
+        <div className="top-bar-actions">
+          <ThemeToggle />
+          <button className="btn-add" onClick={() => setShowAdd(true)}>+ Add</button>
+        </div>
       </header>
 
       <main className="main-content">
@@ -132,8 +144,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AppInner />
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AppInner />
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
