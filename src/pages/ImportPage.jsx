@@ -5,6 +5,7 @@ import { callAiCategorize } from '../lib/claudeApi';
 import * as XLSX from 'xlsx';
 
 const AMOUNT_COLS = ['withdrawal amount(inr)', 'debit', 'debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'dr amount', 'debit amount', 'amount', 'transaction amount'];
+const INCOME_COLS = ['deposit amount(inr)', 'credit', 'credit amt', 'deposit amount', 'cr amount', 'credit amount'];
 const DATE_COLS = ['transaction date', 'value date', 'date', 'txn date', 'posting date', 'trans date'];
 const NOTE_COLS = ['transaction remarks', 'description', 'narration', 'particulars', 'remarks', 'ref no./cheque no.'];
 
@@ -74,18 +75,24 @@ export function ImportPage({ categories, onAdd }) {
   function processRows(parsed) {
     const headers = parsed.length ? Object.keys(parsed[0]) : [];
     const amtCol = findCol(headers, AMOUNT_COLS);
+    const incomeCol = findCol(headers, INCOME_COLS);
     const dateCol = findCol(headers, DATE_COLS);
     const noteCol = findCol(headers, NOTE_COLS);
-    const valid = parsed.filter(row => {
-      const amt = amtCol ? parseAmount(row[amtCol]) : null;
-      return amt && amt > 0;
-    }).map((row, i) => ({
-      _id: i,
-      amount: parseAmount(row[amtCol]),
-      date: dateCol ? parseDate(row[dateCol]) : null,
-      note: noteCol ? cleanNote(row[noteCol]) : '',
-      raw: row,
-    })).filter(r => r.amount && r.date);
+    const valid = parsed.map((row, i) => {
+      const withdrawal = amtCol ? parseAmount(row[amtCol]) : null;
+      const deposit = incomeCol ? parseAmount(row[incomeCol]) : null;
+      const isIncome = (!withdrawal || withdrawal === 0) && deposit && deposit > 0;
+      const amount = isIncome ? deposit : withdrawal;
+      if (!amount || amount <= 0) return null;
+      return {
+        _id: i,
+        amount,
+        type: isIncome ? 'income' : 'expense',
+        date: dateCol ? parseDate(row[dateCol]) : null,
+        note: noteCol ? cleanNote(row[noteCol]) : '',
+        raw: row,
+      };
+    }).filter(r => r && r.amount && r.date);
     setRows(valid);
     setSelected(valid.map(r => r._id));
     setDone(0);
@@ -145,7 +152,7 @@ export function ImportPage({ categories, onAdd }) {
     let count = 0;
     for (const row of toImport) {
       try {
-        await onAdd({ amount: row.amount, category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' });
+        await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' });
         count++;
       } catch {}
     }
@@ -223,7 +230,9 @@ export function ImportPage({ categories, onAdd }) {
                   <span className="import-note-text">{row.note || '—'}</span>
                   <span className="import-date">{row.date}</span>
                 </div>
-                <span className="import-amount">{formatINR(row.amount)}</span>
+                <span className="import-amount" style={{ color: row.type === 'income' ? 'var(--color-success)' : undefined }}>
+                  {row.type === 'income' ? '+' : ''}{formatINR(row.amount)}
+                </span>
                 <select className="import-cat-select" value={catAssign[row._id] || ''}
                   onChange={e => setCatAssign(c => ({ ...c, [row._id]: e.target.value }))}>
                   <option value="">Select category</option>
