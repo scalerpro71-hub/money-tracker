@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { formatINR } from '../lib/dateUtils';
 import { callAiCategorize } from '../lib/claudeApi';
+import * as XLSX from 'xlsx';
 
 const AMOUNT_COLS = ['debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'debit', 'amount', 'dr amount', 'debit amount'];
 const DATE_COLS = ['date', 'txn date', 'transaction date', 'value date', 'posting date'];
@@ -49,31 +50,53 @@ export function ImportPage({ categories, onAdd }) {
   const toast = useToast();
   const fileRef = useRef();
 
+  function processRows(parsed) {
+    const headers = parsed.length ? Object.keys(parsed[0]) : [];
+    const amtCol = findCol(headers, AMOUNT_COLS);
+    const dateCol = findCol(headers, DATE_COLS);
+    const noteCol = findCol(headers, NOTE_COLS);
+    const valid = parsed.filter(row => {
+      const amt = amtCol ? parseAmount(row[amtCol]) : null;
+      return amt && amt > 0;
+    }).map((row, i) => ({
+      _id: i,
+      amount: parseAmount(row[amtCol]),
+      date: dateCol ? parseDate(row[dateCol]) : null,
+      note: noteCol ? row[noteCol]?.slice(0, 100) : '',
+      raw: row,
+    })).filter(r => r.amount && r.date);
+    setRows(valid);
+    setSelected(valid.map(r => r._id));
+    setDone(0);
+    if (valid.length === 0) toast('No valid transactions found. Check your file format.', 'error');
+  }
+
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const parsed = parseCSV(ev.target.result);
-      const headers = parsed.length ? Object.keys(parsed[0]) : [];
-      const amtCol = findCol(headers, AMOUNT_COLS);
-      const dateCol = findCol(headers, DATE_COLS);
-      const noteCol = findCol(headers, NOTE_COLS);
-      const valid = parsed.filter(row => {
-        const amt = amtCol ? parseAmount(row[amtCol]) : null;
-        return amt && amt > 0;
-      }).map((row, i) => ({
-        _id: i,
-        amount: parseAmount(row[amtCol]),
-        date: dateCol ? parseDate(row[dateCol]) : null,
-        note: noteCol ? row[noteCol]?.slice(0, 100) : '',
-        raw: row,
-      })).filter(r => r.amount && r.date);
-      setRows(valid);
-      setSelected(valid.map(r => r._id));
-      setDone(0);
-    };
-    reader.readAsText(file);
+    if (isExcel) {
+      reader.onload = (ev) => {
+        const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        // Normalise keys to lowercase
+        const parsed = json.map(row => {
+          const out = {};
+          for (const k of Object.keys(row)) out[k.toLowerCase().trim()] = String(row[k] ?? '').trim();
+          return out;
+        });
+        processRows(parsed);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = (ev) => {
+        processRows(parseCSV(ev.target.result));
+      };
+      reader.readAsText(file);
+    }
   }
 
   async function handleImport() {
@@ -133,9 +156,9 @@ export function ImportPage({ categories, onAdd }) {
       </div>
 
       <div className="import-upload" onClick={() => fileRef.current.click()}>
-        <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} hidden />
+        <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFile} hidden />
         <div className="empty-icon">📂</div>
-        <p>Click to upload CSV file</p>
+        <p>Click to upload CSV or Excel file</p>
         <p className="empty-sub">or drag and drop</p>
       </div>
 
