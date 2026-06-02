@@ -297,7 +297,30 @@ function AppInner() {
   );
 }
 
+const missingEnv = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 export default function App() {
+  if (missingEnv) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f4f2ec', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'Manrope, sans-serif' }}>
+        <div style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(24,28,34,0.08)', boxShadow: '0 2px 6px rgba(24,28,34,.05), 0 14px 30px -18px rgba(24,28,34,.28)', padding: 36, maxWidth: 480, width: '100%' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#0a9d72,#0a8a86)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 22, marginBottom: 20 }}>₹</div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Setup required</div>
+          <div style={{ fontSize: 14, color: '#565d68', lineHeight: 1.6, marginBottom: 20 }}>
+            Create a <code style={{ background: '#f7f5ef', padding: '2px 6px', borderRadius: 6, fontFamily: 'monospace' }}>.env.local</code> file in the project root with your Supabase credentials:
+          </div>
+          <pre style={{ background: '#0a0c10', color: '#34e0a8', padding: '16px 18px', borderRadius: 12, fontSize: 12.5, overflowX: 'auto', marginBottom: 20, lineHeight: 1.7 }}>
+{`VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key`}
+          </pre>
+          <div style={{ fontSize: 13, color: '#8a909b', fontWeight: 600 }}>
+            Find these in <strong style={{ color: '#0a9d72' }}>Supabase Dashboard → Project Settings → API</strong>, then restart the dev server.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ThemeProvider>
       <ToastProvider>

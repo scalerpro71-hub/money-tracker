@@ -4,7 +4,16 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in environment variables');
+  console.error(
+    '[Rupee] Missing Supabase credentials.\n' +
+    'Create a .env.local file in the project root with:\n' +
+    '  VITE_SUPABASE_URL=https://your-project.supabase.co\n' +
+    '  VITE_SUPABASE_ANON_KEY=your-anon-key\n' +
+    'Find these in Supabase Dashboard → Project Settings → API.'
+  );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder'
+);
