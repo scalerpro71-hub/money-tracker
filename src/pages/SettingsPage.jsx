@@ -348,18 +348,51 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
     onClose();
   }
 
+  const total = Object.values(values).reduce((a, v) => a + (Number(v) || 0), 0);
+
   return (
-    <Modal title="Edit Budgets" onClose={onClose}>
-      <div className="expense-form">
-        {categories.map(c => (
-          <div key={c.id} className="form-row form-row--center">
-            <label className="budget-label-col">{c.icon} {c.name}</label>
-            <input type="number" inputMode="decimal" placeholder="No limit" value={values[c.id] || ''}
-              onChange={e => setValues(v => ({ ...v, [c.id]: e.target.value }))} min="1" />
-          </div>
-        ))}
-        <button className="btn-primary" onClick={handleSave}>Save All Budgets</button>
+    <Modal title="Monthly Budgets" onClose={onClose}>
+      <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 14 }}>
+        Set a monthly spending limit per category. Leave blank for no limit.
+      </p>
+      <div className="budget-edit-list">
+        {categories.map(c => {
+          const val = values[c.id] || '';
+          const filled = Number(val) > 0;
+          return (
+            <div key={c.id} className={`budget-edit-row ${filled ? 'budget-edit-row--filled' : ''}`}
+              style={filled ? { borderColor: c.color + '66', background: c.color + '0d' } : {}}>
+              <div className="budget-edit-left">
+                <span className="budget-edit-icon" style={{ background: c.color + '22', color: c.color }}>
+                  {c.icon}
+                </span>
+                <span className="budget-edit-name">{c.name}</span>
+              </div>
+              <div className="budget-edit-right">
+                <span className="budget-edit-rupee" style={filled ? { color: c.color } : {}}>₹</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="No limit"
+                  value={val}
+                  onChange={e => setValues(v => ({ ...v, [c.id]: e.target.value }))}
+                  min="1"
+                  className="budget-edit-input"
+                  style={filled ? { color: c.color, fontWeight: 700 } : {}}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
+      {total > 0 && (
+        <div className="budget-edit-total">
+          Total budget: <strong>₹{total.toLocaleString('en-IN')}/mo</strong>
+        </div>
+      )}
+      <button className="btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={handleSave}>
+        Save Budgets
+      </button>
     </Modal>
   );
 }

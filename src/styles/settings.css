@@ -156,3 +156,82 @@
   font-weight: 700;
   flex-shrink: 0;
 }
+
+/* ── Budget Edit Modal ── */
+.budget-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 58vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0;
+}
+.budget-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface-2);
+  transition: all var(--transition-fast);
+}
+.budget-edit-row--filled {
+  border-width: 2px;
+}
+.budget-edit-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.budget-edit-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.budget-edit-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.budget-edit-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.budget-edit-rupee {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.budget-edit-input {
+  width: 90px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+}
+.budget-edit-input::placeholder {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.budget-edit-total {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--color-surface-2);
+  border-radius: 10px;
+}
