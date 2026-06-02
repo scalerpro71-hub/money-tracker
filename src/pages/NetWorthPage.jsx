@@ -77,6 +77,24 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
             {netWorth >= 0 ? '✅' : '⚠️'} Net Worth: <strong>{formatINR(netWorth)}</strong>
           </div>
         </div>
+
+        {/* Asset/Liability Insight */}
+        {(assets.length > 0 || liabilities.length > 0) && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-muted)' }}>
+            {totalAssets > 0 && totalLiabilities > 0 && (
+              <div>
+                <div>Debt-to-Assets: {((totalLiabilities / totalAssets) * 100).toFixed(0)}%</div>
+                <div style={{ marginTop: 4 }}>
+                  {((totalLiabilities / totalAssets) * 100) < 30
+                    ? '✅ Healthy debt level — you\'re in good shape'
+                    : ((totalLiabilities / totalAssets) * 100) < 60
+                      ? '🟡 Moderate debt — monitor growth'
+                      : '🔴 High debt — focus on paydown'}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Assets */}
