@@ -110,12 +110,15 @@ export function ImportPage({ categories, onAdd }) {
         // Use sheet_to_json with header:1 to get raw rows, then find the actual header row
         const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
         // Find the row index that looks like a header (contains date/debit/amount keywords)
-        const headerKeywords = ['date', 'debit', 'credit', 'amount', 'description', 'narration', 'particulars', 'transaction', 'withdrawal', 'remarks', 's no'];
+        // Must contain at least one financial column AND one date column to be the real header
+        const mustHaveOne = ['withdrawal', 'debit', 'credit', 'amount(inr)', 'dr amount', 'debit amt'];
+        const mustHaveDate = ['value date', 'transaction date', 'txn date', 'posting date'];
         let headerIdx = 0;
         for (let i = 0; i < Math.min(rawRows.length, 25); i++) {
           const rowStr = rawRows[i].join(' ').toLowerCase();
-          const matches = headerKeywords.filter(k => rowStr.includes(k)).length;
-          if (matches >= 2) { headerIdx = i; break; }
+          const hasFinancial = mustHaveOne.some(k => rowStr.includes(k));
+          const hasDate = mustHaveDate.some(k => rowStr.includes(k));
+          if (hasFinancial && hasDate) { headerIdx = i; break; }
         }
         const headers = rawRows[headerIdx].map(h => String(h).toLowerCase().trim());
         const parsed = rawRows.slice(headerIdx + 1)
