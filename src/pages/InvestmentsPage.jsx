@@ -64,6 +64,23 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
             <span>📈 Monthly SIP commitment: <strong>{formatINR(sipMonthly)}</strong></span>
           </div>
         )}
+
+        {/* Performance insight */}
+        {investments.length > 0 && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-muted)' }}>
+            {(() => {
+              const withReturns = investments.filter(i => Number(i.current_value || i.invested_amount) !== Number(i.invested_amount));
+              if (withReturns.length === 0) return null;
+              const best = withReturns.reduce((a, b) => {
+                const aRet = (Number(b.current_value || b.invested_amount) - Number(b.invested_amount)) / Number(b.invested_amount);
+                const bRet = (Number(b.current_value || b.invested_amount) - Number(b.invested_amount)) / Number(b.invested_amount);
+                return aRet > bRet ? a : b;
+              });
+              const bestPct = (((Number(best.current_value || best.invested_amount) - Number(best.invested_amount)) / Number(best.invested_amount)) * 100).toFixed(1);
+              return <div>🏆 Best: {best.name} ({bestPct > 0 ? '+' : ''}{bestPct}%)</div>;
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Group by type */}

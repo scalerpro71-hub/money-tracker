@@ -113,6 +113,23 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8, textAlign: 'center' }}>
           Actual savings depend on your income slab. Consult a CA for filing.
         </div>
+
+        {/* Deduction insight */}
+        {(() => {
+          const totalLimit = SECTIONS.filter(s => s.limit).reduce((a, s) => a + s.limit, 0);
+          const remaining = totalLimit - totalSaved;
+          if (totalLimit > 0) {
+            const utilisationPct = Math.round((totalSaved / totalLimit) * 100);
+            return (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-muted)' }}>
+                {utilisationPct < 30 && <div>💡 You've used only {utilisationPct}% of available deductions. Explore more ways to maximize savings.</div>}
+                {utilisationPct >= 30 && utilisationPct < 80 && <div>🎯 {utilisationPct}% utilised. {remaining > 0 && `₹${remaining.toLocaleString('en-IN')} room left.`}</div>}
+                {utilisationPct >= 80 && <div>🔥 Excellent! {utilisationPct}% utilised.</div>}
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {SECTIONS.map(section => {
