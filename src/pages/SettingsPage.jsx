@@ -8,19 +8,19 @@ import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
 
 const SUGGESTED_CATEGORIES = [
-  { name: 'Food', icon: '🍽️', color: '#F59E0B' },
-  { name: 'Transport', icon: '🚗', color: '#3B82F6' },
-  { name: 'Housing', icon: '🏠', color: '#F97316' },
-  { name: 'Utilities', icon: '📱', color: '#6366F1' },
-  { name: 'Shopping', icon: '🛍️', color: '#EC4899' },
-  { name: 'Health', icon: '💊', color: '#EF4444' },
-  { name: 'Personal Care', icon: '💆', color: '#A855F7' },
-  { name: 'Education', icon: '🎓', color: '#3B82F6' },
-  { name: 'Entertainment', icon: '🎉', color: '#F97316' },
-  { name: 'Travel', icon: '✈️', color: '#0EA5E9' },
-  { name: 'Finance', icon: '💸', color: '#10B981' },
-  { name: 'Family', icon: '👨‍👩‍👧', color: '#F59E0B' },
-  { name: 'Other', icon: '🙏', color: '#6B7280' },
+  { name: 'Food', icon: '🍽️', color: '#F59E0B', desc: 'Groceries, restaurants, Swiggy/Zomato, tea/coffee, vegetables, dairy' },
+  { name: 'Transport', icon: '🚗', color: '#3B82F6', desc: 'Cab, auto, Ola/Uber, petrol, bus/train, parking, toll' },
+  { name: 'Housing', icon: '🏠', color: '#F97316', desc: 'Rent, electricity, water bill, maintenance, household items' },
+  { name: 'Utilities', icon: '📱', color: '#6366F1', desc: 'Mobile recharge, internet/WiFi, OTT (Netflix/Prime), subscriptions' },
+  { name: 'Shopping', icon: '🛍️', color: '#EC4899', desc: 'Clothes, Amazon/Flipkart, electronics, footwear, accessories' },
+  { name: 'Health', icon: '💊', color: '#EF4444', desc: 'Doctor, medicines, hospital, gym, lab tests, health checkup' },
+  { name: 'Personal Care', icon: '💆', color: '#A855F7', desc: 'Salon, haircut, skincare, toiletries, grooming products' },
+  { name: 'Education', icon: '🎓', color: '#3B82F6', desc: 'School/college fees, books, online courses, stationery, coaching' },
+  { name: 'Entertainment', icon: '🎉', color: '#F97316', desc: 'Movies, events, gaming, night out, bars, hobbies' },
+  { name: 'Travel', icon: '✈️', color: '#0EA5E9', desc: 'Flights, trains, hotels, vacation packages, sightseeing' },
+  { name: 'Finance', icon: '💸', color: '#10B981', desc: 'EMI, insurance premium, SIP/investments, loan payments, credit card' },
+  { name: 'Family', icon: '👨‍👩‍👧', color: '#F59E0B', desc: 'Kids expenses, gifts, family outings, relatives, celebrations' },
+  { name: 'Other', icon: '🙏', color: '#6B7280', desc: 'Pooja/religious, donations, charity, pet, anything that doesn\'t fit above' },
 ];
 
 export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onDeleteEmi, bills, onAddBill, onDeleteBill, expenses, userId, onSignOut }) {
@@ -492,7 +492,7 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
       <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
         Tap to select. Already added ones are greyed out.
       </p>
-      <div className="suggested-cats-grid">
+      <div className="suggested-cats-list">
         {SUGGESTED_CATEGORIES.map(cat => {
           const already = existingNames.has(cat.name.toLowerCase());
           const picked = selected.has(cat.name);
@@ -500,14 +500,22 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
             <button
               key={cat.name}
               type="button"
-              className={`suggested-cat-btn ${picked ? 'selected' : ''} ${already ? 'disabled' : ''}`}
-              style={picked ? { background: cat.color + '33', borderColor: cat.color, color: cat.color } : {}}
+              className={`suggested-cat-row ${picked ? 'selected' : ''} ${already ? 'disabled' : ''}`}
+              style={picked ? { background: cat.color + '18', borderColor: cat.color } : {}}
               onClick={() => { if (!already) toggle(cat.name); }}
               disabled={already}
             >
-              <span style={{ fontSize: 18 }}>{cat.icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>{cat.name}</span>
-              {already && <span style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>added</span>}
+              <span className="suggested-cat-icon" style={{ background: cat.color + '22', color: cat.color }}>
+                {cat.icon}
+              </span>
+              <div className="suggested-cat-info">
+                <div className="suggested-cat-name" style={picked ? { color: cat.color } : {}}>
+                  {cat.name}
+                  {already && <span className="suggested-cat-added">✓ added</span>}
+                </div>
+                <div className="suggested-cat-desc">{cat.desc}</div>
+              </div>
+              {picked && <span className="suggested-cat-check" style={{ color: cat.color }}>✓</span>}
             </button>
           );
         })}
