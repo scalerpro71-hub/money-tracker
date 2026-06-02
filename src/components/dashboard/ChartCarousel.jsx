@@ -9,6 +9,7 @@ import { CumulativeSpendChart } from './CumulativeSpendChart';
 import { DayOfWeekChart } from './DayOfWeekChart';
 import { CategoryBreakdown } from './CategoryBreakdown';
 import { TopExpenses } from './TopExpenses';
+import { PaymentModeChart } from './PaymentModeChart';
 
 export function ChartCarousel({ data, profile, expenses, budgets }) {
   const [active, setActive] = useState(0);
@@ -63,6 +64,11 @@ export function ChartCarousel({ data, profile, expenses, budgets }) {
       id: 'heatmap',
       label: '🔥 Heatmap',
       render: () => <SpendingHeatmap heatmapData={data.heatmapData} />,
+    },
+    {
+      id: 'payment',
+      label: '📱 Payment',
+      render: () => <PaymentModeChart expenses={expenses || []} />,
     },
     ...(income > 0 ? [
       {

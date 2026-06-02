@@ -11,6 +11,7 @@ import { BillsWidget } from '../components/dashboard/BillsWidget';
 import { EmiSummary } from '../components/dashboard/EmiSummary';
 import { RecentTransactions } from '../components/dashboard/RecentTransactions';
 import { MonthlySavingsBar } from '../components/dashboard/MonthlySavingsBar';
+import { CashbackWidget } from '../components/dashboard/CashbackWidget';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { startOfMonthStr } from '../lib/dateUtils';
 
@@ -94,6 +95,9 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
           </div>
         </div>
       )}
+
+      {/* Cashback tracker */}
+      <CashbackWidget expenses={expenses} />
 
       {/* Recent transactions */}
       <RecentTransactions expenses={expenses} />

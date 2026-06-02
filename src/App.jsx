@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useAuth } from './hooks/useAuth';
 import { useExpenses } from './hooks/useExpenses';
@@ -11,6 +11,8 @@ import { useBills } from './hooks/useBills';
 import { useNetWorth } from './hooks/useNetWorth';
 import { useInvestments } from './hooks/useInvestments';
 import { useEvents } from './hooks/useEvents';
+import { useTax } from './hooks/useTax';
+import { autoLogRecurring } from './lib/recurringAutoLog';
 import { LoginPage } from './components/auth/LoginPage';
 import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
@@ -23,6 +25,7 @@ import { ImportPage } from './pages/ImportPage';
 import { NetWorthPage } from './pages/NetWorthPage';
 import { InvestmentsPage } from './pages/InvestmentsPage';
 import { EventsPage } from './pages/EventsPage';
+import { TaxPage } from './pages/TaxPage';
 import { ToastProvider, useToast } from './components/layout/Toast';
 import { Spinner } from './components/layout/Spinner';
 
@@ -33,6 +36,7 @@ const TABS = [
   { id: 'invest', label: 'Invest', icon: '📈' },
   { id: 'events', label: 'Events', icon: '🎉' },
   { id: 'goals', label: 'Goals', icon: '🎯' },
+  { id: 'tax', label: 'Tax', icon: '🧾' },
   { id: 'import', label: 'Import', icon: '📂' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -54,6 +58,9 @@ function AppInner() {
 
   const userId = user?.id;
   const { expenses, loading: expLoading, addExpense, updateExpense, deleteExpense } = useExpenses(userId);
+
+  // Auto-log recurring expenses on mount
+  useEffect(() => { if (userId) autoLogRecurring(userId); }, [userId]);
   const { categories, addCategory, deleteCategory } = useCategories(userId);
   const { budgets, upsertBudget } = useBudgets(userId);
   const { goals, addGoal, updateGoal, deleteGoal } = useGoals(userId);
@@ -63,6 +70,7 @@ function AppInner() {
   const { assets, liabilities, addAsset, deleteAsset, addLiability, deleteLiability } = useNetWorth(userId);
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useInvestments(userId);
   const { events, addEvent, deleteEvent } = useEvents(userId);
+  const { declarations, addDeclaration, deleteDeclaration } = useTax(userId);
 
   if (session === undefined) {
     return (
@@ -152,6 +160,9 @@ function AppInner() {
             )}
             {tab === 'goals' && (
               <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />
+            )}
+            {tab === 'tax' && (
+              <TaxPage declarations={declarations} onAdd={addDeclaration} onDelete={deleteDeclaration} />
             )}
             {tab === 'import' && (
               <ImportPage categories={categories} onAdd={handleAddExpense} />
