@@ -347,7 +347,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, investm
                   </div>
                   <div className="bill-mid">
                     <div className="bill-name">{bill.name}</div>
-                    {bill.category && <div className="bill-sub">{bill.category}</div>}
+                    {bill.category?.name && <div className="bill-sub">{bill.category.name}</div>}
                   </div>
                   <div className="bill-amt num">{cur(bill.amount)}</div>
                 </div>
