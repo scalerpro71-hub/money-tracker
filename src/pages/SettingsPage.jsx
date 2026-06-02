@@ -134,9 +134,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
           {categories.map(c => (
             <div key={c.id} className="cat-item">
               <span style={{ color: c.color }}>{c.icon} {c.name}</span>
-              {!c.is_default && (
-                <button className="btn-icon" onClick={() => onDeleteCategory(c.id)}>🗑️</button>
-              )}
+              <button className="btn-icon" onClick={() => onDeleteCategory(c.id)}>🗑️</button>
             </div>
           ))}
         </div>
