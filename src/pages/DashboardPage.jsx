@@ -14,6 +14,80 @@ import { MonthlySavingsBar } from '../components/dashboard/MonthlySavingsBar';
 import { CashbackWidget } from '../components/dashboard/CashbackWidget';
 import { useDashboardData } from '../hooks/useDashboardData';
 
+function getFinancialHealthScore(savingsRate, budgetAdherence, topCategoryPct) {
+  let score = 100;
+
+  // Savings rate impact
+  if (savingsRate < 10) score -= 30;
+  else if (savingsRate < 20) score -= 15;
+  else if (savingsRate >= 30) score += 10;
+
+  // Budget adherence
+  if (budgetAdherence < 0.5) score -= 20;
+  else if (budgetAdherence < 0.8) score -= 10;
+
+  // Category concentration (if one category >50%, warning)
+  if (topCategoryPct > 50) score -= 15;
+  else if (topCategoryPct > 40) score -= 5;
+
+  score = Math.max(0, Math.min(100, score));
+
+  if (score >= 75) return { status: 'Excellent', emoji: '🟢', color: '#10b981' };
+  if (score >= 50) return { status: 'Good', emoji: '🟡', color: '#f59e0b' };
+  if (score >= 25) return { status: 'Fair', emoji: '🟠', color: '#ef4444' };
+  return { status: 'Critical', emoji: '🔴', color: '#dc2626' };
+}
+
+function generateInsights(monthTotal, monthExpenses, savingsRate, income, budgets, categorySpendMap, prevMonthTotal) {
+  const insights = [];
+
+  // Insight 1: Savings or overspend
+  if (savingsRate !== null) {
+    if (savingsRate >= 30) {
+      insights.push(`💚 Great! You saved ${savingsRate}% of income this month`);
+    } else if (savingsRate >= 10) {
+      insights.push(`🟡 You saved ${savingsRate}% of income. Target is 30% to build wealth`);
+    } else if (savingsRate < 0) {
+      insights.push(`🔴 You overspent by ₹${Math.abs(income - monthTotal).toLocaleString('en-IN')} this month`);
+    } else {
+      insights.push(`⚠️ You saved only ${savingsRate}% — increase savings for security`);
+    }
+  }
+
+  // Insight 2: Spending trend
+  if (prevMonthTotal > 0) {
+    const change = ((monthTotal - prevMonthTotal) / prevMonthTotal) * 100;
+    if (change > 15) {
+      insights.push(`📈 Spending up ${Math.round(change)}% vs last month — investigate why`);
+    } else if (change < -15) {
+      insights.push(`📉 Great control! Spending down ${Math.round(Math.abs(change))}% vs last month`);
+    }
+  }
+
+  // Insight 3: Category concentration
+  if (Object.keys(categorySpendMap).length > 0) {
+    const topCat = Object.entries(categorySpendMap).sort((a, b) => b[1] - a[1])[0];
+    if (topCat) {
+      const topPct = Math.round((topCat[1] / monthTotal) * 100);
+      if (topPct > 50) {
+        insights.push(`⚠️ ${topPct}% on one category — diversify spending for resilience`);
+      } else if (topPct > 40) {
+        insights.push(`🎯 Top category is ${topPct}% of spend — consider a budget for balance`);
+      }
+    }
+  }
+
+  // Insight 4: Budget status
+  if (budgets.length > 0) {
+    const overBudget = budgets.filter(b => (categorySpendMap[b.category_id] || 0) > b.limit_amount).length;
+    if (overBudget > 0) {
+      insights.push(`🚨 ${overBudget} budget${overBudget > 1 ? 's' : ''} exceeded this month`);
+    }
+  }
+
+  return insights.slice(0, 3);
+}
+
 function getMonthKey(date) {
   const d = new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -72,17 +146,62 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
   const data = useDashboardData(expenses, 'monthly');
   const income = Number(profile?.monthly_income) || monthIncome;
 
+  // Previous month data for comparison
+  const prevMonthKey = useMemo(() => {
+    const [y, m] = activeMonth.split('-');
+    let prevMonth = Number(m) - 1;
+    let prevYear = Number(y);
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    return `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+  }, [activeMonth]);
+
+  const prevMonthExpenses = useMemo(() =>
+    expenses.filter(e => e.date?.startsWith(prevMonthKey) && e.type !== 'income'),
+    [expenses, prevMonthKey]
+  );
+  const prevMonthTotal = prevMonthExpenses.reduce((a, e) => a + Number(e.amount), 0);
+
   // Savings
   const savings = income > 0 ? income - monthTotal : null;
   const savingsRate = income > 0 ? Math.round(((income - monthTotal) / income) * 100) : null;
+
+  // Budget adherence
+  const budgetAdherence = budgets.length > 0
+    ? budgets.filter(b => (categorySpendMap[b.category_id] || 0) <= b.limit_amount).length / budgets.length
+    : 0;
+
+  // Health score
+  const topCategoryPct = Object.keys(categorySpendMap).length > 0
+    ? Math.round((Object.values(categorySpendMap).sort((a, b) => b - a)[0] / monthTotal) * 100)
+    : 0;
+
+  const health = getFinancialHealthScore(savingsRate, budgetAdherence, topCategoryPct);
+  const insights = generateInsights(monthTotal, monthExpenses, savingsRate, income, budgets, categorySpendMap, prevMonthTotal);
 
   return (
     <div className="page">
       <SpendingStreak profile={profile} />
 
-      {/* Month selector */}
+      {/* Health Score Card */}
+      <div className="section-card" style={{ background: `linear-gradient(135deg, ${health.color}22, ${health.color}11)`, borderLeft: `4px solid ${health.color}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>Financial Health · {monthLabel(activeMonth)}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: health.color }}>{health.emoji} {health.status}</div>
+          </div>
+        </div>
+        {insights.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {insights.map((insight, i) => (
+              <div key={i} style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.4 }}>• {insight}</div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Month selector + Pace indicator */}
       <div className="section-card" style={{ padding: '10px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}>Viewing</span>
           <select
             value={activeMonth}
@@ -94,6 +213,26 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
             ))}
           </select>
         </div>
+        {isCurrentMonth && monthExpenses.length > 0 && (
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', paddingTop: 8, borderTop: '1px solid var(--color-border)' }}>
+            {(() => {
+              const today = new Date();
+              const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+              const dayOfMonth = today.getDate();
+              const expectedSpend = (monthTotal / dayOfMonth) * daysInMonth;
+              const budgetTotal = budgets.reduce((a, b) => a + b.limit_amount, 0);
+
+              if (budgetTotal > 0) {
+                const projected = expectedSpend;
+                const onTrack = projected <= budgetTotal;
+                return onTrack
+                  ? `✅ On track! Projected ₹${Math.round(projected).toLocaleString('en-IN')} vs ₹${budgetTotal.toLocaleString('en-IN')} budget`
+                  : `⚠️ Pace alert: At this rate, ₹${Math.round(projected).toLocaleString('en-IN')} (₹${Math.round(projected - budgetTotal).toLocaleString('en-IN')} over)`;
+              }
+              return null;
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Hero */}
