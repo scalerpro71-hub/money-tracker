@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { AddExpenseModal } from '../components/expenses/AddExpenseModal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
+import { Area } from '../components/charts/Area';
 import { cur, fmtK } from '../lib/formatUtils';
 import { startOfMonthStr, todayStr } from '../lib/dateUtils';
 
@@ -84,17 +85,27 @@ export function ExpensesPage({ expenses, categories, onAdd, onUpdate, onDelete }
     <div>
       {/* Summary cards */}
       <div className="activity-summary">
-        <div className="activity-summary-card rise" style={{ '--d': '0ms' }}>
-          <div className="eyebrow">Spent this month</div>
-          <div className="summary-amt num">{fmtK(monthTotal)}</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 4 }}>{monthExpenses.length} transactions</div>
-        </div>
-        <div className="activity-summary-card rise" style={{ '--d': '60ms' }}>
-          <div className="eyebrow">Income this month</div>
-          <div className="summary-amt pos num">{fmtK(monthIncome)}</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 4 }}>
-            {monthIncome > 0 ? `Savings: ${Math.round(((monthIncome - monthTotal) / monthIncome) * 100)}%` : 'No income logged'}
+        <div className="activity-summary-card rise" style={{ '--d': '0ms', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div className="eyebrow">Spent this month</div>
+            <div className="summary-amt num">{fmtK(monthTotal)}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 4 }}>{monthExpenses.length} transactions</div>
           </div>
+          {spentData.length >= 2 && (
+            <div style={{ width: 100, flexShrink: 0 }}>
+              <Area data={spentData} h={50} />
+            </div>
+          )}
+        </div>
+        <div className="activity-summary-card rise" style={{ '--d': '60ms', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div className="eyebrow">Income this month</div>
+            <div className="summary-amt pos num">{fmtK(monthIncome)}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 4 }}>
+              {monthIncome > 0 ? `Savings: ${Math.round(((monthIncome - monthTotal) / monthIncome) * 100)}%` : 'No income logged'}
+            </div>
+          </div>
+          <div className="txn-ico" style={{ width: 48, height: 48, fontSize: 22, flexShrink: 0 }}>💸</div>
         </div>
       </div>
 

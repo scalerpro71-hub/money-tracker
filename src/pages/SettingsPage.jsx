@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { Modal } from '../components/layout/Modal';
 import { Icon } from '../components/layout/Icon';
+import { useTheme } from '../contexts/ThemeContext';
 import { useRecurring } from '../hooks/useRecurring';
 import { formatINR } from '../lib/dateUtils';
-import { fmtK } from '../lib/formatUtils';
+import { fmtK, cur } from '../lib/formatUtils';
 import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
 
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
@@ -27,6 +28,7 @@ const SUGGESTED_CATEGORIES = [
 
 export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut }) {
   const toast = useToast();
+  const { theme, toggle: toggleTheme } = useTheme();
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
   const [income, setIncome] = useState(profile?.monthly_income?.toString() || '');
   const [payday, setPayday] = useState(profile?.payday_day?.toString() || '');
@@ -80,32 +82,37 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       <div className="card pad rise" style={{ '--d': '60ms', marginBottom: 18 }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>Money Setup</div>
         <form onSubmit={saveIncome}>
-          <div className="set-row" style={{ borderTop: '1px solid var(--hair)', paddingTop: 14, paddingBottom: 14 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>Monthly Income</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="set-row">
+            <div className="set-ico"><Icon name="wallet" size={18} /></div>
+            <div style={{ flex: 1 }}>
+              <div className="set-label">Monthly income</div>
+              <div className="set-sub">Used for savings-rate &amp; forecasts</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>₹</span>
               <input
-                type="number" inputMode="decimal" placeholder="e.g. 50000" value={income}
+                type="number" inputMode="decimal" placeholder="50000" value={income}
                 onChange={e => setIncome(e.target.value)} min="1"
-                style={{ width: 120, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'right' }}
+                style={{ width: 110, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'right' }}
               />
             </div>
           </div>
-          <div className="set-row" style={{ paddingBottom: 14 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Salary Day</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>Enables salary countdown</div>
+          <div className="set-row">
+            <div className="set-ico"><Icon name="calendar" size={18} /></div>
+            <div style={{ flex: 1 }}>
+              <div className="set-label">Salary date</div>
+              <div className="set-sub">For pay-cycle countdown</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input
                 type="number" inputMode="numeric" placeholder="1" value={payday}
                 onChange={e => setPayday(e.target.value)} min="1" max="31"
-                style={{ width: 64, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'center' }}
+                style={{ width: 54, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'center' }}
               />
-              <span style={{ color: 'var(--ink-3)', fontWeight: 600, fontSize: 13 }}>of month</span>
+              <span className="set-val">of month</span>
             </div>
           </div>
-          <button type="submit" className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '11px' }}>Save Setup</button>
+          <button type="submit" className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '11px', marginTop: 8 }}>Save Setup</button>
         </form>
       </div>
 
@@ -238,8 +245,36 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
         })}
       </div>
 
+      {/* Preferences */}
+      <div className="card pad rise" style={{ '--d': '390ms', marginBottom: 18 }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Preferences</div>
+        <div className="set-row" style={{ cursor: 'pointer' }} onClick={toggleTheme}>
+          <div className="set-ico"><Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} /></div>
+          <div style={{ flex: 1 }}>
+            <div className="set-label">Appearance</div>
+            <div className="set-sub">{theme === 'dark' ? 'Dark mode' : 'Light mode'}</div>
+          </div>
+          <span className="chip">{theme === 'dark' ? 'Dark' : 'Light'}</span>
+        </div>
+        <div className="set-row">
+          <div className="set-ico"><Icon name="shield" size={18} /></div>
+          <div style={{ flex: 1 }}>
+            <div className="set-label">Currency &amp; region</div>
+          </div>
+          <span className="set-val">₹ INR · India</span>
+        </div>
+        <div className="set-row">
+          <div className="set-ico"><Icon name="bell" size={18} /></div>
+          <div style={{ flex: 1 }}>
+            <div className="set-label">Notifications</div>
+            <div className="set-sub">Budget alerts, bill reminders</div>
+          </div>
+          <span className="chip pos">On</span>
+        </div>
+      </div>
+
       {/* Export */}
-      <div className="card pad rise" style={{ '--d': '420ms', marginBottom: 18 }}>
+      <div className="card pad rise" style={{ '--d': '450ms', marginBottom: 18 }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>Export Data</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn-ghost" style={{ flex: 1 }} onClick={() => { exportMonthlyReportCSV(expenses, budgets, profile); toast('Report downloaded'); }}>
@@ -253,6 +288,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
 
       {/* Sign out */}
       <button
+        className="rise" style={{ '--d': '510ms' }}
         onClick={onSignOut}
         style={{ width: '100%', padding: '13px', border: '1px solid var(--neg)', borderRadius: 'var(--r-md)', background: 'transparent', color: 'var(--neg)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
       >
