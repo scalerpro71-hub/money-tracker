@@ -131,12 +131,24 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
         </div>
         <p className="section-desc">Tap "From List" to pick from 40 preset categories</p>
         <div className="cat-list">
-          {categories.map(c => (
-            <div key={c.id} className="cat-item">
-              <span style={{ color: c.color }}>{c.icon} {c.name}</span>
-              <button className="btn-icon" onClick={() => onDeleteCategory(c.id)}>🗑️</button>
-            </div>
-          ))}
+          {categories.map(c => {
+            const meta = SUGGESTED_CATEGORIES.find(s => s.name === c.name);
+            return (
+              <div key={c.id} className="cat-item">
+                <span style={{ color: c.color }}>{c.icon} {c.name}</span>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {meta && (
+                    <button
+                      className="btn-icon"
+                      title={meta.desc}
+                      onClick={() => alert(`${c.icon} ${c.name}\n\n${meta.desc}`)}
+                    >ℹ️</button>
+                  )}
+                  <button className="btn-icon" onClick={() => onDeleteCategory(c.id)}>🗑️</button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
