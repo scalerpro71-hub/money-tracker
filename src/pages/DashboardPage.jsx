@@ -9,6 +9,8 @@ import { SalaryCountdown } from '../components/dashboard/SalaryCountdown';
 import { SpendingStreak } from '../components/dashboard/SpendingStreak';
 import { BillsWidget } from '../components/dashboard/BillsWidget';
 import { EmiSummary } from '../components/dashboard/EmiSummary';
+import { RecentTransactions } from '../components/dashboard/RecentTransactions';
+import { MonthlySavingsBar } from '../components/dashboard/MonthlySavingsBar';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { startOfMonthStr } from '../lib/dateUtils';
 
@@ -29,9 +31,11 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
     categorySpendMap[id] = (categorySpendMap[id] || 0) + Number(e.amount);
   }
 
+  const income = Number(profile?.monthly_income) || 0;
+
   return (
     <div className="page">
-      {/* Spending Streak in Hero area */}
+      {/* Streak */}
       <SpendingStreak profile={profile} />
 
       {/* Hero */}
@@ -48,7 +52,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
         </div>
       </div>
 
-      {/* Salary Countdown */}
+      {/* Salary countdown */}
       <SalaryCountdown profile={profile} monthTotal={data.monthTotal} budgets={budgets} categorySpendMap={categorySpendMap} />
 
       {/* Stat cards */}
@@ -58,10 +62,13 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
         <StatCard label="This Month" amount={data.monthTotal} icon="🗓️" color="#f59e0b" />
       </div>
 
-      {/* Predictive Budget Alerts */}
+      {/* Monthly savings overview */}
+      <MonthlySavingsBar income={income} spent={data.monthTotal} />
+
+      {/* Predictive alerts */}
       <BudgetAlert budgets={budgets} categorySpendMap={categorySpendMap} />
 
-      {/* Expense Velocity */}
+      {/* Expense velocity */}
       <ExpenseVelocity monthlyTrend={data.monthlyTrend} />
 
       {/* Week comparison */}
@@ -70,8 +77,8 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
       {/* Bills due this week */}
       <BillsWidget bills={bills} />
 
-      {/* Swipeable chart carousel */}
-      <ChartCarousel data={data} profile={profile} />
+      {/* Chart carousel — 10 slides */}
+      <ChartCarousel data={data} profile={profile} expenses={expenses} budgets={budgets} />
 
       {/* EMI tracker */}
       <EmiSummary emis={emis} />
@@ -87,6 +94,9 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
           </div>
         </div>
       )}
+
+      {/* Recent transactions */}
+      <RecentTransactions expenses={expenses} />
 
       {budgets.length === 0 && (
         <div className="empty-hint">

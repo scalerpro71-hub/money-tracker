@@ -8,6 +8,9 @@ import { useGoals } from './hooks/useGoals';
 import { useProfile } from './hooks/useProfile';
 import { useEmis } from './hooks/useEmis';
 import { useBills } from './hooks/useBills';
+import { useNetWorth } from './hooks/useNetWorth';
+import { useInvestments } from './hooks/useInvestments';
+import { useEvents } from './hooks/useEvents';
 import { LoginPage } from './components/auth/LoginPage';
 import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
@@ -17,13 +20,18 @@ import { AiChatPage } from './pages/AiChatPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
+import { NetWorthPage } from './pages/NetWorthPage';
+import { InvestmentsPage } from './pages/InvestmentsPage';
+import { EventsPage } from './pages/EventsPage';
 import { ToastProvider, useToast } from './components/layout/Toast';
 import { Spinner } from './components/layout/Spinner';
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: '📊' },
   { id: 'expenses', label: 'Expenses', icon: '📝' },
-  { id: 'chat', label: 'Ask AI', icon: '✨' },
+  { id: 'networth', label: 'Net Worth', icon: '💎' },
+  { id: 'invest', label: 'Invest', icon: '📈' },
+  { id: 'events', label: 'Events', icon: '🎉' },
   { id: 'goals', label: 'Goals', icon: '🎯' },
   { id: 'import', label: 'Import', icon: '📂' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
@@ -52,6 +60,9 @@ function AppInner() {
   const { profile, updateProfile } = useProfile(userId);
   const { emis, addEmi, deleteEmi } = useEmis(userId);
   const { bills, addBill, deleteBill } = useBills(userId);
+  const { assets, liabilities, addAsset, deleteAsset, addLiability, deleteLiability } = useNetWorth(userId);
+  const { investments, addInvestment, updateInvestment, deleteInvestment } = useInvestments(userId);
+  const { events, addEvent, deleteEvent } = useEvents(userId);
 
   if (session === undefined) {
     return (
@@ -129,6 +140,15 @@ function AppInner() {
             )}
             {tab === 'chat' && (
               <AiChatPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} />
+            )}
+            {tab === 'networth' && (
+              <NetWorthPage assets={assets} liabilities={liabilities} onAddAsset={addAsset} onDeleteAsset={deleteAsset} onAddLiability={addLiability} onDeleteLiability={deleteLiability} />
+            )}
+            {tab === 'invest' && (
+              <InvestmentsPage investments={investments} onAdd={addInvestment} onUpdate={updateInvestment} onDelete={deleteInvestment} />
+            )}
+            {tab === 'events' && (
+              <EventsPage events={events} onAdd={addEvent} onDelete={deleteEvent} expenses={expenses} />
             )}
             {tab === 'goals' && (
               <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />

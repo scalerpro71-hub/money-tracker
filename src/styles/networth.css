@@ -1,0 +1,43 @@
+/* ── Net Worth ── */
+.nw-summary-row { text-align: center; margin-top: 8px; }
+.nw-total { font-size: 15px; padding: 10px; border-radius: 12px; background: var(--color-surface-2); }
+.nw-total--pos { color: var(--color-success); }
+.nw-total--neg { color: var(--color-danger); }
+
+.nw-list { display: flex; flex-direction: column; gap: 2px; }
+.nw-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--color-border); }
+.nw-row:last-child { border-bottom: none; }
+.nw-icon { font-size: 22px; flex-shrink: 0; }
+.nw-info { flex: 1; }
+.nw-name { font-size: 13px; font-weight: 600; color: var(--color-text); display: block; }
+.nw-cat { font-size: 11px; color: var(--color-text-muted); }
+.nw-right { display: flex; align-items: center; gap: 8px; }
+.nw-amt { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nw-amt--asset { color: #10b981; }
+.nw-amt--liab { color: #ef4444; }
+
+/* ── Investments ── */
+.inv-summary { display: flex; justify-content: space-around; padding: 8px 0; }
+.inv-summary-item { text-align: center; }
+.inv-summary-val { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--color-text); }
+.inv-summary-label { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+.inv-sip-banner { background: var(--color-surface-2); border-radius: 10px; padding: 8px 12px; margin-top: 12px; font-size: 13px; color: var(--color-text-2); }
+.inv-row { border-top: 1px solid var(--color-border); padding: 12px 0; }
+.inv-row:first-of-type { border-top: none; }
+.inv-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.inv-name { font-size: 14px; font-weight: 600; color: var(--color-text); }
+.inv-row-nums { display: flex; justify-content: space-between; }
+.inv-num-val { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.inv-num-label { font-size: 10px; color: var(--color-text-muted); margin-top: 2px; }
+.inv-edit-val { display: flex; gap: 6px; align-items: center; }
+.inv-sip-row { font-size: 12px; color: var(--color-text-muted); margin-top: 6px; }
+.inv-notes { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; font-style: italic; }
+
+/* ── Events ── */
+.event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.event-title { display: flex; align-items: center; gap: 10px; }
+.event-icon { font-size: 28px; }
+.event-name { font-size: 15px; font-weight: 700; color: var(--color-text); }
+.event-dates { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+.event-live { color: var(--color-success); font-weight: 600; }
+.event-amounts { margin-bottom: 6px; }

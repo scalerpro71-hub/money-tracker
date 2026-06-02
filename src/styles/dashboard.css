@@ -450,3 +450,47 @@
 
 /* ── Export Buttons ── */
 .export-btns { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Chart legend row ── */
+.chart-legend-row { display: flex; gap: 16px; justify-content: center; font-size: 11px; color: var(--color-text-muted); margin-top: 6px; }
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+
+/* ── Category Breakdown ── */
+.cat-breakdown-list { display: flex; flex-direction: column; gap: 10px; }
+.cat-breakdown-row { display: flex; flex-direction: column; gap: 4px; }
+.cat-breakdown-header { display: flex; justify-content: space-between; align-items: center; }
+.cat-breakdown-name { font-size: 13px; }
+.cat-breakdown-amt { font-size: 13px; font-weight: 700; color: var(--color-text); font-variant-numeric: tabular-nums; }
+.cat-breakdown-bar-bg { height: 6px; background: var(--color-surface-2); border-radius: 4px; overflow: hidden; }
+.cat-breakdown-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.cat-breakdown-pct { font-size: 10px; color: var(--color-text-muted); }
+
+/* ── Top Expenses ── */
+.top-exp-list { display: flex; flex-direction: column; gap: 10px; }
+.top-exp-row { display: flex; align-items: flex-start; gap: 8px; }
+.top-exp-rank { font-size: 11px; font-weight: 800; color: var(--color-text-muted); width: 20px; flex-shrink: 0; padding-top: 2px; }
+.top-exp-info { flex: 1; }
+.top-exp-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.top-exp-note { font-size: 13px; font-weight: 600; color: var(--color-text); }
+.top-exp-amt { font-size: 13px; font-weight: 700; color: var(--color-danger); font-variant-numeric: tabular-nums; }
+.top-exp-bar-bg { height: 4px; background: var(--color-surface-2); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+.top-exp-bar-fill { height: 100%; background: var(--gradient-brand); border-radius: 2px; transition: width 0.6s ease; }
+.top-exp-meta { font-size: 11px; color: var(--color-text-muted); }
+
+/* ── Recent Transactions ── */
+.recent-list { display: flex; flex-direction: column; }
+.recent-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-border); }
+.recent-row:last-child { border-bottom: none; }
+.recent-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.recent-info { flex: 1; min-width: 0; }
+.recent-note { font-size: 13px; font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-meta { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; }
+.recent-amt { font-size: 14px; font-weight: 700; color: var(--color-danger); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+/* ── Monthly Savings Bar ── */
+.sbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.sbar-label { font-size: 12px; color: var(--color-text-muted); }
+.sbar-amt { font-size: 14px; font-weight: 700; color: var(--color-text); font-variant-numeric: tabular-nums; }
+.sbar-track { height: 10px; background: var(--color-surface-2); border-radius: 20px; overflow: hidden; margin-bottom: 8px; }
+.sbar-fill { height: 100%; border-radius: 20px; background: var(--gradient-brand); transition: width 0.6s ease; }
+.sbar-footer { font-size: 13px; padding-top: 4px; }
