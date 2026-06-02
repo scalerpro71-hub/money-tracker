@@ -512,10 +512,16 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
     const toAdd = SUGGESTED_CATEGORIES.filter(c => selected.has(c.name));
     if (!toAdd.length) return;
     setAdding(true);
+    let count = 0;
     for (const cat of toAdd) {
-      await onAdd(cat);
+      try {
+        await onAdd(cat);
+        count++;
+      } catch (err) {
+        toast(`Failed to add ${cat.name}: ${err.message}`, 'error');
+      }
     }
-    toast(`${toAdd.length} categories added!`);
+    if (count > 0) toast(`${count} categories added!`);
     setAdding(false);
     onClose();
   }
