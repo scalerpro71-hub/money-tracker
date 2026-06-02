@@ -174,7 +174,7 @@ export function ImportPage({ categories, onAdd }) {
     let count = 0;
     for (const row of toImport) {
       try {
-        await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' });
+        await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' }, true);
         count++;
       } catch {}
     }

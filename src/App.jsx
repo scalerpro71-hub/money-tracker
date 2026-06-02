@@ -85,13 +85,15 @@ function AppInner() {
     return <LoginPage onSignIn={signIn} onSignUp={signUp} onMagicLink={signInWithMagicLink} />;
   }
 
-  async function handleAddExpense(data) {
+  async function handleAddExpense(data, silent = false) {
     try {
       await addExpense(data);
-      toast(`₹${data.amount} added!`);
-      updateStreakIfNeeded();
+      if (!silent) {
+        toast(`₹${data.amount} added!`);
+        updateStreakIfNeeded();
+      }
     } catch (err) {
-      toast(err.message, 'error');
+      if (!silent) toast(err.message, 'error');
       throw err;
     }
   }
