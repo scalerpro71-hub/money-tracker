@@ -7,6 +7,49 @@ import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
 
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
 
+const SUGGESTED_CATEGORIES = [
+  { name: 'Rent', icon: '🏠', color: '#F97316' },
+  { name: 'Groceries', icon: '🛒', color: '#10B981' },
+  { name: 'Food & Dining', icon: '🍽️', color: '#F59E0B' },
+  { name: 'Transport', icon: '🚗', color: '#3B82F6' },
+  { name: 'Auto / Cab', icon: '🛺', color: '#0EA5E9' },
+  { name: 'Petrol', icon: '⛽', color: '#EF4444' },
+  { name: 'Mobile Recharge', icon: '📱', color: '#6366F1' },
+  { name: 'Electricity', icon: '💡', color: '#F59E0B' },
+  { name: 'Internet / WiFi', icon: '🌐', color: '#14B8A6' },
+  { name: 'OTT / Streaming', icon: '🎬', color: '#A855F7' },
+  { name: 'Shopping', icon: '🛍️', color: '#EC4899' },
+  { name: 'Clothing', icon: '👗', color: '#EC4899' },
+  { name: 'Health / Medical', icon: '💊', color: '#EF4444' },
+  { name: 'Gym / Fitness', icon: '🏋️', color: '#10B981' },
+  { name: 'Personal Care', icon: '💇', color: '#A855F7' },
+  { name: 'Education', icon: '🎓', color: '#3B82F6' },
+  { name: 'EMI', icon: '🏦', color: '#6B7280' },
+  { name: 'Insurance', icon: '🛡️', color: '#14B8A6' },
+  { name: 'Investment / SIP', icon: '📈', color: '#10B981' },
+  { name: 'Entertainment', icon: '🎉', color: '#F97316' },
+  { name: 'Travel', icon: '✈️', color: '#0EA5E9' },
+  { name: 'Hotels', icon: '🏨', color: '#6366F1' },
+  { name: 'Gifts', icon: '🎁', color: '#EC4899' },
+  { name: 'Family', icon: '👨‍👩‍👧', color: '#F59E0B' },
+  { name: 'Kids', icon: '👶', color: '#F97316' },
+  { name: 'Pet', icon: '🐶', color: '#F59E0B' },
+  { name: 'Pooja / Religious', icon: '🙏', color: '#F97316' },
+  { name: 'Alcohol', icon: '🍺', color: '#6B7280' },
+  { name: 'Tobacco', icon: '🚬', color: '#6B7280' },
+  { name: 'Subscriptions', icon: '🔄', color: '#A855F7' },
+  { name: 'Home Maintenance', icon: '🔧', color: '#6B7280' },
+  { name: 'Vegetables', icon: '🥦', color: '#10B981' },
+  { name: 'Milk / Dairy', icon: '🥛', color: '#14B8A6' },
+  { name: 'Swiggy / Zomato', icon: '📦', color: '#F97316' },
+  { name: 'Salon', icon: '💈', color: '#EC4899' },
+  { name: 'Charity / Donation', icon: '❤️', color: '#EF4444' },
+  { name: 'Stationery', icon: '📝', color: '#6366F1' },
+  { name: 'Books', icon: '📚', color: '#3B82F6' },
+  { name: 'Games', icon: '🎮', color: '#A855F7' },
+  { name: 'Parking / Toll', icon: '🅿️', color: '#6B7280' },
+];
+
 export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onDeleteEmi, bills, onAddBill, onDeleteBill, expenses, userId, onSignOut }) {
   const toast = useToast();
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
@@ -20,6 +63,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
   const [showBudgets, setShowBudgets] = useState(false);
   const [showAddEmi, setShowAddEmi] = useState(false);
   const [showAddBill, setShowAddBill] = useState(false);
+  const [showSuggestedCats, setShowSuggestedCats] = useState(false);
 
   async function saveIncome(e) {
     e.preventDefault();
@@ -107,8 +151,12 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       <div className="section-card">
         <div className="section-header">
           <h4>Categories</h4>
-          <button className="btn-secondary btn-sm" onClick={() => setShowAddCat(true)}>+ Add</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-secondary btn-sm" onClick={() => setShowSuggestedCats(true)}>+ From List</button>
+            <button className="btn-secondary btn-sm" onClick={() => setShowAddCat(true)}>+ Custom</button>
+          </div>
         </div>
+        <p className="section-desc">Tap "From List" to pick from 40 preset categories</p>
         <div className="cat-list">
           {categories.map(c => (
             <div key={c.id} className="cat-item">
@@ -219,6 +267,15 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
 
       {showBudgets && (
         <BudgetEditModal categories={categories} budgets={budgets} onUpsert={onUpsertBudget} onClose={() => setShowBudgets(false)} />
+      )}
+
+      {showSuggestedCats && (
+        <SuggestedCategoriesModal
+          existing={categories}
+          onAdd={async cat => { await onAddCategory(cat); }}
+          onClose={() => setShowSuggestedCats(false)}
+          toast={toast}
+        />
       )}
 
       {showAddBill && (
@@ -428,6 +485,66 @@ function AddEmiModal({ onAdd, onClose }) {
         </div>
         <button type="submit" className="btn-primary">Add EMI</button>
       </form>
+    </Modal>
+  );
+}
+
+function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
+  const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
+  const [selected, setSelected] = useState(new Set());
+  const [adding, setAdding] = useState(false);
+
+  function toggle(name) {
+    setSelected(s => {
+      const n = new Set(s);
+      n.has(name) ? n.delete(name) : n.add(name);
+      return n;
+    });
+  }
+
+  async function handleAdd() {
+    const toAdd = SUGGESTED_CATEGORIES.filter(c => selected.has(c.name));
+    if (!toAdd.length) return;
+    setAdding(true);
+    for (const cat of toAdd) {
+      await onAdd(cat);
+    }
+    toast(`${toAdd.length} categories added!`);
+    setAdding(false);
+    onClose();
+  }
+
+  return (
+    <Modal title="Pick Categories" onClose={onClose}>
+      <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+        Tap to select. Already added ones are greyed out.
+      </p>
+      <div className="suggested-cats-grid">
+        {SUGGESTED_CATEGORIES.map(cat => {
+          const already = existingNames.has(cat.name.toLowerCase());
+          const picked = selected.has(cat.name);
+          return (
+            <button
+              key={cat.name}
+              type="button"
+              className={`suggested-cat-btn ${picked ? 'selected' : ''} ${already ? 'disabled' : ''}`}
+              style={picked ? { background: cat.color + '33', borderColor: cat.color, color: cat.color } : {}}
+              onClick={() => { if (!already) toggle(cat.name); }}
+              disabled={already}
+            >
+              <span style={{ fontSize: 18 }}>{cat.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>{cat.name}</span>
+              {already && <span style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>added</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>{selected.size} selected</span>
+        <button className="btn-primary" onClick={handleAdd} disabled={selected.size === 0 || adding}>
+          {adding ? 'Adding...' : `Add ${selected.size} Categories`}
+        </button>
+      </div>
     </Modal>
   );
 }
