@@ -18,11 +18,17 @@ export function useEmis(userId) {
     await fetch();
   }
 
+  async function updateEmi(id, updates) {
+    const { error } = await supabase.from('emis').update(updates).eq('id', id);
+    if (error) throw error;
+    await fetch();
+  }
+
   async function deleteEmi(id) {
     const { error } = await supabase.from('emis').delete().eq('id', id);
     if (error) throw error;
     await fetch();
   }
 
-  return { emis, addEmi, deleteEmi };
+  return { emis, addEmi, updateEmi, deleteEmi };
 }

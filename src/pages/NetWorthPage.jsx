@@ -98,6 +98,7 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
                   </div>
                   <div className="nw-right">
                     <span className="nw-amt nw-amt--asset">{formatINR(a.value)}</span>
+                    <button className="btn-icon" onClick={() => setEditingAsset(a)}>✏️</button>
                     <button className="btn-icon" onClick={() => onDeleteAsset(a.id)}>🗑️</button>
                   </div>
                 </div>
@@ -126,6 +127,7 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
                   </div>
                   <div className="nw-right">
                     <span className="nw-amt nw-amt--liab">{formatINR(l.amount)}</span>
+                    <button className="btn-icon" onClick={() => setEditingLiab(l)}>✏️</button>
                     <button className="btn-icon" onClick={() => onDeleteLiability(l.id)}>🗑️</button>
                   </div>
                 </div>
@@ -140,19 +142,29 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
           <AssetForm cats={ASSET_CATS} onSave={async d => { await onAddAsset(d); toast('Asset added'); setShowAddAsset(false); }} />
         </Modal>
       )}
+      {editingAsset && (
+        <Modal title="Edit Asset" onClose={() => setEditingAsset(null)}>
+          <AssetForm cats={ASSET_CATS} initial={editingAsset} onSave={async d => { await onUpdateAsset(editingAsset.id, d); toast('Asset updated'); setEditingAsset(null); }} submitLabel="Save Changes" />
+        </Modal>
+      )}
       {showAddLiab && (
         <Modal title="Add Liability" onClose={() => setShowAddLiab(false)}>
           <LiabForm cats={LIAB_CATS} onSave={async d => { await onAddLiability(d); toast('Liability added'); setShowAddLiab(false); }} />
+        </Modal>
+      )}
+      {editingLiab && (
+        <Modal title="Edit Liability" onClose={() => setEditingLiab(null)}>
+          <LiabForm cats={LIAB_CATS} initial={editingLiab} onSave={async d => { await onUpdateLiability(editingLiab.id, d); toast('Liability updated'); setEditingLiab(null); }} submitLabel="Save Changes" />
         </Modal>
       )}
     </div>
   );
 }
 
-function AssetForm({ cats, onSave }) {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('bank');
-  const [value, setValue] = useState('');
+function AssetForm({ cats, onSave, initial, submitLabel = 'Add Asset' }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [category, setCategory] = useState(initial?.category || 'bank');
+  const [value, setValue] = useState(initial?.value?.toString() || '');
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, category, value: Number(value) }); }} className="expense-form">
       <div className="form-group">
@@ -169,15 +181,15 @@ function AssetForm({ cats, onSave }) {
         <label>Current Value (₹)</label>
         <input type="number" inputMode="decimal" value={value} onChange={e => setValue(e.target.value)} min="0" required />
       </div>
-      <button type="submit" className="btn-primary">Add Asset</button>
+      <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );
 }
 
-function LiabForm({ cats, onSave }) {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('homeloan');
-  const [amount, setAmount] = useState('');
+function LiabForm({ cats, onSave, initial, submitLabel = 'Add Liability' }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [category, setCategory] = useState(initial?.category || 'homeloan');
+  const [amount, setAmount] = useState(initial?.amount?.toString() || '');
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, category, amount: Number(amount) }); }} className="expense-form">
       <div className="form-group">
@@ -194,7 +206,7 @@ function LiabForm({ cats, onSave }) {
         <label>Outstanding Amount (₹)</label>
         <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="0" required />
       </div>
-      <button type="submit" className="btn-primary">Add Liability</button>
+      <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );
 }

@@ -23,7 +23,7 @@ const SUGGESTED_CATEGORIES = [
   { name: 'Other', icon: '🙏', color: '#6B7280', desc: 'Pooja/religious, donations, charity, pet, anything that doesn\'t fit above' },
 ];
 
-export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onDeleteEmi, bills, onAddBill, onDeleteBill, expenses, userId, onSignOut }) {
+export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut }) {
   const toast = useToast();
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
   const [income, setIncome] = useState(profile?.monthly_income?.toString() || '');
@@ -35,7 +35,9 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
   const [showAddRec, setShowAddRec] = useState(false);
   const [showBudgets, setShowBudgets] = useState(false);
   const [showAddEmi, setShowAddEmi] = useState(false);
+  const [editingEmi, setEditingEmi] = useState(null);
   const [showAddBill, setShowAddBill] = useState(false);
+  const [editingBill, setEditingBill] = useState(null);
   const [showSuggestedCats, setShowSuggestedCats] = useState(false);
 
   async function saveIncome(e) {
@@ -167,7 +169,10 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
                   <span>{b.category?.icon || '💳'} <strong>{b.name}</strong></span>
                   <span className="recurring-meta">{formatINR(b.amount)} · Due {b.due_day}th of month</span>
                 </div>
-                <button className="btn-icon" onClick={() => onDeleteBill(b.id)}>🗑️</button>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button className="btn-icon" onClick={() => setEditingBill(b)}>✏️</button>
+                  <button className="btn-icon" onClick={() => onDeleteBill(b.id)}>🗑️</button>
+                </div>
               </div>
             ))}
           </div>
@@ -195,7 +200,10 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
                       {formatINR(e.emi_amount)}/mo · {e.tenure_months} months · Ends {end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                     </span>
                   </div>
-                  <button className="btn-icon" onClick={() => onDeleteEmi(e.id)}>🗑️</button>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn-icon" onClick={() => setEditingEmi(e)}>✏️</button>
+                    <button className="btn-icon" onClick={() => onDeleteEmi(e.id)}>🗑️</button>
+                  </div>
                 </div>
               );
             })}
@@ -264,9 +272,15 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       {showAddBill && (
         <AddBillModal categories={categories} onAdd={async (d) => { await onAddBill(d); toast('Bill added'); setShowAddBill(false); }} onClose={() => setShowAddBill(false)} />
       )}
+      {editingBill && (
+        <AddBillModal categories={categories} initial={editingBill} onAdd={async (d) => { await onUpdateBill(editingBill.id, d); toast('Bill updated'); setEditingBill(null); }} onClose={() => setEditingBill(null)} submitLabel="Save Changes" />
+      )}
 
       {showAddEmi && (
         <AddEmiModal onAdd={async (d) => { await onAddEmi(d); toast('EMI added'); setShowAddEmi(false); }} onClose={() => setShowAddEmi(false)} />
+      )}
+      {editingEmi && (
+        <AddEmiModal initial={editingEmi} onAdd={async (d) => { await onUpdateEmi(editingEmi.id, d); toast('EMI updated'); setEditingEmi(null); }} onClose={() => setEditingEmi(null)} submitLabel="Save Changes" />
       )}
     </div>
   );
@@ -410,11 +424,11 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
   );
 }
 
-function AddBillModal({ categories, onAdd, onClose }) {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [dueDay, setDueDay] = useState('');
-  const [catId, setCatId] = useState('');
+function AddBillModal({ categories, onAdd, onClose, initial, submitLabel = 'Add Bill' }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [amount, setAmount] = useState(initial?.amount?.toString() || '');
+  const [dueDay, setDueDay] = useState(initial?.due_day?.toString() || '');
+  const [catId, setCatId] = useState(initial?.category_id || '');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -422,7 +436,7 @@ function AddBillModal({ categories, onAdd, onClose }) {
   }
 
   return (
-    <Modal title="Add Bill Reminder" onClose={onClose}>
+    <Modal title={initial ? 'Edit Bill' : 'Add Bill Reminder'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="expense-form">
         <div className="form-group">
           <label>Bill Name</label>
@@ -445,19 +459,19 @@ function AddBillModal({ categories, onAdd, onClose }) {
             {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
           </select>
         </div>
-        <button type="submit" className="btn-primary">Add Bill</button>
+        <button type="submit" className="btn-primary">{submitLabel}</button>
       </form>
     </Modal>
   );
 }
 
-function AddEmiModal({ onAdd, onClose }) {
-  const [name, setName] = useState('');
-  const [principal, setPrincipal] = useState('');
-  const [emiAmt, setEmiAmt] = useState('');
-  const [rate, setRate] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [tenure, setTenure] = useState('');
+function AddEmiModal({ onAdd, onClose, initial, submitLabel = 'Add EMI' }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [principal, setPrincipal] = useState(initial?.principal?.toString() || '');
+  const [emiAmt, setEmiAmt] = useState(initial?.emi_amount?.toString() || '');
+  const [rate, setRate] = useState(initial?.interest_rate?.toString() || '');
+  const [startDate, setStartDate] = useState(initial?.start_date || new Date().toISOString().split('T')[0]);
+  const [tenure, setTenure] = useState(initial?.tenure_months?.toString() || '');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -472,7 +486,7 @@ function AddEmiModal({ onAdd, onClose }) {
   }
 
   return (
-    <Modal title="Add EMI" onClose={onClose}>
+    <Modal title={initial ? 'Edit EMI' : 'Add EMI'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="expense-form">
         <div className="form-group">
           <label>EMI Name</label>
@@ -502,7 +516,7 @@ function AddEmiModal({ onAdd, onClose }) {
           <label>Start Date</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
         </div>
-        <button type="submit" className="btn-primary">Add EMI</button>
+        <button type="submit" className="btn-primary">{submitLabel}</button>
       </form>
     </Modal>
   );

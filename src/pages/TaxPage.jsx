@@ -67,9 +67,10 @@ function SectionProgress({ section, total }) {
   );
 }
 
-export function TaxPage({ declarations, onAdd, onDelete }) {
+export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
   const toast = useToast();
   const [showAdd, setShowAdd] = useState(null); // section id
+  const [editingDecl, setEditingDecl] = useState(null);
   const [fy, setFy] = useState('2024-25');
 
   const filtered = declarations.filter(d => d.financial_year === fy);
@@ -140,6 +141,7 @@ export function TaxPage({ declarations, onAdd, onDelete }) {
                     <span className="tax-name">{d.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span className="tax-amt">{formatINR(d.amount)}</span>
+                      <button className="btn-icon" onClick={() => setEditingDecl(d)}>✏️</button>
                       <button className="btn-icon" onClick={() => { onDelete(d.id); toast('Removed'); }}>🗑️</button>
                     </div>
                   </div>
@@ -164,14 +166,26 @@ export function TaxPage({ declarations, onAdd, onDelete }) {
           />
         </Modal>
       )}
+      {editingDecl && (
+        <Modal title="Edit Declaration" onClose={() => setEditingDecl(null)}>
+          <TaxForm
+            section={editingDecl.section}
+            fy={editingDecl.financial_year}
+            items={SECTIONS.find(s => s.id === editingDecl.section)?.items || []}
+            initial={editingDecl}
+            submitLabel="Save Changes"
+            onSave={async d => { await onUpdate(editingDecl.id, { name: d.name, amount: d.amount }); toast('Updated'); setEditingDecl(null); }}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
 
-function TaxForm({ section, fy, items, onSave }) {
-  const [name, setName] = useState(items[0] || '');
+function TaxForm({ section, fy, items, onSave, initial, submitLabel = 'Add Declaration' }) {
+  const [name, setName] = useState(initial?.name || items[0] || '');
   const [customName, setCustomName] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(initial?.amount?.toString() || '');
 
   const finalName = name === 'custom' ? customName : name;
 
@@ -195,7 +209,7 @@ function TaxForm({ section, fy, items, onSave }) {
         <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="1" required />
       </div>
       <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>Financial Year: {fy}</div>
-      <button type="submit" className="btn-primary">Add Declaration</button>
+      <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );
 }

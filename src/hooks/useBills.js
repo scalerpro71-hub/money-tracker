@@ -19,11 +19,17 @@ export function useBills(userId) {
     await fetch();
   }
 
+  async function updateBill(id, updates) {
+    const { error } = await supabase.from('bills').update(updates).eq('id', id);
+    if (error) throw error;
+    await fetch();
+  }
+
   async function deleteBill(id) {
     const { error } = await supabase.from('bills').delete().eq('id', id);
     if (error) throw error;
     await fetch();
   }
 
-  return { bills, addBill, deleteBill };
+  return { bills, addBill, updateBill, deleteBill };
 }

@@ -5,9 +5,10 @@ import { useToast } from '../components/layout/Toast';
 
 const EVENT_ICONS = ['🎉', '🪔', '💍', '🎂', '✈️', '🎓', '🏠', '🎊', '🛍️', '⭐'];
 
-export function EventsPage({ events, onAdd, onDelete, expenses }) {
+export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
   const toast = useToast();
   const [showAdd, setShowAdd] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   function getEventSpend(event) {
     if (!event.start_date && !event.end_date) return 0;
@@ -63,7 +64,10 @@ export function EventsPage({ events, onAdd, onDelete, expenses }) {
                   )}
                 </div>
               </div>
-              <button className="btn-icon" onClick={() => onDelete(ev.id)}>🗑️</button>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className="btn-icon" onClick={() => setEditingEvent(ev)}>✏️</button>
+                <button className="btn-icon" onClick={() => onDelete(ev.id)}>🗑️</button>
+              </div>
             </div>
 
             <div className="event-amounts">
@@ -92,16 +96,22 @@ export function EventsPage({ events, onAdd, onDelete, expenses }) {
           <EventForm onSave={async d => { await onAdd(d); toast('Event created'); setShowAdd(false); }} />
         </Modal>
       )}
+      {editingEvent && (
+        <Modal title="Edit Event" onClose={() => setEditingEvent(null)}>
+          <EventForm initial={editingEvent} submitLabel="Save Changes"
+            onSave={async d => { await onUpdate(editingEvent.id, d); toast('Event updated'); setEditingEvent(null); }} />
+        </Modal>
+      )}
     </div>
   );
 }
 
-function EventForm({ onSave }) {
-  const [name, setName] = useState('');
-  const [budget, setBudget] = useState('');
-  const [icon, setIcon] = useState('🎉');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+function EventForm({ onSave, initial, submitLabel = 'Create Event' }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [budget, setBudget] = useState(initial?.budget?.toString() || '');
+  const [icon, setIcon] = useState(initial?.icon || '🎉');
+  const [startDate, setStartDate] = useState(initial?.start_date || '');
+  const [endDate, setEndDate] = useState(initial?.end_date || '');
 
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, budget: Number(budget), icon, start_date: startDate || null, end_date: endDate || null }); }} className="expense-form">
@@ -134,7 +144,7 @@ function EventForm({ onSave }) {
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
       </div>
-      <button type="submit" className="btn-primary">Create Event</button>
+      <button type="submit" className="btn-primary">{submitLabel}</button>
     </form>
   );
 }

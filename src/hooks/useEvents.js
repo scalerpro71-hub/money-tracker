@@ -17,10 +17,16 @@ export function useEvents(userId) {
     if (error) throw error;
     await fetch();
   }
+  async function updateEvent(id, updates) {
+    const { error } = await supabase.from('events').update(updates).eq('id', id);
+    if (error) throw error;
+    await fetch();
+  }
+
   async function deleteEvent(id) {
     await supabase.from('events').delete().eq('id', id);
     await fetch();
   }
 
-  return { events, addEvent, deleteEvent };
+  return { events, addEvent, updateEvent, deleteEvent };
 }

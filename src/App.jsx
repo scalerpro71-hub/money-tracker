@@ -65,12 +65,12 @@ function AppInner() {
   const { budgets, upsertBudget } = useBudgets(userId);
   const { goals, addGoal, updateGoal, deleteGoal } = useGoals(userId);
   const { profile, updateProfile } = useProfile(userId);
-  const { emis, addEmi, deleteEmi } = useEmis(userId);
-  const { bills, addBill, deleteBill } = useBills(userId);
-  const { assets, liabilities, addAsset, deleteAsset, addLiability, deleteLiability } = useNetWorth(userId);
+  const { emis, addEmi, updateEmi, deleteEmi } = useEmis(userId);
+  const { bills, addBill, updateBill, deleteBill } = useBills(userId);
+  const { assets, liabilities, addAsset, updateAsset, deleteAsset, addLiability, updateLiability, deleteLiability } = useNetWorth(userId);
   const { investments, addInvestment, updateInvestment, deleteInvestment } = useInvestments(userId);
-  const { events, addEvent, deleteEvent } = useEvents(userId);
-  const { declarations, addDeclaration, deleteDeclaration } = useTax(userId);
+  const { events, addEvent, updateEvent, deleteEvent } = useEvents(userId);
+  const { declarations, addDeclaration, updateDeclaration, deleteDeclaration } = useTax(userId);
 
   if (session === undefined) {
     return (
@@ -150,19 +150,19 @@ function AppInner() {
               <AiChatPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} />
             )}
             {tab === 'networth' && (
-              <NetWorthPage assets={assets} liabilities={liabilities} onAddAsset={addAsset} onDeleteAsset={deleteAsset} onAddLiability={addLiability} onDeleteLiability={deleteLiability} />
+              <NetWorthPage assets={assets} liabilities={liabilities} onAddAsset={addAsset} onUpdateAsset={updateAsset} onDeleteAsset={deleteAsset} onAddLiability={addLiability} onUpdateLiability={updateLiability} onDeleteLiability={deleteLiability} />
             )}
             {tab === 'invest' && (
               <InvestmentsPage investments={investments} onAdd={addInvestment} onUpdate={updateInvestment} onDelete={deleteInvestment} />
             )}
             {tab === 'events' && (
-              <EventsPage events={events} onAdd={addEvent} onDelete={deleteEvent} expenses={expenses} />
+              <EventsPage events={events} onAdd={addEvent} onUpdate={updateEvent} onDelete={deleteEvent} expenses={expenses} />
             )}
             {tab === 'goals' && (
               <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />
             )}
             {tab === 'tax' && (
-              <TaxPage declarations={declarations} onAdd={addDeclaration} onDelete={deleteDeclaration} />
+              <TaxPage declarations={declarations} onAdd={addDeclaration} onUpdate={updateDeclaration} onDelete={deleteDeclaration} />
             )}
             {tab === 'import' && (
               <ImportPage categories={categories} onAdd={handleAddExpense} />
@@ -178,9 +178,11 @@ function AppInner() {
                 onUpsertBudget={upsertBudget}
                 emis={emis}
                 onAddEmi={addEmi}
+                onUpdateEmi={updateEmi}
                 onDeleteEmi={deleteEmi}
                 bills={bills}
                 onAddBill={addBill}
+                onUpdateBill={updateBill}
                 onDeleteBill={deleteBill}
                 expenses={expenses}
                 userId={userId}

@@ -18,10 +18,16 @@ export function useTax(userId) {
     await fetch();
   }
 
+  async function updateDeclaration(id, updates) {
+    const { error } = await supabase.from('tax_declarations').update(updates).eq('id', id);
+    if (error) throw error;
+    await fetch();
+  }
+
   async function deleteDeclaration(id) {
     await supabase.from('tax_declarations').delete().eq('id', id);
     await fetch();
   }
 
-  return { declarations, addDeclaration, deleteDeclaration };
+  return { declarations, addDeclaration, updateDeclaration, deleteDeclaration };
 }
