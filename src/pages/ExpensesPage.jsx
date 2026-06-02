@@ -46,9 +46,21 @@ export function ExpensesPage({ expenses, categories, onAdd, onUpdate, onDelete }
     });
   }, [expenses, search, filterCat, from, to, showType]);
 
-  const totalExpenses = filtered.filter(e => (e.type || 'expense') === 'expense').reduce((a, e) => a + Number(e.amount), 0);
+  const expenseEntries = filtered.filter(e => (e.type || 'expense') === 'expense');
+  const totalExpenses = expenseEntries.reduce((a, e) => a + Number(e.amount), 0);
   const totalIncome = filtered.filter(e => e.type === 'income').reduce((a, e) => a + Number(e.amount), 0);
-  const totalCashback = filtered.filter(e => (e.type || 'expense') === 'expense').reduce((a, e) => a + Number(e.cashback_amount || 0), 0);
+  const totalCashback = expenseEntries.reduce((a, e) => a + Number(e.cashback_amount || 0), 0);
+
+  // Insights
+  const avgPerTx = expenseEntries.length > 0 ? Math.round(totalExpenses / expenseEntries.length) : 0;
+  const topMerchant = useMemo(() => {
+    const merchants = {};
+    for (const e of expenseEntries) {
+      const note = e.note || 'Unknown';
+      merchants[note] = (merchants[note] || 0) + Number(e.amount);
+    }
+    return Object.entries(merchants).sort((a, b) => b[1] - a[1])[0];
+  }, [expenseEntries]);
 
   async function handleDelete(id) {
     try {
@@ -93,6 +105,18 @@ export function ExpensesPage({ expenses, categories, onAdd, onUpdate, onDelete }
           <div className="exp-summary-label">Entries</div>
         </div>
       </div>
+
+      {/* Quick insights */}
+      {expenseEntries.length > 0 && (
+        <div className="section-card" style={{ padding: '10px 12px' }}>
+          <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+            <div><span style={{ fontWeight: 600 }}>Avg per tx:</span> <span style={{ color: 'var(--color-text-muted)' }}>₹{avgPerTx.toLocaleString('en-IN')}</span></div>
+            {topMerchant && (
+              <div><span style={{ fontWeight: 600 }}>Top:</span> <span style={{ color: 'var(--color-text-muted)' }}>{topMerchant[0].slice(0, 20)} (₹{Math.round(topMerchant[1]).toLocaleString('en-IN')})</span></div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Date preset tabs */}
       <div className="range-toggle" style={{ marginBottom: 10 }}>
