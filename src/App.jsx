@@ -11,6 +11,7 @@ import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { AiPage } from './pages/AiPage';
+import { AiChatPage } from './pages/AiChatPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
@@ -18,9 +19,9 @@ import { ToastProvider, useToast } from './components/layout/Toast';
 import { Spinner } from './components/layout/Spinner';
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'dashboard', label: 'Home', icon: '📊' },
   { id: 'expenses', label: 'Expenses', icon: '📝' },
-  { id: 'ai', label: 'AI', icon: '✨' },
+  { id: 'chat', label: 'Ask AI', icon: '✨' },
   { id: 'goals', label: 'Goals', icon: '🎯' },
   { id: 'import', label: 'Import', icon: '📂' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
@@ -98,6 +99,9 @@ function AppInner() {
             )}
             {tab === 'ai' && (
               <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} />
+            )}
+            {tab === 'chat' && (
+              <AiChatPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} />
             )}
             {tab === 'goals' && (
               <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />
