@@ -89,7 +89,12 @@ export function ImportPage({ categories, onAdd }) {
     setRows(valid);
     setSelected(valid.map(r => r._id));
     setDone(0);
-    if (valid.length === 0) toast('No valid transactions found. Check your file format.', 'error');
+    if (valid.length === 0) {
+      const amtCol = findCol(parsed.length ? Object.keys(parsed[0]) : [], AMOUNT_COLS);
+      const dateCol = findCol(parsed.length ? Object.keys(parsed[0]) : [], DATE_COLS);
+      const sampleKeys = parsed.length ? Object.keys(parsed[0]).join(', ') : 'none';
+      toast(`No valid transactions found. Columns detected: ${sampleKeys}. Amount col: ${amtCol}, Date col: ${dateCol}`, 'error');
+    }
   }
 
   function handleFile(e) {
@@ -105,19 +110,19 @@ export function ImportPage({ categories, onAdd }) {
         // Use sheet_to_json with header:1 to get raw rows, then find the actual header row
         const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
         // Find the row index that looks like a header (contains date/debit/amount keywords)
-        const headerKeywords = ['date', 'debit', 'credit', 'amount', 'description', 'narration', 'particulars', 'transaction', 'withdrawal', 'remarks'];
+        const headerKeywords = ['date', 'debit', 'credit', 'amount', 'description', 'narration', 'particulars', 'transaction', 'withdrawal', 'remarks', 's no'];
         let headerIdx = 0;
-        for (let i = 0; i < Math.min(rawRows.length, 20); i++) {
+        for (let i = 0; i < Math.min(rawRows.length, 25); i++) {
           const rowStr = rawRows[i].join(' ').toLowerCase();
           const matches = headerKeywords.filter(k => rowStr.includes(k)).length;
           if (matches >= 2) { headerIdx = i; break; }
         }
         const headers = rawRows[headerIdx].map(h => String(h).toLowerCase().trim());
         const parsed = rawRows.slice(headerIdx + 1)
-          .filter(row => row.some(cell => cell !== ''))
+          .filter(row => row.some(cell => String(cell).trim() !== ''))
           .map(row => {
             const out = {};
-            headers.forEach((h, i) => { out[h] = String(row[i] ?? '').trim(); });
+            headers.forEach((h, i) => { if (h) out[h] = String(row[i] ?? '').trim(); });
             return out;
           });
         processRows(parsed);
