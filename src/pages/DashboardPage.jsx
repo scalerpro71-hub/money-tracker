@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { StatCard } from '../components/dashboard/StatCard';
-import { SpendingChart } from '../components/dashboard/SpendingChart';
-import { CategoryPieChart } from '../components/dashboard/CategoryPieChart';
+import { ChartCarousel } from '../components/dashboard/ChartCarousel';
 import { BudgetRing } from '../components/dashboard/BudgetRing';
+import { WeekComparison } from '../components/dashboard/WeekComparison';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { startOfMonthStr } from '../lib/dateUtils';
 
 const RANGES = ['daily', 'weekly', 'monthly'];
 const RANGE_LABELS = { daily: 'Today', weekly: 'This Week', monthly: 'This Month' };
 
-export function DashboardPage({ expenses, budgets }) {
+export function DashboardPage({ expenses, budgets, profile }) {
   const [range, setRange] = useState('monthly');
   const data = useDashboardData(expenses, range);
 
@@ -25,6 +25,7 @@ export function DashboardPage({ expenses, budgets }) {
 
   return (
     <div className="page">
+      {/* Hero */}
       <div className="dashboard-hero">
         <div className="hero-label">Spent this month</div>
         <div className="hero-amount">₹{data.monthTotal.toLocaleString('en-IN')}</div>
@@ -38,15 +39,24 @@ export function DashboardPage({ expenses, budgets }) {
         </div>
       </div>
 
+      {/* Stat cards */}
       <div className="stat-grid">
         <StatCard label="Today" amount={data.todayTotal} icon="📅" color="#6366f1" />
         <StatCard label="This Week" amount={data.weekTotal} icon="📆" color="#0ea5e9" />
         <StatCard label="This Month" amount={data.monthTotal} icon="🗓️" color="#f59e0b" />
       </div>
 
-      <SpendingChart dailyBars={data.dailyBars} />
-      <CategoryPieChart categoryTotals={data.categoryTotals} />
+      {/* Week comparison */}
+      <WeekComparison
+        weekTotal={data.weekTotal}
+        prevWeekTotal={data.prevWeekTotal}
+        weekChange={data.weekChange}
+      />
 
+      {/* Swipeable chart carousel */}
+      <ChartCarousel data={data} profile={profile} />
+
+      {/* Budget rings */}
       {budgets.length > 0 && (
         <div className="section-card">
           <h4>Budget Status (This Month)</h4>

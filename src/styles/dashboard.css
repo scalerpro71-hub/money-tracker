@@ -223,6 +223,142 @@
   font-weight: 600;
 }
 
+/* ── Week Comparison ── */
+.week-compare {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-card);
+}
+.week-compare-label { font-size: 11px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.week-compare-row { display: flex; align-items: center; justify-content: space-between; }
+.week-compare-amounts { display: flex; flex-direction: column; gap: 2px; }
+.week-compare-current { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.week-compare-prev { font-size: 12px; color: var(--color-text-muted); }
+.week-compare-badge { font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 20px; letter-spacing: 0.2px; }
+
+/* ── Chart Carousel ── */
+.chart-carousel {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 18px;
+  padding: 14px 14px 10px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+.carousel-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.carousel-tabs::-webkit-scrollbar { display: none; }
+.carousel-tab {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.carousel-tab.active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+}
+.carousel-slide {
+  min-height: 180px;
+  touch-action: pan-y;
+}
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-surface-3);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+.carousel-dot.active {
+  width: 18px;
+  border-radius: 3px;
+  background: var(--color-brand);
+}
+.chart-slide-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.chart-slide-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* ── Income vs Expense Bar ── */
+.ive-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; font-size: 13px; font-weight: 500; color: var(--color-text-2); }
+.ive-label { display: flex; align-items: center; gap: 6px; }
+.ive-dot { width: 8px; height: 8px; border-radius: 50%; }
+.ive-dot--income { background: #10b981; }
+.ive-dot--spent { background: #ef4444; }
+.ive-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ive-amount--income { color: #10b981; }
+.ive-amount--spent { color: #ef4444; }
+.ive-bar-bg { height: 10px; background: var(--color-surface-2); border-radius: 20px; overflow: hidden; margin-bottom: 4px; }
+.ive-bar-fill { height: 100%; border-radius: 20px; transition: width 0.6s ease; }
+.ive-bar-fill--income { background: #10b981; }
+.ive-bar-fill--spent { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
+.ive-summary { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.ive-savings { font-size: 13px; font-weight: 700; }
+.ive-savings--negative { color: var(--color-danger); }
+.ive-rate { font-size: 12px; color: var(--color-text-muted); }
+
+/* ── Spending Heatmap ── */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  cursor: default;
+  transition: transform 0.1s;
+}
+.heatmap-cell:hover { transform: scale(1.2); }
+.heatmap-legend { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--color-text-muted); }
+.heatmap-legend-cells { display: flex; gap: 3px; }
+.heatmap-legend-cells .heatmap-cell { width: 12px; height: 12px; }
+
+/* ── Savings Gauge ── */
+.gauge-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.gauge-detail { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.gauge-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-2); }
+.gauge-zones { display: flex; justify-content: space-between; font-size: 10px; padding-top: 4px; }
+
 /* ── Recharts dark mode overrides ── */
 [data-theme="dark"] .recharts-default-tooltip {
   background: var(--color-surface-2) !important;

@@ -86,7 +86,7 @@ function AppInner() {
           <div className="loading-screen"><Spinner size={32} /><p>Loading...</p></div>
         ) : (
           <>
-            {tab === 'dashboard' && <DashboardPage expenses={expenses} budgets={budgets} />}
+            {tab === 'dashboard' && <DashboardPage expenses={expenses} budgets={budgets} profile={profile} />}
             {tab === 'expenses' && (
               <ExpensesPage
                 expenses={expenses}
