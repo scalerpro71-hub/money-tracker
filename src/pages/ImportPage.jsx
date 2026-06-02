@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { formatINR } from '../lib/dateUtils';
+import { callAiCategorize } from '../lib/claudeApi';
 
 const AMOUNT_COLS = ['debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'debit', 'amount', 'dr amount', 'debit amount'];
 const DATE_COLS = ['date', 'txn date', 'transaction date', 'value date', 'posting date'];
@@ -43,6 +44,7 @@ export function ImportPage({ categories, onAdd }) {
   const [selected, setSelected] = useState([]);
   const [catAssign, setCatAssign] = useState({});
   const [importing, setImporting] = useState(false);
+  const [categorizing, setCategorizing] = useState(false);
   const [done, setDone] = useState(0);
   const toast = useToast();
   const fileRef = useRef();
@@ -91,6 +93,23 @@ export function ImportPage({ categories, onAdd }) {
     toast(`${count} expenses imported!`);
   }
 
+  async function handleAutoCategorize() {
+    if (!rows.length || !categories.length) return;
+    setCategorizing(true);
+    try {
+      const transactions = rows.map(r => ({ id: r._id, description: r.note || r.date }));
+      const results = await callAiCategorize(transactions, categories.map(c => ({ id: c.id, name: c.name })));
+      const newAssign = { ...catAssign };
+      for (const r of results) newAssign[r.id] = r.category_id;
+      setCatAssign(newAssign);
+      toast(`Auto-categorized ${results.length} transactions`);
+    } catch (err) {
+      toast('Auto-categorize failed: ' + err.message, 'error');
+    } finally {
+      setCategorizing(false);
+    }
+  }
+
   function toggleRow(id) {
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   }
@@ -124,9 +143,14 @@ export function ImportPage({ categories, onAdd }) {
         <>
           <div className="import-header">
             <p>{rows.length} transactions found · {selected.length} selected</p>
-            <button className="btn-primary" onClick={handleImport} disabled={importing || selected.length === 0}>
-              {importing ? 'Importing...' : `Import ${selected.length} Expenses`}
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn-secondary btn-sm" onClick={handleAutoCategorize} disabled={categorizing}>
+                {categorizing ? '✨ Categorizing...' : '✨ Auto-Categorize'}
+              </button>
+              <button className="btn-primary" onClick={handleImport} disabled={importing || selected.length === 0}>
+                {importing ? 'Importing...' : `Import ${selected.length}`}
+              </button>
+            </div>
           </div>
           <div className="import-table">
             {rows.map(row => (

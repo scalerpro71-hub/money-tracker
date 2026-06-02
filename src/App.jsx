@@ -6,6 +6,8 @@ import { useCategories } from './hooks/useCategories';
 import { useBudgets } from './hooks/useBudgets';
 import { useGoals } from './hooks/useGoals';
 import { useProfile } from './hooks/useProfile';
+import { useEmis } from './hooks/useEmis';
+import { useBills } from './hooks/useBills';
 import { LoginPage } from './components/auth/LoginPage';
 import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
@@ -48,6 +50,8 @@ function AppInner() {
   const { budgets, upsertBudget } = useBudgets(userId);
   const { goals, addGoal, updateGoal, deleteGoal } = useGoals(userId);
   const { profile, updateProfile } = useProfile(userId);
+  const { emis, addEmi, deleteEmi } = useEmis(userId);
+  const { bills, addBill, deleteBill } = useBills(userId);
 
   if (session === undefined) {
     return (
@@ -66,9 +70,32 @@ function AppInner() {
     try {
       await addExpense(data);
       toast(`₹${data.amount} added!`);
+      updateStreakIfNeeded();
     } catch (err) {
       toast(err.message, 'error');
       throw err;
+    }
+  }
+
+  async function updateStreakIfNeeded() {
+    if (!profile || !budgets.length) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (profile.last_streak_date === today) return;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const totalBudget = budgets.reduce((a, b) => a + b.limit_amount, 0);
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dailyBudget = totalBudget / daysInMonth;
+    const todaySpend = expenses.filter(e => e.date === today).reduce((a, e) => a + Number(e.amount), 0);
+    if (todaySpend <= dailyBudget) {
+      const wasStreakContinued = profile.last_streak_date === yesterdayStr;
+      const newStreak = wasStreakContinued ? (profile.current_streak || 0) + 1 : 1;
+      await updateProfile({
+        current_streak: newStreak,
+        longest_streak: Math.max(newStreak, profile.longest_streak || 0),
+        last_streak_date: today,
+      });
     }
   }
 
@@ -87,7 +114,7 @@ function AppInner() {
           <div className="loading-screen"><Spinner size={32} /><p>Loading...</p></div>
         ) : (
           <>
-            {tab === 'dashboard' && <DashboardPage expenses={expenses} budgets={budgets} profile={profile} />}
+            {tab === 'dashboard' && <DashboardPage expenses={expenses} budgets={budgets} profile={profile} bills={bills} emis={emis} />}
             {tab === 'expenses' && (
               <ExpensesPage
                 expenses={expenses}
@@ -118,6 +145,13 @@ function AppInner() {
                 onDeleteCategory={deleteCategory}
                 budgets={budgets}
                 onUpsertBudget={upsertBudget}
+                emis={emis}
+                onAddEmi={addEmi}
+                onDeleteEmi={deleteEmi}
+                bills={bills}
+                onAddBill={addBill}
+                onDeleteBill={deleteBill}
+                expenses={expenses}
                 userId={userId}
                 onSignOut={signOut}
               />

@@ -3,24 +3,28 @@ import { useToast } from '../components/layout/Toast';
 import { Modal } from '../components/layout/Modal';
 import { useRecurring } from '../hooks/useRecurring';
 import { formatINR } from '../lib/dateUtils';
+import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
 
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
 
-export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, userId, onSignOut }) {
+export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onDeleteEmi, bills, onAddBill, onDeleteBill, expenses, userId, onSignOut }) {
   const toast = useToast();
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
   const [income, setIncome] = useState(profile?.monthly_income?.toString() || '');
+  const [payday, setPayday] = useState(profile?.payday_day?.toString() || '');
   const [showAddCat, setShowAddCat] = useState(false);
   const [catName, setCatName] = useState('');
   const [catIcon, setCatIcon] = useState('💰');
   const [catColor, setCatColor] = useState('#6366F1');
   const [showAddRec, setShowAddRec] = useState(false);
   const [showBudgets, setShowBudgets] = useState(false);
+  const [showAddEmi, setShowAddEmi] = useState(false);
+  const [showAddBill, setShowAddBill] = useState(false);
 
   async function saveIncome(e) {
     e.preventDefault();
-    await onUpdateProfile({ monthly_income: Number(income) || null });
-    toast('Income saved');
+    await onUpdateProfile({ monthly_income: Number(income) || null, payday_day: Number(payday) || null });
+    toast('Profile saved');
   }
 
   async function handleAddCat(e) {
@@ -36,11 +40,20 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       <div className="page-header"><h2>Settings</h2></div>
 
       <div className="section-card">
-        <h4>Monthly Income</h4>
-        <p className="section-desc">Used by AI to calculate savings rate and advice</p>
-        <form onSubmit={saveIncome} className="inline-form">
-          <input type="number" inputMode="decimal" placeholder="e.g. 50000" value={income} onChange={e => setIncome(e.target.value)} min="1" />
-          <button type="submit" className="btn-primary btn-sm">Save</button>
+        <h4>Profile</h4>
+        <p className="section-desc">Income is used for savings rate. Payday enables the salary countdown.</p>
+        <form onSubmit={saveIncome} className="expense-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label>Monthly Income (₹)</label>
+              <input type="number" inputMode="decimal" placeholder="e.g. 50000" value={income} onChange={e => setIncome(e.target.value)} min="1" />
+            </div>
+            <div className="form-group">
+              <label>Salary Day (1–31)</label>
+              <input type="number" inputMode="numeric" placeholder="e.g. 1" value={payday} onChange={e => setPayday(e.target.value)} min="1" max="31" />
+            </div>
+          </div>
+          <button type="submit" className="btn-primary btn-sm">Save Profile</button>
         </form>
       </div>
 
@@ -108,6 +121,71 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
         </div>
       </div>
 
+      {/* Bills */}
+      <div className="section-card">
+        <div className="section-header">
+          <h4>Bill Reminders</h4>
+          <button className="btn-secondary btn-sm" onClick={() => setShowAddBill(true)}>+ Add</button>
+        </div>
+        <p className="section-desc">Get alerted on Dashboard when a bill is due within 7 days</p>
+        {bills.length === 0 ? <p className="empty-hint">No bills set</p> : (
+          <div className="recurring-list">
+            {bills.map(b => (
+              <div key={b.id} className="recurring-item">
+                <div>
+                  <span>{b.category?.icon || '💳'} <strong>{b.name}</strong></span>
+                  <span className="recurring-meta">{formatINR(b.amount)} · Due {b.due_day}th of month</span>
+                </div>
+                <button className="btn-icon" onClick={() => onDeleteBill(b.id)}>🗑️</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* EMIs */}
+      <div className="section-card">
+        <div className="section-header">
+          <h4>EMI Tracker</h4>
+          <button className="btn-secondary btn-sm" onClick={() => setShowAddEmi(true)}>+ Add</button>
+        </div>
+        <p className="section-desc">Track car loans, home loans, phone EMIs — see progress and end dates</p>
+        {emis.length === 0 ? <p className="empty-hint">No EMIs tracked</p> : (
+          <div className="recurring-list">
+            {emis.map(e => {
+              const start = new Date(e.start_date + 'T00:00:00');
+              const end = new Date(start);
+              end.setMonth(end.getMonth() + e.tenure_months);
+              return (
+                <div key={e.id} className="recurring-item">
+                  <div>
+                    <span><strong>{e.name}</strong></span>
+                    <span className="recurring-meta">
+                      {formatINR(e.emi_amount)}/mo · {e.tenure_months} months · Ends {end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <button className="btn-icon" onClick={() => onDeleteEmi(e.id)}>🗑️</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Export */}
+      <div className="section-card">
+        <h4>Export Data</h4>
+        <p className="section-desc">Download your expenses as CSV for use in Excel or Google Sheets</p>
+        <div className="export-btns">
+          <button className="btn-secondary" onClick={() => { exportMonthlyReportCSV(expenses, budgets, profile); toast('Report downloaded'); }}>
+            📊 Monthly Report CSV
+          </button>
+          <button className="btn-secondary" onClick={() => { exportExpensesCSV(expenses); toast('Expenses downloaded'); }}>
+            📋 All Expenses CSV
+          </button>
+        </div>
+      </div>
+
       <button className="btn-danger" onClick={onSignOut}>Sign Out</button>
 
       {showAddCat && (
@@ -141,6 +219,14 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
 
       {showBudgets && (
         <BudgetEditModal categories={categories} budgets={budgets} onUpsert={onUpsertBudget} onClose={() => setShowBudgets(false)} />
+      )}
+
+      {showAddBill && (
+        <AddBillModal categories={categories} onAdd={async (d) => { await onAddBill(d); toast('Bill added'); setShowAddBill(false); }} onClose={() => setShowAddBill(false)} />
+      )}
+
+      {showAddEmi && (
+        <AddEmiModal onAdd={async (d) => { await onAddEmi(d); toast('EMI added'); setShowAddEmi(false); }} onClose={() => setShowAddEmi(false)} />
       )}
     </div>
   );
@@ -244,6 +330,104 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
         ))}
         <button className="btn-primary" onClick={handleSave}>Save All Budgets</button>
       </div>
+    </Modal>
+  );
+}
+
+function AddBillModal({ categories, onAdd, onClose }) {
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [dueDay, setDueDay] = useState('');
+  const [catId, setCatId] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    await onAdd({ name, amount: Number(amount), due_day: Number(dueDay), category_id: catId || null });
+  }
+
+  return (
+    <Modal title="Add Bill Reminder" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="expense-form">
+        <div className="form-group">
+          <label>Bill Name</label>
+          <input type="text" placeholder="e.g. Electricity, Netflix" value={name} onChange={e => setName(e.target.value)} required />
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Amount (₹)</label>
+            <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} min="1" required />
+          </div>
+          <div className="form-group">
+            <label>Due Day (1–31)</label>
+            <input type="number" inputMode="numeric" value={dueDay} onChange={e => setDueDay(e.target.value)} min="1" max="31" required />
+          </div>
+        </div>
+        <div className="form-group">
+          <label>Category (optional)</label>
+          <select value={catId} onChange={e => setCatId(e.target.value)}>
+            <option value="">None</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+          </select>
+        </div>
+        <button type="submit" className="btn-primary">Add Bill</button>
+      </form>
+    </Modal>
+  );
+}
+
+function AddEmiModal({ onAdd, onClose }) {
+  const [name, setName] = useState('');
+  const [principal, setPrincipal] = useState('');
+  const [emiAmt, setEmiAmt] = useState('');
+  const [rate, setRate] = useState('');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [tenure, setTenure] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    await onAdd({
+      name,
+      principal: Number(principal),
+      emi_amount: Number(emiAmt),
+      interest_rate: Number(rate) || 0,
+      start_date: startDate,
+      tenure_months: Number(tenure),
+    });
+  }
+
+  return (
+    <Modal title="Add EMI" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="expense-form">
+        <div className="form-group">
+          <label>EMI Name</label>
+          <input type="text" placeholder="e.g. Home Loan, iPhone 15" value={name} onChange={e => setName(e.target.value)} required />
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Loan Amount (₹)</label>
+            <input type="number" inputMode="decimal" value={principal} onChange={e => setPrincipal(e.target.value)} min="1" required />
+          </div>
+          <div className="form-group">
+            <label>Monthly EMI (₹)</label>
+            <input type="number" inputMode="decimal" value={emiAmt} onChange={e => setEmiAmt(e.target.value)} min="1" required />
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Tenure (months)</label>
+            <input type="number" inputMode="numeric" value={tenure} onChange={e => setTenure(e.target.value)} min="1" required />
+          </div>
+          <div className="form-group">
+            <label>Interest Rate (%)</label>
+            <input type="number" inputMode="decimal" step="0.01" value={rate} onChange={e => setRate(e.target.value)} min="0" />
+          </div>
+        </div>
+        <div className="form-group">
+          <label>Start Date</label>
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+        </div>
+        <button type="submit" className="btn-primary">Add EMI</button>
+      </form>
     </Modal>
   );
 }

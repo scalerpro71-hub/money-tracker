@@ -1,5 +1,28 @@
 import { supabase } from './supabase';
 
+export async function callAiCategorize(transactions, categories) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const res = await fetch(`${supabaseUrl}/functions/v1/ai-categorize`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ transactions, categories }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'AI categorize failed');
+  }
+
+  const { results } = await res.json();
+  return results;
+}
+
 export async function callAiChat(message, context, history) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');

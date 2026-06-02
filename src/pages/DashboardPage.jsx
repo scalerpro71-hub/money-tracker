@@ -3,13 +3,19 @@ import { StatCard } from '../components/dashboard/StatCard';
 import { ChartCarousel } from '../components/dashboard/ChartCarousel';
 import { BudgetRing } from '../components/dashboard/BudgetRing';
 import { WeekComparison } from '../components/dashboard/WeekComparison';
+import { BudgetAlert } from '../components/dashboard/BudgetAlert';
+import { ExpenseVelocity } from '../components/dashboard/ExpenseVelocity';
+import { SalaryCountdown } from '../components/dashboard/SalaryCountdown';
+import { SpendingStreak } from '../components/dashboard/SpendingStreak';
+import { BillsWidget } from '../components/dashboard/BillsWidget';
+import { EmiSummary } from '../components/dashboard/EmiSummary';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { startOfMonthStr } from '../lib/dateUtils';
 
 const RANGES = ['daily', 'weekly', 'monthly'];
 const RANGE_LABELS = { daily: 'Today', weekly: 'This Week', monthly: 'This Month' };
 
-export function DashboardPage({ expenses, budgets, profile }) {
+export function DashboardPage({ expenses, budgets, profile, bills, emis }) {
   const [range, setRange] = useState('monthly');
   const data = useDashboardData(expenses, range);
 
@@ -25,6 +31,9 @@ export function DashboardPage({ expenses, budgets, profile }) {
 
   return (
     <div className="page">
+      {/* Spending Streak in Hero area */}
+      <SpendingStreak profile={profile} />
+
       {/* Hero */}
       <div className="dashboard-hero">
         <div className="hero-label">Spent this month</div>
@@ -39,6 +48,9 @@ export function DashboardPage({ expenses, budgets, profile }) {
         </div>
       </div>
 
+      {/* Salary Countdown */}
+      <SalaryCountdown profile={profile} monthTotal={data.monthTotal} budgets={budgets} categorySpendMap={categorySpendMap} />
+
       {/* Stat cards */}
       <div className="stat-grid">
         <StatCard label="Today" amount={data.todayTotal} icon="📅" color="#6366f1" />
@@ -46,15 +58,23 @@ export function DashboardPage({ expenses, budgets, profile }) {
         <StatCard label="This Month" amount={data.monthTotal} icon="🗓️" color="#f59e0b" />
       </div>
 
+      {/* Predictive Budget Alerts */}
+      <BudgetAlert budgets={budgets} categorySpendMap={categorySpendMap} />
+
+      {/* Expense Velocity */}
+      <ExpenseVelocity monthlyTrend={data.monthlyTrend} />
+
       {/* Week comparison */}
-      <WeekComparison
-        weekTotal={data.weekTotal}
-        prevWeekTotal={data.prevWeekTotal}
-        weekChange={data.weekChange}
-      />
+      <WeekComparison weekTotal={data.weekTotal} prevWeekTotal={data.prevWeekTotal} weekChange={data.weekChange} />
+
+      {/* Bills due this week */}
+      <BillsWidget bills={bills} />
 
       {/* Swipeable chart carousel */}
       <ChartCarousel data={data} profile={profile} />
+
+      {/* EMI tracker */}
+      <EmiSummary emis={emis} />
 
       {/* Budget rings */}
       {budgets.length > 0 && (
