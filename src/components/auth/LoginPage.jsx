@@ -33,8 +33,8 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">💰</div>
-        <h1>Rupee Tracker</h1>
+        <div className="auth-logo">₹</div>
+        <h1>Rupee.</h1>
         <p className="auth-subtitle">Track every rupee. Save smarter.</p>
 
         <div className="auth-tabs">
