@@ -4,9 +4,9 @@ import { formatINR } from '../lib/dateUtils';
 import { callAiCategorize } from '../lib/claudeApi';
 import * as XLSX from 'xlsx';
 
-const AMOUNT_COLS = ['debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'debit', 'amount', 'dr amount', 'debit amount'];
-const DATE_COLS = ['date', 'txn date', 'transaction date', 'value date', 'posting date'];
-const NOTE_COLS = ['narration', 'description', 'particulars', 'remarks', 'transaction remarks'];
+const AMOUNT_COLS = ['withdrawal amount(inr)', 'debit', 'debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'dr amount', 'debit amount', 'amount', 'transaction amount'];
+const DATE_COLS = ['transaction date', 'value date', 'date', 'txn date', 'posting date', 'trans date'];
+const NOTE_COLS = ['transaction remarks', 'description', 'narration', 'particulars', 'remarks', 'ref no./cheque no.'];
 
 function parseCSV(text) {
   const lines = text.trim().split('\n');
@@ -30,9 +30,22 @@ function parseAmount(str) {
   return isNaN(n) ? null : n;
 }
 
+const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
 function parseDate(str) {
   if (!str) return null;
-  const parts = str.split(/[\/\-]/);
+  // Already a JS Date object (from xlsx cellDates)
+  if (str instanceof Date) {
+    return str.toISOString().split('T')[0];
+  }
+  const s = String(str).trim();
+  // DD-MMM-YYYY or DD/MMM/YYYY e.g. 15-May-2025
+  const mmmMatch = s.match(/^(\d{1,2})[-\/]([A-Za-z]{3})[-\/](\d{4})$/);
+  if (mmmMatch) {
+    const [, d, mon, y] = mmmMatch;
+    const m = MONTHS[mon.toLowerCase()];
+    if (m) return `${y}-${String(m).padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  const parts = s.split(/[\/\-]/);
   if (parts.length === 3) {
     if (parts[0].length === 4) return `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
     return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
@@ -50,6 +63,14 @@ export function ImportPage({ categories, onAdd }) {
   const toast = useToast();
   const fileRef = useRef();
 
+  function cleanNote(str) {
+    if (!str) return '';
+    // ICICI UPI format: UPI/MERCHANT NAME/upiid/bank/ref → extract merchant name
+    const upiMatch = str.match(/^UPI\/([^\/]+)/i);
+    if (upiMatch) return upiMatch[1].replace(/_/g, ' ').trim();
+    return str.slice(0, 80);
+  }
+
   function processRows(parsed) {
     const headers = parsed.length ? Object.keys(parsed[0]) : [];
     const amtCol = findCol(headers, AMOUNT_COLS);
@@ -62,7 +83,7 @@ export function ImportPage({ categories, onAdd }) {
       _id: i,
       amount: parseAmount(row[amtCol]),
       date: dateCol ? parseDate(row[dateCol]) : null,
-      note: noteCol ? row[noteCol]?.slice(0, 100) : '',
+      note: noteCol ? cleanNote(row[noteCol]) : '',
       raw: row,
     })).filter(r => r.amount && r.date);
     setRows(valid);
@@ -81,13 +102,24 @@ export function ImportPage({ categories, onAdd }) {
       reader.onload = (ev) => {
         const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
-        // Normalise keys to lowercase
-        const parsed = json.map(row => {
-          const out = {};
-          for (const k of Object.keys(row)) out[k.toLowerCase().trim()] = String(row[k] ?? '').trim();
-          return out;
-        });
+        // Use sheet_to_json with header:1 to get raw rows, then find the actual header row
+        const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        // Find the row index that looks like a header (contains date/debit/amount keywords)
+        const headerKeywords = ['date', 'debit', 'credit', 'amount', 'description', 'narration', 'particulars', 'transaction', 'withdrawal', 'remarks'];
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(rawRows.length, 20); i++) {
+          const rowStr = rawRows[i].join(' ').toLowerCase();
+          const matches = headerKeywords.filter(k => rowStr.includes(k)).length;
+          if (matches >= 2) { headerIdx = i; break; }
+        }
+        const headers = rawRows[headerIdx].map(h => String(h).toLowerCase().trim());
+        const parsed = rawRows.slice(headerIdx + 1)
+          .filter(row => row.some(cell => cell !== ''))
+          .map(row => {
+            const out = {};
+            headers.forEach((h, i) => { out[h] = String(row[i] ?? '').trim(); });
+            return out;
+          });
         processRows(parsed);
       };
       reader.readAsArrayBuffer(file);
