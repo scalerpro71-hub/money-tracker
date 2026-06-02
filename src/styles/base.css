@@ -2,23 +2,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 body {
-  font-family: var(--font-sans);
-  background: var(--color-bg);
-  color: var(--color-text);
-  transition: background 0.2s, color 0.2s;
+  font-family: var(--font-body, 'Manrope', sans-serif);
+  background: var(--bg, #f4f2ec);
+  color: var(--ink, #181c22);
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── App Shell ── */
-.app {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
-  background: var(--color-surface);
-  position: relative;
-}
+/* ── App Shell — overridden by aurora-base.css ── */
 .main-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 72px; }
 
 /* ── Loading ── */
