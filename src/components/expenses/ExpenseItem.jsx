@@ -5,10 +5,16 @@ import { hexWithAlpha } from '../../lib/colorUtils';
 const MODE_ICONS = { upi: '📱', cash: '💵', card: '💳', netbanking: '🏦' };
 
 export function ExpenseItem({ expense, onEdit, onDelete }) {
+  const catColor = expense.category?.color;
+  const rowTint = catColor ? hexWithAlpha(catColor, '0d') : 'transparent';
+
   return (
-    <div className="expense-item">
+    <div className="expense-item" style={{ backgroundColor: rowTint }}>
       <div className="expense-left">
-        <div className="expense-icon" style={{ background: hexWithAlpha(expense.category?.color, '22') }}>
+        <div
+          className="expense-icon expense-icon--lg"
+          style={{ background: catColor ? hexWithAlpha(catColor, '33') : 'var(--color-surface-2)' }}
+        >
           {expense.category?.icon || '💰'}
         </div>
         <div className="expense-info">

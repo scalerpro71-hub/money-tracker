@@ -31,6 +31,32 @@
   --glass-bg: rgba(255,255,255,0.8);
   --glass-border: rgba(255,255,255,0.6);
   --glass-blur: blur(12px);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Radius scale */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --gradient-hero: linear-gradient(160deg, #4338ca 0%, #6366f1 55%, #818cf8 100%);
+  --gradient-stat-today: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  --gradient-stat-week: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+  --gradient-stat-month: linear-gradient(135deg, #10b981 0%, #065f46 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
+
+  /* Enhanced shadows */
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 16px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-brand: 0 4px 16px rgba(99,102,241,0.30);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
 }
 
 /* ── Dark theme ── */
@@ -61,9 +87,21 @@
   --color-warning-text: #fcd34d;
   --color-uncategorized-bg: #334155;
   --color-uncategorized-text: #94a3b8;
-  --shadow-card: 0 1px 4px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
   --shadow-lg: 0 20px 60px rgba(0,0,0,0.6);
   --glass-bg: rgba(30,41,59,0.8);
   --glass-border: rgba(255,255,255,0.08);
   --glass-blur: blur(12px);
+
+  /* Deeper navy overrides */
+  --color-bg: #0a0f1e;
+  --color-surface: #131929;
+  --color-surface-2: #1a2035;
+  --color-surface-3: #243050;
+  --color-border: #1e2d4a;
+  --color-border-2: #1a2035;
+  --gradient-brand: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  --gradient-hero: linear-gradient(160deg, #312e81 0%, #4338ca 55%, #6366f1 100%);
+  --shadow-brand: 0 4px 20px rgba(129,140,248,0.35);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-card-hover: 0 4px 20px rgba(0,0,0,0.6);
 }

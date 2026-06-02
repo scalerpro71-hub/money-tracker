@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StatCard } from '../components/dashboard/StatCard';
 import { SpendingChart } from '../components/dashboard/SpendingChart';
 import { CategoryPieChart } from '../components/dashboard/CategoryPieChart';
-import { BudgetProgressBar } from '../components/dashboard/BudgetProgressBar';
+import { BudgetRing } from '../components/dashboard/BudgetRing';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { startOfMonthStr } from '../lib/dateUtils';
 
@@ -14,17 +14,22 @@ export function DashboardPage({ expenses, budgets }) {
   const data = useDashboardData(expenses, range);
 
   const monthStart = startOfMonthStr();
+  const monthExpenses = expenses.filter(ex => ex.date >= monthStart);
+  const txCount = monthExpenses.length;
+
   const categorySpendMap = {};
-  for (const e of expenses.filter(ex => ex.date >= monthStart)) {
+  for (const e of monthExpenses) {
     const id = e.category_id || 'uncategorized';
     categorySpendMap[id] = (categorySpendMap[id] || 0) + Number(e.amount);
   }
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h2>Dashboard</h2>
-        <div className="range-toggle">
+      <div className="dashboard-hero">
+        <div className="hero-label">Spent this month</div>
+        <div className="hero-amount">₹{data.monthTotal.toLocaleString('en-IN')}</div>
+        <div className="hero-sub">across {txCount} transaction{txCount !== 1 ? 's' : ''}</div>
+        <div className="range-toggle hero-range-toggle">
           {RANGES.map(r => (
             <button key={r} className={range === r ? 'active' : ''} onClick={() => setRange(r)}>
               {RANGE_LABELS[r]}
@@ -45,9 +50,11 @@ export function DashboardPage({ expenses, budgets }) {
       {budgets.length > 0 && (
         <div className="section-card">
           <h4>Budget Status (This Month)</h4>
-          {budgets.map(b => (
-            <BudgetProgressBar key={b.id} budget={b} spent={categorySpendMap[b.category_id] || 0} />
-          ))}
+          <div className="budget-ring-grid">
+            {budgets.map(b => (
+              <BudgetRing key={b.id} budget={b} spent={categorySpendMap[b.category_id] || 0} />
+            ))}
+          </div>
         </div>
       )}
 

@@ -21,13 +21,19 @@
   font-size: 20px;
   flex-shrink: 0;
 }
+.expense-icon--lg {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  font-size: 22px;
+}
 .expense-info { flex: 1; min-width: 0; }
-.expense-note { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.expense-note { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .expense-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
 .expense-date { font-size: 11px; color: var(--color-text-muted); }
 .expense-mode { font-size: 14px; }
 .expense-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-.expense-amount { font-size: 15px; font-weight: 700; color: var(--color-danger); }
+.expense-amount { font-size: 15px; font-weight: 800; color: var(--color-danger); font-variant-numeric: tabular-nums; letter-spacing: -0.3px; }
 .expense-actions { display: flex; gap: 4px; }
 .expense-summary { font-size: 13px; color: var(--color-text-3); }
 
