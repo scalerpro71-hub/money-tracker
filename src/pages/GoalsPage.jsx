@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AddGoalModal } from '../components/goals/AddGoalModal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
-import { cur, fmtK } from '../lib/formatUtils';
+import { fmtK } from '../lib/formatUtils';
 
 function GoalCard({ goal, onEdit, onDelete, index }) {
   const pct = goal.target_amount > 0

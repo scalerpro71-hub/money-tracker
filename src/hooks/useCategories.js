@@ -1,6 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
+const DEFAULT_CATEGORIES = [
+  { name: 'Food', icon: '🍛', color: '#F97316', is_default: true },
+  { name: 'Transport', icon: '🚗', color: '#3B82F6', is_default: true },
+  { name: 'Shopping', icon: '🛍️', color: '#A855F7', is_default: true },
+  { name: 'Entertainment', icon: '🎬', color: '#EC4899', is_default: true },
+  { name: 'Health', icon: '💊', color: '#10B981', is_default: true },
+  { name: 'Utilities', icon: '💡', color: '#F59E0B', is_default: true },
+  { name: 'Rent', icon: '🏠', color: '#6366F1', is_default: true },
+  { name: 'Education', icon: '📚', color: '#14B8A6', is_default: true },
+  { name: 'Other', icon: '💰', color: '#6B7280', is_default: true },
+];
+
 export function useCategories(userId) {
   const [categories, setCategories] = useState([]);
 
@@ -11,7 +23,16 @@ export function useCategories(userId) {
       .select('*')
       .eq('user_id', userId)
       .order('name');
-    setCategories(data ?? []);
+    if (data?.length) {
+      setCategories(data);
+      return;
+    }
+    const { data: seeded, error } = await supabase
+      .from('categories')
+      .insert(DEFAULT_CATEGORIES.map(cat => ({ ...cat, user_id: userId })))
+      .select('*')
+      .order('name');
+    if (!error) setCategories(seeded ?? []);
   }, [userId]);
 
   useEffect(() => { fetch(); }, [fetch]);

@@ -1,9 +1,12 @@
 import { useState, useRef } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
-import { cur, fmtK } from '../lib/formatUtils';
+import { cur } from '../lib/formatUtils';
 import * as XLSX from 'xlsx';
 
+const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+const MAX_IMPORT_ROWS = 1000;
+const ACCEPTED_EXTENSIONS = /\.(csv|xlsx|xls)$/i;
 const AMOUNT_COLS = ['withdrawal amount(inr)', 'debit', 'debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'dr amount', 'debit amount', 'amount', 'transaction amount'];
 const INCOME_COLS = ['deposit amount(inr)', 'credit', 'credit amt', 'deposit amount', 'cr amount', 'credit amount'];
 const DATE_COLS = ['transaction date', 'value date', 'date', 'txn date', 'posting date', 'trans date'];
@@ -37,7 +40,7 @@ function smartCategorize(note, categories) {
 }
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().split(/\r?\n/).slice(0, MAX_IMPORT_ROWS + 1);
   if (lines.length < 2) return [];
   const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase());
   return lines.slice(1).map(line => {
@@ -55,9 +58,9 @@ function parseDate(str) {
   if (!str) return null;
   if (str instanceof Date) return str.toISOString().split('T')[0];
   const s = String(str).trim();
-  const mmmMatch = s.match(/^(\d{1,2})[-\/]([A-Za-z]{3})[-\/](\d{4})$/);
+  const mmmMatch = s.match(/^(\d{1,2})[-/]([A-Za-z]{3})[-/](\d{4})$/);
   if (mmmMatch) { const [, d, mon, y] = mmmMatch; const m = MONTHS[mon.toLowerCase()]; if (m) return `${y}-${String(m).padStart(2,'0')}-${d.padStart(2,'0')}`; }
-  const parts = s.split(/[\/\-]/);
+  const parts = s.split(/[-/]/);
   if (parts.length === 3) {
     if (parts[0].length === 4) return `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
     return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
@@ -66,7 +69,7 @@ function parseDate(str) {
 }
 function cleanNote(str) {
   if (!str) return '';
-  const upiMatch = str.match(/^UPI\/([^\/]+)/i);
+  const upiMatch = str.match(/^UPI\/([^/]+)/i);
   if (upiMatch) return upiMatch[1].replace(/_/g, ' ').trim();
   return str.slice(0, 80);
 }
@@ -109,13 +112,27 @@ export function ImportPage({ categories, onAdd }) {
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
+    if (!ACCEPTED_EXTENSIONS.test(file.name)) {
+      toast('Use a CSV, XLS, or XLSX bank statement.', 'error');
+      return;
+    }
+    if (file.size > MAX_IMPORT_BYTES) {
+      toast('File too large. Import files up to 2 MB for now.', 'error');
+      return;
+    }
     const isExcel = /\.(xlsx|xls)$/i.test(file.name);
     const reader = new FileReader();
     if (isExcel) {
       reader.onload = (ev) => {
-        const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        try {
+        const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true, sheetRows: MAX_IMPORT_ROWS + 25 });
+        const firstSheet = wb.SheetNames[0];
+        if (!firstSheet) {
+          toast('No sheet found in this workbook.', 'error');
+          return;
+        }
+        const ws = wb.Sheets[firstSheet];
+        const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false }).slice(0, MAX_IMPORT_ROWS + 25);
         const mustHaveOne = ['withdrawal', 'debit', 'credit', 'amount(inr)', 'dr amount', 'debit amt'];
         const mustHaveDate = ['value date', 'transaction date', 'txn date', 'posting date'];
         let headerIdx = 0;
@@ -125,13 +142,23 @@ export function ImportPage({ categories, onAdd }) {
         }
         const hdrs = rawRows[headerIdx].map(h => String(h).toLowerCase().trim());
         const parsed = rawRows.slice(headerIdx + 1)
+          .slice(0, MAX_IMPORT_ROWS)
           .filter(row => row.some(cell => String(cell).trim() !== ''))
           .map(row => { const out = {}; hdrs.forEach((h, i) => { if (h) out[h] = String(row[i] ?? '').trim(); }); return out; });
         processRows(parsed);
+        } catch {
+          toast('Could not read this Excel file. Try exporting it as CSV.', 'error');
+        }
       };
       reader.readAsArrayBuffer(file);
     } else {
-      reader.onload = (ev) => { processRows(parseCSV(ev.target.result)); };
+      reader.onload = (ev) => {
+        try {
+          processRows(parseCSV(ev.target.result));
+        } catch {
+          toast('Could not read this CSV file.', 'error');
+        }
+      };
       reader.readAsText(file);
     }
   }
@@ -145,7 +172,7 @@ export function ImportPage({ categories, onAdd }) {
     setImporting(true);
     let count = 0;
     for (const row of toImport) {
-      try { await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' }, true); count++; } catch {}
+      try { await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' }, true); count++; } catch (err) { toast(err.message, 'error'); }
     }
     setImporting(false); setDone(count); setRows([]); setSelected([]); setCatAssign({});
     toast(`${count} transactions imported!`);
@@ -161,7 +188,7 @@ export function ImportPage({ categories, onAdd }) {
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFile} hidden />
             <div className="dz-ico"><Icon name="download" size={26} /></div>
             <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Drop your bank statement</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 14 }}>PDF or CSV · HDFC, ICICI, SBI, Axis & 40+ banks</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 14 }}>CSV or Excel · HDFC, ICICI, SBI, Axis & 40+ banks</div>
             <button className="btn-ghost" onClick={e => { e.stopPropagation(); fileRef.current.click(); }}>Choose file</button>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
@@ -200,7 +227,7 @@ export function ImportPage({ categories, onAdd }) {
           <div className="card">
             {rows.map(row => {
               const cat = categories.find(c => c.id === catAssign[row._id]);
-              const matchPct = cat ? Math.round(70 + Math.random() * 25) : 0;
+              const matchPct = cat ? 70 + (row._id % 25) : 0;
               return (
                 <div key={row._id} className="import-preview-item" style={{ padding: '12px 16px' }}>
                   <input type="checkbox" checked={selected.includes(row._id)} onChange={() => toggleRow(row._id)} style={{ marginRight: 4 }} />

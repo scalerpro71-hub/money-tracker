@@ -23,11 +23,13 @@ export function useNetWorth(userId) {
     await fetch();
   }
   async function updateAsset(id, updates) {
-    await supabase.from('assets').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('assets').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
   async function deleteAsset(id) {
-    await supabase.from('assets').delete().eq('id', id);
+    const { error } = await supabase.from('assets').delete().eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
 
@@ -37,11 +39,13 @@ export function useNetWorth(userId) {
     await fetch();
   }
   async function updateLiability(id, updates) {
-    await supabase.from('liabilities').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('liabilities').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
   async function deleteLiability(id) {
-    await supabase.from('liabilities').delete().eq('id', id);
+    const { error } = await supabase.from('liabilities').delete().eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
 

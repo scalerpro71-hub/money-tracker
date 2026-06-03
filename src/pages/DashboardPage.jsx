@@ -7,16 +7,10 @@ import { SpendingStreak } from '../components/dashboard/SpendingStreak';
 import { EmiSummary } from '../components/dashboard/EmiSummary';
 import { SalaryCountdown } from '../components/dashboard/SalaryCountdown';
 import { CashbackWidget } from '../components/dashboard/CashbackWidget';
-import { useDashboardData } from '../hooks/useDashboardData';
 
 function getMonthKey(date) {
   const d = new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function monthLabel(key) {
-  const [y, m] = key.split('-');
-  return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 }
 
 function monthShort(key) {
@@ -35,16 +29,6 @@ function daysLeftInMonth() {
   const today = new Date();
   const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   return last.getDate() - today.getDate();
-}
-
-function classifyInsight(text) {
-  if (text.startsWith('💚') || text.startsWith('📉')) return 'good';
-  if (text.startsWith('🔴') || text.startsWith('🚨') || text.startsWith('📈')) return 'warn';
-  return 'tip';
-}
-
-function cleanInsightText(text) {
-  return text.replace(/^[💚🟡⚠️🔴📈📉🚨🎯]\s*/, '');
 }
 
 function generateInsights(monthTotal, savingsRate, income, budgets, categorySpendMap, prevMonthTotal) {
@@ -67,7 +51,7 @@ function generateInsights(monthTotal, savingsRate, income, budgets, categorySpen
   return insights.slice(0, 3);
 }
 
-export function DashboardPage({ expenses, budgets, profile, bills, emis, investments, goals, assets, liabilities, onAddExpense }) {
+export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddExpense }) {
   const availableMonths = useMemo(() => getAvailableMonths(expenses), [expenses]);
   const defaultMonth = useMemo(() => {
     const withData = availableMonths.find(m => expenses.some(e => e.date?.startsWith(m)));
@@ -112,8 +96,6 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, investm
       .reduce((a, e) => a + Number(e.amount), 0), [expenses, prevMonthKey]);
 
   const insights = generateInsights(monthTotal, savingsRate, income, budgets, categorySpendMap, prevMonthTotal);
-
-  const data = useDashboardData(expenses, 'monthly');
 
   // Top categories with budget info
   const topCategories = useMemo(() => {
@@ -360,7 +342,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, investm
       {/* Extra widgets row */}
       {isCurrentMonth && (
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <SalaryCountdown profile={profile} monthTotal={monthTotal} budgets={budgets} categorySpendMap={categorySpendMap} />
+          <SalaryCountdown profile={profile} monthTotal={monthTotal} budgets={budgets} />
           <BudgetAlert budgets={budgets} categorySpendMap={categorySpendMap} />
           <SpendingStreak profile={profile} />
         </div>

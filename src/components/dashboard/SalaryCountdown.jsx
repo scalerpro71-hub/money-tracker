@@ -1,6 +1,6 @@
 import { formatINR } from '../../lib/dateUtils';
 
-export function SalaryCountdown({ profile, monthTotal, budgets, categorySpendMap }) {
+export function SalaryCountdown({ profile, monthTotal, budgets }) {
   const payday = profile?.payday_day;
   const income = profile?.monthly_income;
   if (!payday || !income) return null;

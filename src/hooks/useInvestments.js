@@ -18,11 +18,13 @@ export function useInvestments(userId) {
     await fetch();
   }
   async function updateInvestment(id, updates) {
-    await supabase.from('investments').update(updates).eq('id', id);
+    const { error } = await supabase.from('investments').update(updates).eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
   async function deleteInvestment(id) {
-    await supabase.from('investments').delete().eq('id', id);
+    const { error } = await supabase.from('investments').delete().eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
 

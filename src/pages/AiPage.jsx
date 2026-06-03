@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { callAiChat } from '../lib/claudeApi';
 import { Icon } from '../components/layout/Icon';
 import { cur, fmtK } from '../lib/formatUtils';
-import { startOfMonthStr, daysAgoStr, daysRemainingInMonth } from '../lib/dateUtils';
-import { useAiSuggestions } from '../hooks/useAiSuggestions';
+import { startOfMonthStr } from '../lib/dateUtils';
 
 const SUGGESTIONS = [
   "Can I afford a ₹15,000 trip this month?",
@@ -12,14 +11,6 @@ const SUGGESTIONS = [
   "Am I saving enough?",
   "Where should I cut spending?",
 ];
-
-const COACH = {
-  afford: "Based on your current spending rate, you have {left} left for the month. A ₹15,000 trip would {result}.",
-  budget: "Your biggest category this month is {top} at {amt}. That's {pct}% of total spend.",
-  goal: "At your current savings rate of {rate}%, you'd reach your goals in roughly {months} months.",
-  save: "You're saving {rate}% of income this month. Aim for 30%+ by trimming {suggestion}.",
-  default: "Based on your finances, you're spending {total} this month on {count} transactions. Your savings rate is {rate}%.",
-};
 
 function coachFallback(q, context) {
   const q2 = q.toLowerCase();
@@ -51,7 +42,7 @@ function coachFallback(q, context) {
 
 function buildCoachPrompt(q, context) {
   const { income, monthTotal, spendable, savingsRate, netWorth, portfolioValue, sipMonthly,
-    topCategories, goals, upcomingBills, txCount } = context;
+    topCategories, goals, upcomingBills } = context;
   const budgetPct = income > 0 ? Math.round((monthTotal / income) * 100) : 0;
 
   const topCats = (topCategories || []).slice(0, 4)
@@ -81,7 +72,7 @@ Answer only from the above data. Use ₹ Indian formatting. Keep to 2-4 short se
 User: ${q}`;
 }
 
-function healthScore(savingsRate, budgetAdherence, monthTotal, income) {
+function healthScore(savingsRate, budgetAdherence) {
   let score = 60;
   if (savingsRate !== null) {
     if (savingsRate >= 30) score += 20;
@@ -94,8 +85,7 @@ function healthScore(savingsRate, budgetAdherence, monthTotal, income) {
   return Math.max(10, Math.min(99, score));
 }
 
-export function AiPage({ userId, expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
-  const { suggestions, loading: sugLoading, error: sugError, generate } = useAiSuggestions(userId);
+export function AiPage({ expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
@@ -123,12 +113,16 @@ export function AiPage({ userId, expenses, budgets, goals, profile, investments,
   const portfolioValue = (investments || []).reduce((a, i) => a + Number(i.current_value || i.invested_amount), 0);
   const sipMonthly = (investments || []).filter(i => i.type === 'sip').reduce((a, i) => a + Number(i.monthly_amount || 0), 0);
 
-  const catMap = {};
-  for (const e of monthExpenses) {
-    const id = e.category_id || 'other';
-    if (!catMap[id]) catMap[id] = { amt: 0, name: e.category?.name || 'Other', icon: e.category?.icon || '💰', catId: id };
-    catMap[id].amt += Number(e.amount);
-  }
+  const catMap = useMemo(() => {
+    const map = {};
+    for (const e of monthExpenses) {
+      const id = e.category_id || 'other';
+      if (!map[id]) map[id] = { amt: 0, name: e.category?.name || 'Other', icon: e.category?.icon || '💰', catId: id };
+      map[id].amt += Number(e.amount);
+    }
+    return map;
+  }, [monthExpenses]);
+
   const topCategories = Object.values(catMap).sort((a, b) => b.amt - a.amt).map(c => {
     const b = budgets.find(x => x.category_id === c.catId);
     return { ...c, budget: b?.limit_amount || 0 };
@@ -138,7 +132,7 @@ export function AiPage({ userId, expenses, budgets, goals, profile, investments,
   const budgetAdherence = budgets.length > 0
     ? budgets.filter(b => (catMap[b.category_id]?.amt || 0) <= b.limit_amount).length / budgets.length
     : 0;
-  const score = healthScore(savingsRate, budgetAdherence, monthTotal, income);
+  const score = healthScore(savingsRate, budgetAdherence);
 
   const context = {
     income, monthTotal, spendable, savingsRate, netWorth, portfolioValue, sipMonthly,

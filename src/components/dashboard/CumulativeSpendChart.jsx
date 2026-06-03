@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart } from 'recharts';
+import { Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { formatINR } from '../../lib/dateUtils';
 
 export function CumulativeSpendChart({ expenses, budgetTotal }) {
@@ -7,15 +7,14 @@ export function CumulativeSpendChart({ expenses, budgetTotal }) {
   const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const monthExpenses = expenses.filter(e => e.date?.startsWith(monthStr));
 
-  // Build cumulative data per day
-  let running = 0;
   const data = Array.from({ length: today.getDate() }, (_, i) => {
     const day = i + 1;
-    const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
-    const dayAmt = monthExpenses.filter(e => e.date === dateStr).reduce((a, e) => a + Number(e.amount), 0);
-    running += dayAmt;
+    const runningTotal = Array.from({ length: day }, (_, j) => {
+      const dateStr = `${monthStr}-${String(j + 1).padStart(2, '0')}`;
+      return monthExpenses.filter(e => e.date === dateStr).reduce((a, e) => a + Number(e.amount), 0);
+    }).reduce((a, n) => a + n, 0);
     const pace = budgetTotal > 0 ? Math.round((budgetTotal / daysInMonth) * (i + 1)) : null;
-    return { day: `${day}`, actual: Math.round(running), pace };
+    return { day: `${day}`, actual: Math.round(runningTotal), pace };
   });
 
   if (data.length === 0) return <div className="chart-slide-empty">No data this month</div>;

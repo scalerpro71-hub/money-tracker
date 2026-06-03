@@ -19,13 +19,13 @@ export function useEmis(userId) {
   }
 
   async function updateEmi(id, updates) {
-    const { error } = await supabase.from('emis').update(updates).eq('id', id);
+    const { error } = await supabase.from('emis').update(updates).eq('id', id).eq('user_id', userId);
     if (error) throw error;
     await fetch();
   }
 
   async function deleteEmi(id) {
-    const { error } = await supabase.from('emis').delete().eq('id', id);
+    const { error } = await supabase.from('emis').delete().eq('id', id).eq('user_id', userId);
     if (error) throw error;
     await fetch();
   }

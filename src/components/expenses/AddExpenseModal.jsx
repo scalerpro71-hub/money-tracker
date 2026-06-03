@@ -16,7 +16,7 @@ export function AddExpenseModal({ categories, onAdd, onClose, initialData = null
   const [date, setDate] = useState(initialData?.date || todayStr());
   const [note, setNote] = useState(initialData?.note || '');
   const [paymentMode, setPaymentMode] = useState(initialData?.payment_mode || 'upi');
-  const [cashback, setCashback] = useState(initialData?.cashback_amount?.toString() || '');
+  const [cashback] = useState(initialData?.cashback_amount?.toString() || '');
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
 

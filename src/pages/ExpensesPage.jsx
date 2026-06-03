@@ -40,7 +40,7 @@ function dateLabel(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-export function ExpensesPage({ expenses, categories, onAdd, onUpdate, onDelete }) {
+export function ExpensesPage({ expenses, categories, onUpdate, onDelete }) {
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [datePreset, setDatePreset] = useState('month');

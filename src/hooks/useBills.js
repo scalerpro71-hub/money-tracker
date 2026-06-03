@@ -20,13 +20,13 @@ export function useBills(userId) {
   }
 
   async function updateBill(id, updates) {
-    const { error } = await supabase.from('bills').update(updates).eq('id', id);
+    const { error } = await supabase.from('bills').update(updates).eq('id', id).eq('user_id', userId);
     if (error) throw error;
     await fetch();
   }
 
   async function deleteBill(id) {
-    const { error } = await supabase.from('bills').delete().eq('id', id);
+    const { error } = await supabase.from('bills').delete().eq('id', id).eq('user_id', userId);
     if (error) throw error;
     await fetch();
   }

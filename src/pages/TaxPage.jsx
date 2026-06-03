@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
-import { cur, fmtK } from '../lib/formatUtils';
+import { fmtK } from '../lib/formatUtils';
 
 const SECTIONS = [
   { id: '80C', label: '80C — Investments & Insurance', limit: 150000, examples: 'PPF, ELSS, LIC, NSC, Home Loan Principal, Tuition Fees', items: ['PPF', 'ELSS Mutual Fund', 'LIC Premium', 'NSC', 'Home Loan Principal', 'Tuition Fees', 'ULIP', '5-yr FD', 'NPS (employee)', 'SCSS'] },
@@ -25,7 +25,6 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
     return acc + Math.min(sTotal, s.limit);
   }, 0);
   const taxSaved = Math.round(totalSaved * 0.3);
-  const totalLimit = SECTIONS.filter(s => s.limit).reduce((a, s) => a + s.limit, 0);
   const roomLeft = Math.max(0, 150000 - (filtered.filter(d => d.section === '80C').reduce((a, d) => a + Number(d.amount), 0)));
 
   return (

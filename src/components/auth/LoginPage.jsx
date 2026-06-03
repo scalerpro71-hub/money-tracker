@@ -55,21 +55,21 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
           <form onSubmit={handleSubmit} className="auth-form">
             {mode === 'signup' && (
               <div className="form-group">
-                <label>Full Name</label>
-                <input type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
+                <label htmlFor="auth-name">Full Name</label>
+                <input id="auth-name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
               </div>
             )}
             <div className="form-group">
-              <label>Email</label>
-              <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              <label htmlFor="auth-email">Email</label>
+              <input id="auth-email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             {mode !== 'magic' && (
               <div className="form-group">
-                <label>Password</label>
-                <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+                <label htmlFor="auth-password">Password</label>
+                <input id="auth-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
               </div>
             )}
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} aria-label={mode === 'login' ? 'Submit login' : mode === 'signup' ? 'Create account' : 'Send magic link'}>
               {loading ? 'Please wait...' : mode === 'login' ? 'Login' : mode === 'signup' ? 'Create Account' : 'Send Magic Link'}
             </button>
           </form>

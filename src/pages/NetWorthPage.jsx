@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
-import { cur, fmtK } from '../lib/formatUtils';
+import { fmtK } from '../lib/formatUtils';
 
 const ASSET_CATS = [
   { id: 'bank', icon: '🏦', label: 'Bank / Savings' },
@@ -20,7 +20,7 @@ const LIAB_CATS = [
   { id: 'other', icon: '💸', label: 'Other Liability' },
 ];
 
-export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, onDeleteAsset, onAddLiability, onUpdateLiability, onDeleteLiability }) {
+export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, onAddLiability, onUpdateLiability }) {
   const toast = useToast();
   const [showAddAsset, setShowAddAsset] = useState(false);
   const [showAddLiab, setShowAddLiab] = useState(false);

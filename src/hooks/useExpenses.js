@@ -33,16 +33,19 @@ export function useExpenses(userId) {
   async function addExpense(expense) {
     const { error } = await supabase.from('expenses').insert({ ...expense, user_id: userId });
     if (error) throw error;
+    await fetch();
   }
 
   async function updateExpense(id, updates) {
     const { error } = await supabase.from('expenses').update(updates).eq('id', id).eq('user_id', userId);
     if (error) throw error;
+    await fetch();
   }
 
   async function deleteExpense(id) {
     const { error } = await supabase.from('expenses').delete().eq('id', id).eq('user_id', userId);
     if (error) throw error;
+    await fetch();
   }
 
   return { expenses, loading, addExpense, updateExpense, deleteExpense, refetch: fetch };

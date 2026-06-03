@@ -81,7 +81,7 @@ function ChatBubble({ msg }) {
   );
 }
 
-export function AiChatPage({ userId, expenses, budgets, goals, profile }) {
+export function AiChatPage({ expenses, budgets, goals, profile }) {
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

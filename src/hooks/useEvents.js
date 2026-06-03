@@ -18,13 +18,14 @@ export function useEvents(userId) {
     await fetch();
   }
   async function updateEvent(id, updates) {
-    const { error } = await supabase.from('events').update(updates).eq('id', id);
+    const { error } = await supabase.from('events').update(updates).eq('id', id).eq('user_id', userId);
     if (error) throw error;
     await fetch();
   }
 
   async function deleteEvent(id) {
-    await supabase.from('events').delete().eq('id', id);
+    const { error } = await supabase.from('events').delete().eq('id', id).eq('user_id', userId);
+    if (error) throw error;
     await fetch();
   }
 

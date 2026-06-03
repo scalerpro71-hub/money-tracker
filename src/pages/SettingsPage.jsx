@@ -4,8 +4,7 @@ import { Modal } from '../components/layout/Modal';
 import { Icon } from '../components/layout/Icon';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRecurring } from '../hooks/useRecurring';
-import { formatINR } from '../lib/dateUtils';
-import { fmtK, cur } from '../lib/formatUtils';
+import { fmtK } from '../lib/formatUtils';
 import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
 
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
@@ -612,7 +611,7 @@ function SuggestedCategoriesModal({ existing, onAdd, onClose, toast }) {
     let count = 0;
     for (const cat of toAdd) {
       try {
-        const { desc: _desc, ...catData } = cat;
+        const catData = { name: cat.name, icon: cat.icon, color: cat.color };
         await onAdd(catData);
         count++;
       } catch (err) {
