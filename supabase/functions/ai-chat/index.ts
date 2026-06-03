@@ -1,24 +1,24 @@
-import Anthropic from 'npm:@anthropic-ai/sdk@0.36.3';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+
+const OPENAI_MODEL = 'gpt-5-mini';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `You are a personal finance assistant for an Indian user who uses "Rupee Tracker" to manage their expenses.
+const SYSTEM_PROMPT = `You are a personal finance assistant for an Indian user who uses "Rupee Tracker" to manage expenses.
 
 You have access to the user's real financial data provided in each message. Use it to give specific, accurate answers.
 
 Guidelines:
-- Always use ₹ (Indian Rupee) for amounts
-- Be concise and direct — answer in 2-4 sentences unless a detailed breakdown is asked
-- Use Indian context: UPI, EMI, SIP, lakh/crore notation (e.g. ₹1.5L not ₹150,000)
-- Format large numbers in Indian style: ₹1,50,000 or ₹1.5L
-- If data doesn't exist for what they're asking, say so clearly
-- For spending questions, do the math from the data provided
-- Give actionable advice when relevant, not just numbers
-- Keep responses friendly and conversational`;
+- Always use INR / rupee amounts.
+- Be concise and direct; answer in 2-4 sentences unless a detailed breakdown is asked.
+- Use Indian context: UPI, EMI, SIP, lakh/crore notation.
+- If data does not exist for what they ask, say so clearly.
+- For spending questions, do the math from the data provided.
+- Give actionable advice when relevant, not just numbers.
+- Keep responses friendly and conversational.`;
 
 async function requireUser(req: Request) {
   const authHeader = req.headers.get('Authorization');
@@ -32,6 +32,51 @@ async function requireUser(req: Request) {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return { error: 'Invalid authorization' };
   return { user: data.user };
+}
+
+function openAiKey() {
+  const key = Deno.env.get('OPENAI_API_KEY');
+  if (!key) throw new Error('OPENAI_API_KEY is not configured');
+  return key;
+}
+
+function extractText(data: Record<string, unknown>) {
+  if (typeof data.output_text === 'string') return data.output_text.trim();
+  const output = Array.isArray(data.output) ? data.output : [];
+  for (const item of output) {
+    const content = Array.isArray(item?.content) ? item.content : [];
+    for (const part of content) {
+      if (part?.type === 'output_text' && typeof part.text === 'string') return part.text.trim();
+      if (part?.type === 'text' && typeof part.text === 'string') return part.text.trim();
+    }
+  }
+  return '';
+}
+
+async function callOpenAI(input: Array<{ role: string; content: string }>, maxOutputTokens = 600) {
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openAiKey()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      instructions: SYSTEM_PROMPT,
+      input,
+      max_output_tokens: maxOutputTokens,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = data?.error?.message || `OpenAI request failed with ${response.status}`;
+    throw new Error(message);
+  }
+
+  const text = extractText(data);
+  if (!text) throw new Error('OpenAI returned an empty response');
+  return text;
 }
 
 Deno.serve(async (req) => {
@@ -49,7 +94,6 @@ Deno.serve(async (req) => {
     }
 
     const { message, context, history } = await req.json();
-
     if (!message) {
       return new Response(JSON.stringify({ error: 'Missing message' }), {
         status: 400,
@@ -57,43 +101,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
+    const contextBlock = context
+      ? `\n\nFinancial data:\n${JSON.stringify(context, null, 2)}`
+      : '';
 
-    // Build messages array with history + current message
-    const contextBlock = context ? `\n\n<financial_data>\n${JSON.stringify(context, null, 2)}\n</financial_data>` : '';
-
-    const messages = [
-      // Inject context as first user turn if provided
+    const input = [
       ...(context ? [{
-        role: 'user' as const,
-        content: `Here is my current financial data for reference:${contextBlock}\n\nPlease acknowledge you have my data and are ready to help.`,
-      }, {
-        role: 'assistant' as const,
-        content: 'Got it! I can see your financial data — expenses, budgets, goals, and profile. Ask me anything about your spending, savings, or finances.',
+        role: 'user',
+        content: `Here is my current financial data for reference:${contextBlock}`,
       }] : []),
-      // Previous conversation history
-      ...(history || []).map((h: { role: string; content: string }) => ({
-        role: h.role as 'user' | 'assistant',
-        content: h.content,
-      })),
-      // Current message
-      { role: 'user' as const, content: message },
+      ...(history || [])
+        .filter((h: { role?: string; content?: string }) => h?.content && (h.role === 'user' || h.role === 'assistant'))
+        .map((h: { role: string; content: string }) => ({ role: h.role, content: h.content })),
+      { role: 'user', content: message },
     ];
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 600,
-      system: SYSTEM_PROMPT,
-      messages,
-    });
-
-    const reply = response.content[0].type === 'text' ? response.content[0].text : '';
+    const reply = await callOpenAI(input);
 
     return new Response(JSON.stringify({ reply }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
