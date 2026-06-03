@@ -28,11 +28,14 @@ button { font-family: inherit; }
 
 /* ---- Sidebar (desktop) ---- */
 .rail {
-  position: sticky; top: 0; height: 100vh;
+  position: sticky; top: 0; height: 100vh; max-height: 100dvh;
   display: flex; flex-direction: column;
   padding: 22px 16px;
   border-right: 1px solid var(--hair);
   background: var(--bg-soft);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
 }
 .brand { display: flex; align-items: center; gap: 11px; padding: 6px 10px 22px; }
 .brand-mark {
@@ -43,8 +46,8 @@ button { font-family: inherit; }
 }
 .brand-name { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
 .brand-name span { color: var(--accent); }
-.rail-nav { display: flex; flex-direction: column; gap: 3px; }
-.rail-group { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); padding: 16px 12px 6px; }
+.rail-nav { display: flex; flex-direction: column; gap: 3px; min-height: 0; }
+.rail-group { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); padding: 14px 12px 6px; }
 .rail-link {
   display: flex; align-items: center; gap: 12px;
   padding: 11px 12px; border-radius: var(--r-sm);
@@ -58,10 +61,18 @@ button { font-family: inherit; }
 .rail-link.on svg { color: var(--accent); }
 .rail-spacer { flex: 1; }
 .rail-card {
-  margin-top: 14px; padding: 14px; border-radius: var(--r-md);
+  flex: 0 0 auto; margin-top: 14px; padding: 14px; border-radius: var(--r-md);
   background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow-xs);
 }
 .rail-user { display: flex; align-items: center; gap: 11px; }
+
+@media (max-height: 760px) and (min-width: 861px) {
+  .rail { padding-top: 16px; padding-bottom: 12px; }
+  .brand { padding-bottom: 14px; }
+  .rail-group { padding-top: 10px; }
+  .rail-link { padding-top: 9px; padding-bottom: 9px; }
+  .rail-card { margin-top: 10px; padding: 12px; }
+}
 
 /* ---- Main column ---- */
 .main { min-width: 0; display: flex; flex-direction: column; }
