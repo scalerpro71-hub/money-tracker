@@ -18,10 +18,14 @@ export function exportMonthlyReportCSV(expenses, budgets, profile) {
   const today = new Date();
   const month = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-  const monthExpenses = expenses.filter(e => e.date >= monthStart);
+  const monthEntries = expenses.filter(e => e.date >= monthStart);
+  const monthExpenses = monthEntries.filter(e => e.type !== 'income');
+  const monthIncome = monthEntries
+    .filter(e => e.type === 'income')
+    .reduce((a, e) => a + Number(e.amount), 0);
 
   const totalSpent = monthExpenses.reduce((a, e) => a + Number(e.amount), 0);
-  const income = profile?.monthly_income || 0;
+  const income = Number(profile?.monthly_income) || monthIncome || 0;
   const savings = income - totalSpent;
   const savingsRate = income > 0 ? Math.round((savings / income) * 100) : null;
 
@@ -59,7 +63,7 @@ export function exportMonthlyReportCSV(expenses, budgets, profile) {
     ``,
     `=== ALL TRANSACTIONS ===`,
     `Date,Amount,Category,Note`,
-    ...monthExpenses
+    ...monthEntries
       .sort((a, b) => b.date.localeCompare(a.date))
       .map(e => `${e.date},${e.amount},${e.category?.name || 'Uncategorized'},${(e.note || '').replace(/,/g, ';')}`),
   ].filter(l => l !== null).join('\n');

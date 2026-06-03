@@ -27,9 +27,10 @@ export function useDashboardData(expenses, timeRange = 'monthly') {
     const weekStart = startOfWeekStr();
     const monthStart = startOfMonthStr();
 
-    const todayExpenses = expenses.filter(e => e.date === today);
-    const weekExpenses = expenses.filter(e => e.date >= weekStart);
-    const monthExpenses = expenses.filter(e => e.date >= monthStart);
+    const spendEntries = expenses.filter(e => e.type !== 'income');
+    const todayExpenses = spendEntries.filter(e => e.date === today);
+    const weekExpenses = spendEntries.filter(e => e.date >= weekStart);
+    const monthExpenses = spendEntries.filter(e => e.date >= monthStart);
 
     const sum = arr => arr.reduce((acc, e) => acc + Number(e.amount), 0);
 
@@ -59,14 +60,14 @@ export function useDashboardData(expenses, timeRange = 'monthly') {
     const last7 = getLast7Days();
     const dailyBars = last7.map(date => ({
       date,
-      amount: sum(expenses.filter(e => e.date === date)),
+      amount: sum(spendEntries.filter(e => e.date === date)),
     }));
 
     // 6-month trend
     const months = getLast6Months();
     const monthlyTrend = months.map(({ key, label }) => ({
       label,
-      amount: sum(expenses.filter(e => e.date?.startsWith(key))),
+      amount: sum(spendEntries.filter(e => e.date?.startsWith(key))),
     }));
 
     // Week-over-week
@@ -76,14 +77,14 @@ export function useDashboardData(expenses, timeRange = 'monthly') {
     prevWeekEnd.setDate(prevWeekEnd.getDate() + 6);
     const prevWeekStartStr = prevWeekStart.toISOString().split('T')[0];
     const prevWeekEndStr = prevWeekEnd.toISOString().split('T')[0];
-    const prevWeekTotal = sum(expenses.filter(e => e.date >= prevWeekStartStr && e.date <= prevWeekEndStr));
+    const prevWeekTotal = sum(spendEntries.filter(e => e.date >= prevWeekStartStr && e.date <= prevWeekEndStr));
     const weekChange = prevWeekTotal > 0 ? ((weekTotal - prevWeekTotal) / prevWeekTotal) * 100 : null;
 
     // 30-day heatmap
     const last30 = getLast30DaysArr();
     const heatmapData = last30.map(date => ({
       date,
-      amount: sum(expenses.filter(e => e.date === date)),
+      amount: sum(spendEntries.filter(e => e.date === date)),
     }));
 
     // Days remaining & daily budget pace

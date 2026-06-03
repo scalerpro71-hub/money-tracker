@@ -27,7 +27,21 @@ Deno.serve(async () => {
       (r.frequency === 'monthly' && r.day_of_month === dayOfMonth) ||
       (r.frequency === 'weekly' && r.day_of_week === dayOfWeek);
 
-    const alreadyLogged = r.last_logged_at === todayDate;
+    let existingExpenseQuery = supabase
+      .from('expenses')
+      .select('id')
+      .eq('user_id', r.user_id)
+      .eq('date', todayDate)
+      .eq('note', r.name)
+      .eq('amount', r.amount);
+
+    existingExpenseQuery = r.category_id
+      ? existingExpenseQuery.eq('category_id', r.category_id)
+      : existingExpenseQuery.is('category_id', null);
+
+    const { data: existingExpense } = await existingExpenseQuery.maybeSingle();
+
+    const alreadyLogged = r.last_logged_at === todayDate || !!existingExpense;
 
     if (isDue && !alreadyLogged) {
       await supabase.from('expenses').insert({
@@ -42,7 +56,8 @@ Deno.serve(async () => {
       await supabase
         .from('recurring_expenses')
         .update({ last_logged_at: todayDate })
-        .eq('id', r.id);
+        .eq('id', r.id)
+        .eq('user_id', r.user_id);
 
       logged++;
     }

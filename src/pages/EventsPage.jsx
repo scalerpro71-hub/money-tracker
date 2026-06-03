@@ -18,6 +18,7 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
   function getEventSpend(event) {
     if (!event.start_date && !event.end_date) return 0;
     return expenses.filter(e => {
+      if (e.type === 'income') return false;
       if (event.start_date && e.date < event.start_date) return false;
       if (event.end_date && e.date > event.end_date) return false;
       return true;

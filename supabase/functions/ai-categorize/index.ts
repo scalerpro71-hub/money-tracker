@@ -1,16 +1,31 @@
 import Anthropic from 'npm:@anthropic-ai/sdk@0.36.3';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function requireUser(req: Request) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return { error: 'Missing authorization' };
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return { error: 'Invalid authorization' };
+  return { user: data.user };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return new Response(JSON.stringify({ error: 'Missing authorization' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const auth = await requireUser(req);
+    if (auth.error) return new Response(JSON.stringify({ error: auth.error }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     const { transactions, categories } = await req.json();
     if (!transactions?.length || !categories?.length) {

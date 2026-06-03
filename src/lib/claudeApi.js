@@ -1,70 +1,25 @@
 import { supabase } from './supabase';
 
 export async function callAiCategorize(transactions, categories) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const res = await fetch(`${supabaseUrl}/functions/v1/ai-categorize`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ transactions, categories }),
+  const { data, error } = await supabase.functions.invoke('ai-categorize', {
+    body: { transactions, categories },
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'AI categorize failed');
-  }
-
-  const { results } = await res.json();
-  return results;
+  if (error) throw new Error(error.message || 'AI categorize failed');
+  return data?.results ?? [];
 }
 
 export async function callAiChat(message, context, history) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const res = await fetch(`${supabaseUrl}/functions/v1/ai-chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ message, context, history }),
+  const { data, error } = await supabase.functions.invoke('ai-chat', {
+    body: { message, context, history },
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'AI request failed');
-  }
-
-  const { reply } = await res.json();
-  return reply;
+  if (error) throw new Error(error.message || 'AI request failed');
+  return data?.reply ?? '';
 }
 
 export async function callAiSuggest(feature, data) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const res = await fetch(`${supabaseUrl}/functions/v1/ai-suggest`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ feature, data }),
+  const { data: result, error } = await supabase.functions.invoke('ai-suggest', {
+    body: { feature, data },
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'AI request failed');
-  }
-
-  const { suggestion } = await res.json();
-  return suggestion;
+  if (error) throw new Error(error.message || 'AI request failed');
+  return result?.suggestion ?? '';
 }

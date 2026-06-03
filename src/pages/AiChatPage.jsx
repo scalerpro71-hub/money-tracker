@@ -16,8 +16,9 @@ function buildContext(expenses, budgets, goals, profile) {
   const monthStart = startOfMonthStr();
   const last90 = daysAgoStr(90);
 
-  const recent = expenses.filter(e => e.date >= last90);
-  const thisMonth = expenses.filter(e => e.date >= monthStart);
+  const spendEntries = expenses.filter(e => e.type !== 'income');
+  const recent = spendEntries.filter(e => e.date >= last90);
+  const thisMonth = spendEntries.filter(e => e.date >= monthStart);
 
   const byCategory = {};
   for (const e of recent) {

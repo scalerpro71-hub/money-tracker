@@ -20,7 +20,7 @@ const LIAB_CATS = [
   { id: 'other', icon: '💸', label: 'Other Liability' },
 ];
 
-export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, onAddLiability, onUpdateLiability }) {
+export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, onDeleteAsset, onAddLiability, onUpdateLiability, onDeleteLiability }) {
   const toast = useToast();
   const [showAddAsset, setShowAddAsset] = useState(false);
   const [showAddLiab, setShowAddLiab] = useState(false);
@@ -76,6 +76,9 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
                   <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 8 }} onClick={() => setEditingAsset(a)}>
                     <Icon name="gear" size={14} />
                   </button>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 6, color: 'var(--neg)' }} onClick={async () => { await onDeleteAsset(a.id); toast('Asset deleted'); }}>
+                    ×
+                  </button>
                 </div>
               );
             })}
@@ -105,6 +108,9 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
                   <div className="nw-amt neg num">{fmtK(l.amount)}</div>
                   <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 8 }} onClick={() => setEditingLiab(l)}>
                     <Icon name="gear" size={14} />
+                  </button>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 6, color: 'var(--neg)' }} onClick={async () => { await onDeleteLiability(l.id); toast('Liability deleted'); }}>
+                    ×
                   </button>
                 </div>
               );

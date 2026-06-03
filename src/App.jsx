@@ -136,7 +136,9 @@ function AppInner() {
     const totalBudget = budgets.reduce((a, b) => a + b.limit_amount, 0);
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const dailyBudget = totalBudget / daysInMonth;
-    const todaySpend = expenses.filter(e => e.date === today).reduce((a, e) => a + Number(e.amount), 0);
+    const todaySpend = expenses
+      .filter(e => e.date === today && e.type !== 'income')
+      .reduce((a, e) => a + Number(e.amount), 0);
     if (todaySpend <= dailyBudget) {
       const wasStreakContinued = profile.last_streak_date === yesterdayStr;
       const newStreak = wasStreakContinued ? (profile.current_streak || 0) + 1 : 1;

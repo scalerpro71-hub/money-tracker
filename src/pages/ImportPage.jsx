@@ -40,11 +40,43 @@ function smartCategorize(note, categories) {
 }
 
 function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/).slice(0, MAX_IMPORT_ROWS + 1);
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase());
-  return lines.slice(1).map(line => {
-    const vals = line.split(',').map(v => v.replace(/"/g, '').trim());
+  const rows = [];
+  let field = '';
+  let row = [];
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (ch === '"' && quoted && next === '"') {
+      field += '"';
+      i++;
+    } else if (ch === '"') {
+      quoted = !quoted;
+    } else if (ch === ',' && !quoted) {
+      row.push(field.trim());
+      field = '';
+    } else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && next === '\n') i++;
+      row.push(field.trim());
+      if (row.some(v => v !== '')) rows.push(row);
+      field = '';
+      row = [];
+      if (rows.length > MAX_IMPORT_ROWS) break;
+    } else {
+      field += ch;
+    }
+  }
+
+  if (field || row.length) {
+    row.push(field.trim());
+    if (row.some(v => v !== '')) rows.push(row);
+  }
+
+  const limitedRows = rows.slice(0, MAX_IMPORT_ROWS + 1);
+  if (limitedRows.length < 2) return [];
+  const headers = limitedRows[0].map(h => h.replace(/^\uFEFF/, '').trim().toLowerCase());
+  return limitedRows.slice(1).map(vals => {
     const obj = {};
     headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
     return obj;
