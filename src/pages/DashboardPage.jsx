@@ -51,7 +51,7 @@ function generateInsights(monthTotal, savingsRate, income, budgets, categorySpen
   return insights.slice(0, 3);
 }
 
-export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddExpense }) {
+export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddExpense, onAddIncome, onPayBills }) {
   const availableMonths = useMemo(() => getAvailableMonths(expenses), [expenses]);
   const defaultMonth = useMemo(() => {
     const withData = availableMonths.find(m => expenses.some(e => e.date?.startsWith(m)));
@@ -188,10 +188,10 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
           <button className="ha solid" onClick={onAddExpense}>
             <Icon name="plus" size={15} />Add expense
           </button>
-          <button className="ha">
+          <button className="ha" onClick={onAddIncome}>
             <Icon name="arrowR" size={15} />Transfer
           </button>
-          <button className="ha">
+          <button className="ha" onClick={onPayBills}>
             <Icon name="wallet" size={15} />Pay bills
           </button>
         </div>

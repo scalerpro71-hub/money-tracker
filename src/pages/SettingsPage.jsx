@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { Modal } from '../components/layout/Modal';
 import { Icon } from '../components/layout/Icon';
@@ -25,7 +25,7 @@ const SUGGESTED_CATEGORIES = [
   { name: 'Other', icon: '🙏', color: '#6B7280', desc: 'Pooja/religious, donations, charity, pet, anything that doesn\'t fit above' },
 ];
 
-export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut }) {
+export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut, focusSection, onFocusHandled }) {
   const toast = useToast();
   const { theme, toggle: toggleTheme } = useTheme();
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
@@ -42,6 +42,15 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
   const [showAddBill, setShowAddBill] = useState(false);
   const [editingBill, setEditingBill] = useState(null);
   const [showSuggestedCats, setShowSuggestedCats] = useState(false);
+  const billsRef = useRef(null);
+
+  useEffect(() => {
+    if (focusSection !== 'bills') return;
+    requestAnimationFrame(() => {
+      billsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onFocusHandled?.();
+    });
+  }, [focusSection, onFocusHandled]);
 
   async function saveIncome(e) {
     e.preventDefault();
@@ -184,7 +193,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       </div>
 
       {/* Bill Reminders */}
-      <div className="card pad rise" style={{ '--d': '300ms', marginBottom: 18 }}>
+      <div ref={billsRef} className="card pad rise" style={{ '--d': '300ms', marginBottom: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div>
             <div className="eyebrow">Bill Reminders</div>

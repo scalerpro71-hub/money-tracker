@@ -77,6 +77,8 @@ function AppInner() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [tab, setTab] = useState('home');
   const [showAdd, setShowAdd] = useState(false);
+  const [addEntryType, setAddEntryType] = useState('expense');
+  const [settingsFocus, setSettingsFocus] = useState(null);
   const toast = useToast();
 
   const userId = user?.id;
@@ -154,10 +156,20 @@ function AppInner() {
   const userInitial = userName.charAt(0).toUpperCase();
   const mobileActive = MOBILE_IDS.has(tab) ? tab : 'more';
 
+  function openAddEntry(type = 'expense') {
+    setAddEntryType(type);
+    setShowAdd(true);
+  }
+
+  function openBillReminders() {
+    setSettingsFocus('bills');
+    setTab('settings');
+  }
+
   function renderPage() {
     switch (tab) {
       case 'home':
-        return <DashboardPage expenses={expenses} budgets={budgets} profile={profile} bills={bills} emis={emis} investments={investments} goals={goals} assets={assets} liabilities={liabilities} onAddExpense={() => setShowAdd(true)} />;
+        return <DashboardPage expenses={expenses} budgets={budgets} profile={profile} bills={bills} emis={emis} investments={investments} goals={goals} assets={assets} liabilities={liabilities} onAddExpense={() => openAddEntry('expense')} onAddIncome={() => openAddEntry('income')} onPayBills={openBillReminders} />;
       case 'insights':
         return <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} investments={investments} assets={assets} liabilities={liabilities} bills={bills} />;
       case 'txns':
@@ -183,6 +195,7 @@ function AppInner() {
             emis={emis} onAddEmi={addEmi} onUpdateEmi={updateEmi} onDeleteEmi={deleteEmi}
             bills={bills} onAddBill={addBill} onUpdateBill={updateBill} onDeleteBill={deleteBill}
             expenses={expenses} userId={userId} onSignOut={signOut}
+            focusSection={settingsFocus} onFocusHandled={() => setSettingsFocus(null)}
           />
         );
       case 'more':
@@ -257,7 +270,7 @@ function AppInner() {
             <button className="icon-btn tb-bell" title="Notifications">
               <Icon name="bell" size={18} />
             </button>
-            <button className="btn-accent" onClick={() => setShowAdd(true)}>
+            <button className="btn-accent" onClick={() => openAddEntry('expense')}>
               <Icon name="plus" size={16} />Add
             </button>
           </div>
@@ -291,6 +304,7 @@ function AppInner() {
       {showAdd && (
         <AddExpenseModal
           categories={categories}
+          initialType={addEntryType}
           onAdd={handleAddExpense}
           onClose={() => setShowAdd(false)}
         />

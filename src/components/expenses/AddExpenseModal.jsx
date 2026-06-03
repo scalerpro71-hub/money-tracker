@@ -8,9 +8,9 @@ const PAYMENT_MODES = [
   { value: 'netbanking', label: 'Bank' },
 ];
 
-export function AddExpenseModal({ categories, onAdd, onClose, initialData = null }) {
+export function AddExpenseModal({ categories, onAdd, onClose, initialData = null, initialType = 'expense' }) {
   const editing = !!initialData;
-  const [type, setType] = useState(initialData?.type || 'expense');
+  const [type, setType] = useState(initialData?.type || initialType);
   const [amountStr, setAmountStr] = useState(initialData?.amount?.toString() || '');
   const [categoryId, setCategoryId] = useState(initialData?.category_id || '');
   const [date, setDate] = useState(initialData?.date || todayStr());
