@@ -264,10 +264,10 @@ function AppInner() {
             <button className="icon-btn" onClick={toggleTheme} title="Toggle theme">
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
-            <button className="icon-btn tb-search" title="Search">
+            <button className="icon-btn tb-search" title="Search" onClick={() => toast('Search is coming soon')}>
               <Icon name="search" size={18} />
             </button>
-            <button className="icon-btn tb-bell" title="Notifications">
+            <button className="icon-btn tb-bell" title="Notifications" onClick={() => toast('No notifications yet')}>
               <Icon name="bell" size={18} />
             </button>
             <button className="btn-accent" onClick={() => openAddEntry('expense')}>

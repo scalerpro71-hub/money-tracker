@@ -33,9 +33,13 @@ function coachFallback(q, context) {
       : 'Set savings goals in the Goals tab to track your progress.';
   }
   if (q2.includes('save') || q2.includes('saving')) {
-    return rate !== null
-      ? `You're saving ${rate}% of income. The 30% rule suggests saving ₹${Math.round((context.income * 0.3) - (context.income - context.monthTotal))} more each month.`
-      : 'Set your monthly income in Settings for personalised savings advice.';
+    if (rate === null) return 'Set your monthly income in Settings for personalised savings advice.';
+    const saved = context.income - context.monthTotal;
+    const targetSaving = context.income * 0.3;
+    const extraNeeded = Math.max(0, Math.round(targetSaving - saved));
+    return extraNeeded > 0
+      ? `You're saving ${rate}% of income. The 30% rule suggests saving ₹${extraNeeded.toLocaleString('en-IN')} more each month.`
+      : `You're saving ${rate}% of income, which is already above the 30% savings target.`;
   }
   return `You've spent ${total} across ${count} transaction${count !== 1 ? 's' : ''} this month${rate !== null ? `, saving ${rate}% of income` : ''}.`;
 }

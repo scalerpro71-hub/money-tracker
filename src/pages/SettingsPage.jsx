@@ -25,6 +25,15 @@ const SUGGESTED_CATEGORIES = [
   { name: 'Other', icon: '🙏', color: '#6B7280', desc: 'Pooja/religious, donations, charity, pet, anything that doesn\'t fit above' },
 ];
 
+function ordinalDay(day) {
+  const n = Number(day);
+  if (!Number.isFinite(n)) return day;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  const suffix = n % 10 === 1 ? 'st' : n % 10 === 2 ? 'nd' : n % 10 === 3 ? 'rd' : 'th';
+  return `${n}${suffix}`;
+}
+
 export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut, focusSection, onFocusHandled }) {
   const toast = useToast();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -157,7 +166,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
             <div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{r.category?.icon} {r.name}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>
-                {fmtK(r.amount)} · {r.frequency === 'monthly' ? `${r.day_of_month}th of month` : `Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][r.day_of_week]}`}
+                {fmtK(r.amount)} · {r.frequency === 'monthly' ? `${ordinalDay(r.day_of_month)} of month` : `Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][r.day_of_week]}`}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -209,7 +218,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
           <div key={b.id} className="set-row" style={{ borderTop: '1px solid var(--hair)' }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{b.category?.icon || '💳'} {b.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{fmtK(b.amount)} · Due {b.due_day}th of month</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{fmtK(b.amount)} · Due {ordinalDay(b.due_day)} of month</div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setEditingBill(b)}><Icon name="gear" size={13} /></button>
