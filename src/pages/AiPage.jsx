@@ -236,7 +236,7 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
             </div>
             <div>
               <div className="chat-header-title">Rupee Coach</div>
-              <div className="chat-header-sub">Powered by Claude</div>
+              <div className="chat-header-sub">Powered by OpenAI</div>
             </div>
           </div>
 
