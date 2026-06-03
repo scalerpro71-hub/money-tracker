@@ -1,29 +1,18 @@
-import { useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { cur } from '../lib/formatUtils';
 import { supabase } from '../lib/supabase';
+import { callAiCategorize } from '../lib/claudeApi';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
+const AI_CATEGORIZE_BATCH_SIZE = 50;
 const ACCEPTED_EXTENSIONS = /\.(csv|xlsx|xls)$/i;
 const AMOUNT_COLS = ['withdrawal amount(inr)', 'debit', 'debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'dr amount', 'debit amount', 'amount', 'transaction amount'];
 const INCOME_COLS = ['deposit amount(inr)', 'credit', 'credit amt', 'deposit amount', 'cr amount', 'credit amount'];
 const DATE_COLS = ['transaction date', 'value date', 'date', 'txn date', 'posting date', 'trans date'];
 const NOTE_COLS = ['transaction remarks', 'description', 'narration', 'particulars', 'remarks', 'ref no./cheque no.'];
-
-const CAT_RULES = [
-  { keywords: ['swiggy', 'zomato', 'hotel', 'restaurant', 'cafe', 'coffee', 'biryani', 'food', 'bakery', 'dhaba', 'haldiram', 'domino', 'pizza', 'burger', 'kfc', 'mcdo', 'subway', 'juice', 'milk', 'dairy', 'grocer', 'bigbasket', 'blinkit', 'zepto', 'dunzo', 'instamart', 'vegetable', 'fruit'], cat: 'Food' },
-  { keywords: ['uber', 'ola', 'rapido', 'bus', 'train', 'irctc', 'petrol', 'fuel', 'parking', 'fastag', 'toll', 'metro', 'auto', 'cab'], cat: 'Transport' },
-  { keywords: ['rent', 'electricity', 'bescom', 'tsspdcl', 'water', 'maintenance', 'society', 'housing'], cat: 'Housing' },
-  { keywords: ['airtel', 'jio', 'vodafone', 'bsnl', 'recharge', 'netflix', 'prime', 'hotstar', 'spotify', 'youtube', 'internet', 'broadband', 'wifi', 'subscription'], cat: 'Utilities' },
-  { keywords: ['amazon', 'flipkart', 'myntra', 'meesho', 'ajio', 'nykaa', 'shopping', 'mall', 'reliance', 'dmart', 'big bazaar'], cat: 'Shopping' },
-  { keywords: ['apollo', 'medplus', 'pharma', 'medical', 'hospital', 'clinic', 'doctor', 'lab', 'diagnostic', 'medicine', 'thyrocare', 'gym', 'fitness'], cat: 'Health' },
-  { keywords: ['movie', 'cinema', 'pvr', 'inox', 'bookmyshow', 'gaming', 'game', 'pub', 'bar', 'club', 'party', 'event', 'concert'], cat: 'Entertainment' },
-  { keywords: ['flight', 'airline', 'indigo', 'spicejet', 'airindia', 'makemytrip', 'goibibo', 'cleartrip', 'oyo', 'airbnb', 'trip'], cat: 'Travel' },
-  { keywords: ['emi', 'loan', 'insurance', 'lic', 'sip', 'mutual fund', 'zerodha', 'groww', 'ppf', 'nps', 'fd'], cat: 'Finance' },
-  { keywords: ['neft', 'salary', 'payroll', 'payment received', 'credit'], cat: 'Income' },
-];
 
 const BANK_CHIPS = ['HDFC', 'ICICI', 'SBI', 'Axis', 'Kotak', 'PNB', 'BOI', 'Union'];
 
@@ -45,18 +34,6 @@ async function parseExcelOnServer(file) {
   }
   if (!data?.rows) throw new Error('Could not read this Excel file.');
   return data.rows;
-}
-
-function smartCategorize(note, categories) {
-  if (!note) return null;
-  const n = note.toLowerCase();
-  for (const rule of CAT_RULES) {
-    if (rule.keywords.some(k => n.includes(k))) {
-      const cat = categories.find(c => c.name.toLowerCase() === rule.cat.toLowerCase());
-      if (cat) return cat.id;
-    }
-  }
-  return null;
 }
 
 function parseCSV(text) {
@@ -126,16 +103,119 @@ function cleanNote(str) {
   return str.slice(0, 80);
 }
 
+function merchantKey(note) {
+  return (note || '')
+    .toLowerCase()
+    .replace(/upi\/|imps\/|neft\/|rtgs\/|ach\/|pos\/|ecom\//g, ' ')
+    .replace(/[0-9a-f]{8,}/g, ' ')
+    .replace(/\b\d+\b/g, ' ')
+    .replace(/[^a-z ]+/g, ' ')
+    .replace(/\b(ref|txn|upi|pay|payment|ltd|limited|pvt|private|india|bank)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 64);
+}
+
+function cacheKey(categories) {
+  const signature = categories
+    .map(c => `${c.id}:${c.name}`)
+    .sort()
+    .join('|');
+  return `rupee-import-ai-categories:${signature}`;
+}
+
+function loadCategoryCache(categories) {
+  try {
+    return JSON.parse(localStorage.getItem(cacheKey(categories)) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveCategoryCache(categories, cache) {
+  try {
+    localStorage.setItem(cacheKey(categories), JSON.stringify(cache));
+  } catch {
+    // Import still works if storage is unavailable.
+  }
+}
+
+async function aiCategorizeRows(rows, categories) {
+  const validCategoryIds = new Set(categories.map(c => c.id));
+  const cache = loadCategoryCache(categories);
+  const byMerchant = new Map();
+
+  for (const row of rows) {
+    if (row.type === 'income') continue;
+    const key = merchantKey(row.note);
+    if (!key) continue;
+    if (!byMerchant.has(key)) byMerchant.set(key, []);
+    byMerchant.get(key).push(row._id);
+  }
+
+  const assignments = {};
+  const missing = [];
+  for (const [key, ids] of byMerchant.entries()) {
+    if (cache[key] && validCategoryIds.has(cache[key])) {
+      ids.forEach(id => { assignments[id] = cache[key]; });
+    } else {
+      missing.push(key);
+    }
+  }
+
+  for (let i = 0; i < missing.length; i += AI_CATEGORIZE_BATCH_SIZE) {
+    const batch = missing.slice(i, i + AI_CATEGORIZE_BATCH_SIZE);
+    const results = await callAiCategorize(
+      batch.map(key => ({ id: key, description: key })),
+      categories.map(c => ({ id: c.id, name: c.name }))
+    );
+    for (const result of results) {
+      if (!validCategoryIds.has(result.category_id) || !byMerchant.has(result.id)) continue;
+      cache[result.id] = result.category_id;
+      byMerchant.get(result.id).forEach(id => { assignments[id] = result.category_id; });
+    }
+  }
+
+  saveCategoryCache(categories, cache);
+  return assignments;
+}
+
 export function ImportPage({ categories, onAdd }) {
   const [rows, setRows] = useState([]);
   const [selected, setSelected] = useState([]);
   const [catAssign, setCatAssign] = useState({});
+  const [aiCategorizedAttempted, setAiCategorizedAttempted] = useState(false);
+  const [aiCategorizing, setAiCategorizing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(0);
   const toast = useToast();
   const fileRef = useRef();
 
-  function processRows(parsed) {
+  const applyAiCategories = useCallback(async (validRows) => {
+    if (!validRows.length || !categories.length || aiCategorizing) return 0;
+    setAiCategorizedAttempted(true);
+    setAiCategorizing(true);
+    try {
+      toast('AI categorizing transactions...');
+      const autoAssign = await aiCategorizeRows(validRows, categories);
+      setCatAssign(current => ({ ...current, ...autoAssign }));
+      const count = Object.keys(autoAssign).length;
+      if (count > 0) toast(`${count} transactions AI-categorized`);
+      return count;
+    } catch {
+      toast('AI categorization unavailable. You can select categories manually.', 'error');
+      return 0;
+    } finally {
+      setAiCategorizing(false);
+    }
+  }, [aiCategorizing, categories, toast]);
+
+  useEffect(() => {
+    if (!rows.length || !categories.length || aiCategorizedAttempted) return;
+    applyAiCategories(rows);
+  }, [rows, categories, aiCategorizedAttempted, applyAiCategories]);
+
+  async function processRows(parsed) {
     const headers = parsed.length ? Object.keys(parsed[0]) : [];
     const amtCol = findCol(headers, AMOUNT_COLS);
     const incomeCol = findCol(headers, INCOME_COLS);
@@ -151,14 +231,13 @@ export function ImportPage({ categories, onAdd }) {
       return { _id: i, amount, type: isIncome ? 'income' : 'expense', date: dateCol ? parseDate(row[dateCol]) : null, note, raw: row };
     }).filter(r => r && r.amount && r.date);
 
-    const autoAssign = {};
-    for (const r of valid) {
-      const catId = smartCategorize(r.note, categories);
-      if (catId) autoAssign[r._id] = catId;
+    setRows(valid); setSelected(valid.map(r => r._id)); setCatAssign({}); setAiCategorizedAttempted(false); setDone(0);
+    if (valid.length === 0) {
+      toast('No valid transactions found. Check column names.', 'error');
+    } else {
+      const count = categories.length ? await applyAiCategories(valid) : 0;
+      toast(`${valid.length} transactions loaded · ${count} AI-categorized`);
     }
-    setRows(valid); setSelected(valid.map(r => r._id)); setCatAssign(autoAssign); setDone(0);
-    if (valid.length === 0) toast('No valid transactions found. Check column names.', 'error');
-    else toast(`${valid.length} transactions loaded · ${Object.keys(autoAssign).length} auto-categorized`);
   }
 
   async function handleFile(e) {
@@ -176,15 +255,15 @@ export function ImportPage({ categories, onAdd }) {
     if (isExcel) {
       try {
         toast('Reading Excel securely...');
-        processRows(await parseExcelOnServer(file));
+        await processRows(await parseExcelOnServer(file));
       } catch (err) {
         toast(err.message || 'Could not read this Excel file. Try exporting it as CSV.', 'error');
       }
     } else {
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         try {
-          processRows(parseCSV(ev.target.result));
+          await processRows(parseCSV(ev.target.result));
         } catch {
           toast('Could not read this CSV file.', 'error');
         }
@@ -193,7 +272,7 @@ export function ImportPage({ categories, onAdd }) {
     }
   }
 
-  function handleCancel() { setRows([]); setSelected([]); setCatAssign({}); setDone(0); if (fileRef.current) fileRef.current.value = ''; }
+  function handleCancel() { setRows([]); setSelected([]); setCatAssign({}); setAiCategorizedAttempted(false); setDone(0); if (fileRef.current) fileRef.current.value = ''; }
   function toggleRow(id) { setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]); }
   function toggleAll() { setSelected(s => s.length === rows.length ? [] : rows.map(r => r._id)); }
 
@@ -204,7 +283,7 @@ export function ImportPage({ categories, onAdd }) {
     for (const row of toImport) {
       try { await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' }, true); count++; } catch (err) { toast(err.message, 'error'); }
     }
-    setImporting(false); setDone(count); setRows([]); setSelected([]); setCatAssign({});
+    setImporting(false); setDone(count); setRows([]); setSelected([]); setCatAssign({}); setAiCategorizedAttempted(false);
     toast(`${count} transactions imported!`);
   }
 
@@ -238,7 +317,7 @@ export function ImportPage({ categories, onAdd }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 15 }}>{rows.length} transactions found</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{selected.length} selected · {categorizedCount} auto-categorized</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{selected.length} selected · {categorizedCount} AI-categorized{aiCategorizing ? ' · working...' : ''}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn-ghost" style={{ padding: '9px 14px' }} onClick={handleCancel}>Cancel</button>
