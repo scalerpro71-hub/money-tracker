@@ -51,7 +51,10 @@ async function callOpenAI(prompt: string) {
       model: OPENAI_MODEL,
       instructions: 'Return only valid JSON. Do not include markdown, prose, or code fences.',
       input: [{ role: 'user', content: prompt }],
-      max_output_tokens: 1024,
+      reasoning: { effort: 'minimal' },
+      text: { verbosity: 'low' },
+      max_output_tokens: 400,
+      store: false,
     }),
   });
 
