@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { cur } from '../lib/formatUtils';
-import * as XLSX from 'xlsx';
+import { supabase } from '../lib/supabase';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
@@ -26,6 +26,26 @@ const CAT_RULES = [
 ];
 
 const BANK_CHIPS = ['HDFC', 'ICICI', 'SBI', 'Axis', 'Kotak', 'PNB', 'BOI', 'Union'];
+
+async function parseExcelOnServer(file) {
+  const form = new FormData();
+  form.append('file', file);
+  const { data, error } = await supabase.functions.invoke('parse-bank-statement', {
+    body: form,
+  });
+  if (error) {
+    let message = error.message;
+    try {
+      const details = await error.context?.json?.();
+      message = details?.error || message;
+    } catch {
+      // Keep the Supabase error message if the response body is not JSON.
+    }
+    throw new Error(message || 'Could not read this Excel file.');
+  }
+  if (!data?.rows) throw new Error('Could not read this Excel file.');
+  return data.rows;
+}
 
 function smartCategorize(note, categories) {
   if (!note) return null;
@@ -141,7 +161,7 @@ export function ImportPage({ categories, onAdd }) {
     else toast(`${valid.length} transactions loaded · ${Object.keys(autoAssign).length} auto-categorized`);
   }
 
-  function handleFile(e) {
+  async function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
     if (!ACCEPTED_EXTENSIONS.test(file.name)) {
@@ -153,37 +173,15 @@ export function ImportPage({ categories, onAdd }) {
       return;
     }
     const isExcel = /\.(xlsx|xls)$/i.test(file.name);
-    const reader = new FileReader();
     if (isExcel) {
-      reader.onload = (ev) => {
-        try {
-        const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true, sheetRows: MAX_IMPORT_ROWS + 25 });
-        const firstSheet = wb.SheetNames[0];
-        if (!firstSheet) {
-          toast('No sheet found in this workbook.', 'error');
-          return;
-        }
-        const ws = wb.Sheets[firstSheet];
-        const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false }).slice(0, MAX_IMPORT_ROWS + 25);
-        const mustHaveOne = ['withdrawal', 'debit', 'credit', 'amount(inr)', 'dr amount', 'debit amt'];
-        const mustHaveDate = ['value date', 'transaction date', 'txn date', 'posting date'];
-        let headerIdx = 0;
-        for (let i = 0; i < Math.min(rawRows.length, 25); i++) {
-          const rowStr = rawRows[i].join(' ').toLowerCase();
-          if (mustHaveOne.some(k => rowStr.includes(k)) && mustHaveDate.some(k => rowStr.includes(k))) { headerIdx = i; break; }
-        }
-        const hdrs = rawRows[headerIdx].map(h => String(h).toLowerCase().trim());
-        const parsed = rawRows.slice(headerIdx + 1)
-          .slice(0, MAX_IMPORT_ROWS)
-          .filter(row => row.some(cell => String(cell).trim() !== ''))
-          .map(row => { const out = {}; hdrs.forEach((h, i) => { if (h) out[h] = String(row[i] ?? '').trim(); }); return out; });
-        processRows(parsed);
-        } catch {
-          toast('Could not read this Excel file. Try exporting it as CSV.', 'error');
-        }
-      };
-      reader.readAsArrayBuffer(file);
+      try {
+        toast('Reading Excel securely...');
+        processRows(await parseExcelOnServer(file));
+      } catch (err) {
+        toast(err.message || 'Could not read this Excel file. Try exporting it as CSV.', 'error');
+      }
     } else {
+      const reader = new FileReader();
       reader.onload = (ev) => {
         try {
           processRows(parseCSV(ev.target.result));
