@@ -231,10 +231,6 @@ function AppInner() {
           ))}
         </nav>
         <div className="rail-spacer" />
-        <button className="rail-link" onClick={toggleTheme}>
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={20} />
-          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        </button>
         <div className="rail-card">
           <div className="rail-user">
             <div className="avatar">{userInitial}</div>
