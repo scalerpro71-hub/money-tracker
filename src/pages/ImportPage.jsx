@@ -3,12 +3,9 @@ import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { cur } from '../lib/formatUtils';
 import { supabase } from '../lib/supabase';
-import { callAiCategorize } from '../lib/claudeApi';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
-const AI_CATEGORIZE_BATCH_SIZE = 25;
-const AI_CATEGORY_CACHE_VERSION = 3;
 const ACCEPTED_EXTENSIONS = /\.(csv|xlsx|xls)$/i;
 const AMOUNT_COLS = ['withdrawal amount(inr)', 'debit', 'debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'dr amount', 'debit amount', 'amount', 'transaction amount'];
 const INCOME_COLS = ['deposit amount(inr)', 'credit', 'credit amt', 'deposit amount', 'cr amount', 'credit amount'];
@@ -117,30 +114,6 @@ function merchantKey(note) {
     .slice(0, 64);
 }
 
-function cacheKey(categories) {
-  const signature = categories
-    .map(c => `${c.id}:${c.name}`)
-    .sort()
-    .join('|');
-  return `rupee-import-ai-categories:v${AI_CATEGORY_CACHE_VERSION}:${signature}`;
-}
-
-function loadCategoryCache(categories) {
-  try {
-    return JSON.parse(localStorage.getItem(cacheKey(categories)) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function saveCategoryCache(categories, cache) {
-  try {
-    localStorage.setItem(cacheKey(categories), JSON.stringify(cache));
-  } catch {
-    // Import still works if storage is unavailable.
-  }
-}
-
 function findCategory(categories, preferredNames) {
   const normalized = categories.map(c => ({ ...c, key: c.name.toLowerCase().trim() }));
   for (const name of preferredNames) {
@@ -185,10 +158,8 @@ function categoryByMerchant(note, key, categories) {
   return null;
 }
 
-async function aiCategorizeRows(rows, categories) {
+function categorizeRowsByRules(rows, categories) {
   const validCategoryIds = new Set(categories.map(c => c.id));
-  const cache = loadCategoryCache(categories);
-  const byMerchant = new Map();
   const assignments = {};
 
   for (const row of rows) {
@@ -198,46 +169,9 @@ async function aiCategorizeRows(rows, categories) {
     const ruleCategory = categoryByMerchant(row.note, key, categories);
     if (ruleCategory && validCategoryIds.has(ruleCategory)) {
       assignments[row._id] = ruleCategory;
-      cache[key] = ruleCategory;
-      continue;
-    }
-    if (!byMerchant.has(key)) {
-      byMerchant.set(key, { ids: [], description: row.note || key, amount: row.amount });
-    }
-    byMerchant.get(key).ids.push(row._id);
-  }
-
-  const missing = [];
-  for (const [key, merchant] of byMerchant.entries()) {
-    if (cache[key] && validCategoryIds.has(cache[key])) {
-      merchant.ids.forEach(id => { assignments[id] = cache[key]; });
-    } else {
-      missing.push(key);
     }
   }
 
-  for (let i = 0; i < missing.length; i += AI_CATEGORIZE_BATCH_SIZE) {
-    const batch = missing.slice(i, i + AI_CATEGORIZE_BATCH_SIZE);
-    const results = await callAiCategorize(
-      batch.map(key => {
-        const merchant = byMerchant.get(key);
-        return {
-          id: key,
-          description: merchant?.description || key,
-          merchant: key,
-          amount: merchant?.amount || null,
-        };
-      }),
-      categories.map(c => ({ id: c.id, name: c.name }))
-    );
-    for (const result of results) {
-      if (!validCategoryIds.has(result.category_id) || !byMerchant.has(result.id)) continue;
-      cache[result.id] = result.category_id;
-      byMerchant.get(result.id).ids.forEach(id => { assignments[id] = result.category_id; });
-    }
-  }
-
-  saveCategoryCache(categories, cache);
   return assignments;
 }
 
@@ -245,36 +179,26 @@ export function ImportPage({ categories, onAdd }) {
   const [rows, setRows] = useState([]);
   const [selected, setSelected] = useState([]);
   const [catAssign, setCatAssign] = useState({});
-  const [aiCategorizedAttempted, setAiCategorizedAttempted] = useState(false);
-  const [aiCategorizing, setAiCategorizing] = useState(false);
+  const [autoCategorizedAttempted, setAutoCategorizedAttempted] = useState(false);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(0);
   const toast = useToast();
   const fileRef = useRef();
 
-  const applyAiCategories = useCallback(async (validRows) => {
-    if (!validRows.length || !categories.length || aiCategorizing) return 0;
-    setAiCategorizedAttempted(true);
-    setAiCategorizing(true);
-    try {
-      toast('AI categorizing transactions...');
-      const autoAssign = await aiCategorizeRows(validRows, categories);
-      setCatAssign(current => ({ ...current, ...autoAssign }));
-      const count = Object.keys(autoAssign).length;
-      if (count > 0) toast(`${count} transactions AI-categorized`);
-      return count;
-    } catch {
-      toast('AI categorization unavailable. You can select categories manually.', 'error');
-      return 0;
-    } finally {
-      setAiCategorizing(false);
-    }
-  }, [aiCategorizing, categories, toast]);
+  const applyRuleCategories = useCallback((validRows) => {
+    if (!validRows.length || !categories.length) return 0;
+    setAutoCategorizedAttempted(true);
+    const autoAssign = categorizeRowsByRules(validRows, categories);
+    setCatAssign(current => ({ ...current, ...autoAssign }));
+    const count = Object.keys(autoAssign).length;
+    if (count > 0) toast(`${count} transactions auto-categorized`);
+    return count;
+  }, [categories, toast]);
 
   useEffect(() => {
-    if (!rows.length || !categories.length || aiCategorizedAttempted) return;
-    applyAiCategories(rows);
-  }, [rows, categories, aiCategorizedAttempted, applyAiCategories]);
+    if (!rows.length || !categories.length || autoCategorizedAttempted) return;
+    applyRuleCategories(rows);
+  }, [rows, categories, autoCategorizedAttempted, applyRuleCategories]);
 
   async function processRows(parsed) {
     const headers = parsed.length ? Object.keys(parsed[0]) : [];
@@ -292,12 +216,12 @@ export function ImportPage({ categories, onAdd }) {
       return { _id: i, amount, type: isIncome ? 'income' : 'expense', date: dateCol ? parseDate(row[dateCol]) : null, note, raw: row };
     }).filter(r => r && r.amount && r.date);
 
-    setRows(valid); setSelected(valid.map(r => r._id)); setCatAssign({}); setAiCategorizedAttempted(false); setDone(0);
+    setRows(valid); setSelected(valid.map(r => r._id)); setCatAssign({}); setAutoCategorizedAttempted(false); setDone(0);
     if (valid.length === 0) {
       toast('No valid transactions found. Check column names.', 'error');
     } else {
-      const count = categories.length ? await applyAiCategories(valid) : 0;
-      toast(`${valid.length} transactions loaded · ${count} AI-categorized`);
+      const count = categories.length ? applyRuleCategories(valid) : 0;
+      toast(`${valid.length} transactions loaded · ${count} auto-categorized`);
     }
   }
 
@@ -333,7 +257,7 @@ export function ImportPage({ categories, onAdd }) {
     }
   }
 
-  function handleCancel() { setRows([]); setSelected([]); setCatAssign({}); setAiCategorizedAttempted(false); setDone(0); if (fileRef.current) fileRef.current.value = ''; }
+  function handleCancel() { setRows([]); setSelected([]); setCatAssign({}); setAutoCategorizedAttempted(false); setDone(0); if (fileRef.current) fileRef.current.value = ''; }
   function toggleRow(id) { setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]); }
   function toggleAll() { setSelected(s => s.length === rows.length ? [] : rows.map(r => r._id)); }
 
@@ -344,7 +268,7 @@ export function ImportPage({ categories, onAdd }) {
     for (const row of toImport) {
       try { await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' }, true); count++; } catch (err) { toast(err.message, 'error'); }
     }
-    setImporting(false); setDone(count); setRows([]); setSelected([]); setCatAssign({}); setAiCategorizedAttempted(false);
+    setImporting(false); setDone(count); setRows([]); setSelected([]); setCatAssign({}); setAutoCategorizedAttempted(false);
     toast(`${count} transactions imported!`);
   }
 
@@ -378,7 +302,7 @@ export function ImportPage({ categories, onAdd }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 15 }}>{rows.length} transactions found</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{selected.length} selected · {categorizedCount} AI-categorized{aiCategorizing ? ' · working...' : ''}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>{selected.length} selected · {categorizedCount} auto-categorized</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn-ghost" style={{ padding: '9px 14px' }} onClick={handleCancel}>Cancel</button>
@@ -397,18 +321,17 @@ export function ImportPage({ categories, onAdd }) {
           <div className="card">
             {rows.map(row => {
               const cat = categories.find(c => c.id === catAssign[row._id]);
-              const matchPct = cat ? 70 + (row._id % 25) : 0;
               return (
                 <div key={row._id} className="import-preview-item" style={{ padding: '12px 16px' }}>
                   <input type="checkbox" checked={selected.includes(row._id)} onChange={() => toggleRow(row._id)} style={{ marginRight: 4 }} />
                   <div className="txn-ico" style={{ fontSize: 18 }}>{cat?.icon || '💳'}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.note || '—'}</div>
-                    {cat && <div className="import-match">{cat.name} · {matchPct}% match</div>}
-                    {!cat && <select className="mini-select" style={{ marginTop: 4, fontSize: 12, padding: '4px 8px' }} value={catAssign[row._id] || ''} onChange={e => setCatAssign(c => ({ ...c, [row._id]: e.target.value }))}>
+                    {cat && <div className="import-match">{cat.name} · rule match</div>}
+                    <select className="mini-select" style={{ marginTop: 4, fontSize: 12, padding: '4px 8px' }} value={catAssign[row._id] || ''} onChange={e => setCatAssign(c => ({ ...c, [row._id]: e.target.value }))}>
                       <option value="">Select category</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                    </select>}
+                    </select>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div className={`txn-amt${row.type === 'income' ? ' income' : ''}`}>{row.type === 'income' ? '+' : '–'}<span className="num">{cur(row.amount)}</span></div>
