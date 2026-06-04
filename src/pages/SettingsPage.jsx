@@ -40,6 +40,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
   const [income, setIncome] = useState(profile?.monthly_income?.toString() || '');
   const [payday, setPayday] = useState(profile?.payday_day?.toString() || '');
+  const [editingMoneySetup, setEditingMoneySetup] = useState(!profile?.monthly_income);
   const [showAddCat, setShowAddCat] = useState(false);
   const [catName, setCatName] = useState('');
   const [catIcon, setCatIcon] = useState('💰');
@@ -54,6 +55,12 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
   const billsRef = useRef(null);
 
   useEffect(() => {
+    setIncome(profile?.monthly_income?.toString() || '');
+    setPayday(profile?.payday_day?.toString() || '');
+    setEditingMoneySetup(!profile?.monthly_income);
+  }, [profile?.monthly_income, profile?.payday_day]);
+
+  useEffect(() => {
     if (focusSection !== 'bills') return;
     requestAnimationFrame(() => {
       billsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -63,7 +70,14 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
 
   async function saveIncome(e) {
     e.preventDefault();
-    await onUpdateProfile({ monthly_income: Number(income) || null, payday_day: Number(payday) || null });
+    const nextIncome = Number(income) || 0;
+    const currentBudgetTotal = budgets.reduce((a, b) => a + Number(b.limit_amount || 0), 0);
+    if (nextIncome > 0 && currentBudgetTotal > nextIncome) {
+      toast(`Your current budgets total ₹${currentBudgetTotal.toLocaleString('en-IN')}, which is above this salary. Reduce budgets first.`, 'error');
+      return;
+    }
+    await onUpdateProfile({ monthly_income: nextIncome || null, payday_day: Number(payday) || null });
+    setEditingMoneySetup(false);
     toast('Profile saved');
   }
 
@@ -97,40 +111,68 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
 
       {/* Money setup */}
       <div className="card pad rise" style={{ '--d': '60ms', marginBottom: 18 }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>Money Setup</div>
-        <form onSubmit={saveIncome}>
-          <div className="set-row">
-            <div className="set-ico"><Icon name="wallet" size={18} /></div>
-            <div style={{ flex: 1 }}>
-              <div className="set-label">Monthly income</div>
-              <div className="set-sub">Used for savings-rate &amp; forecasts</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div className="eyebrow">Money Setup</div>
+          {!editingMoneySetup && (
+            <button className="btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => setEditingMoneySetup(true)}>
+              <Icon name="gear" size={13} />Edit
+            </button>
+          )}
+        </div>
+        {!editingMoneySetup ? (
+          <>
+            <div className="set-row">
+              <div className="set-ico"><Icon name="wallet" size={18} /></div>
+              <div style={{ flex: 1 }}>
+                <div className="set-label">Monthly income</div>
+                <div className="set-sub">Used for savings-rate &amp; forecasts</div>
+              </div>
+              <span className="num" style={{ fontWeight: 800 }}>{fmtK(Number(profile?.monthly_income || 0))}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>₹</span>
-              <input
-                type="number" inputMode="decimal" placeholder="50000" value={income}
-                onChange={e => setIncome(e.target.value)} min="1"
-                style={{ width: 110, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'right' }}
-              />
+            <div className="set-row">
+              <div className="set-ico"><Icon name="calendar" size={18} /></div>
+              <div style={{ flex: 1 }}>
+                <div className="set-label">Salary date</div>
+                <div className="set-sub">For pay-cycle countdown</div>
+              </div>
+              <span className="set-val">{profile?.payday_day ? ordinalDay(profile.payday_day) + ' of month' : 'Not set'}</span>
             </div>
-          </div>
-          <div className="set-row">
-            <div className="set-ico"><Icon name="calendar" size={18} /></div>
-            <div style={{ flex: 1 }}>
-              <div className="set-label">Salary date</div>
-              <div className="set-sub">For pay-cycle countdown</div>
+          </>
+        ) : (
+          <form onSubmit={saveIncome}>
+            <div className="set-row">
+              <div className="set-ico"><Icon name="wallet" size={18} /></div>
+              <div style={{ flex: 1 }}>
+                <div className="set-label">Monthly income</div>
+                <div className="set-sub">Used for savings-rate &amp; forecasts</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>₹</span>
+                <input
+                  type="number" inputMode="decimal" placeholder="50000" value={income}
+                  onChange={e => setIncome(e.target.value)} min="1"
+                  style={{ width: 110, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'right' }}
+                />
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <input
-                type="number" inputMode="numeric" placeholder="1" value={payday}
-                onChange={e => setPayday(e.target.value)} min="1" max="31"
-                style={{ width: 54, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'center' }}
-              />
-              <span className="set-val">of month</span>
+            <div className="set-row">
+              <div className="set-ico"><Icon name="calendar" size={18} /></div>
+              <div style={{ flex: 1 }}>
+                <div className="set-label">Salary date</div>
+                <div className="set-sub">For pay-cycle countdown</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="number" inputMode="numeric" placeholder="1" value={payday}
+                  onChange={e => setPayday(e.target.value)} min="1" max="31"
+                  style={{ width: 54, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'center' }}
+                />
+                <span className="set-val">of month</span>
+              </div>
             </div>
-          </div>
-          <button type="submit" className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '11px', marginTop: 8 }}>Save Setup</button>
-        </form>
+            <button type="submit" className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '11px', marginTop: 8 }}>Save Setup</button>
+          </form>
+        )}
       </div>
 
       {/* Monthly Budgets */}
@@ -344,7 +386,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       )}
 
       {showBudgets && (
-        <BudgetEditModal categories={categories} budgets={budgets} onUpsert={onUpsertBudget} onClose={() => setShowBudgets(false)} />
+        <BudgetEditModal categories={categories} budgets={budgets} monthlyIncome={Number(profile?.monthly_income) || 0} onUpsert={onUpsertBudget} onClose={() => setShowBudgets(false)} />
       )}
 
       {showSuggestedCats && (
@@ -443,7 +485,7 @@ function AddRecurringModal({ categories, onAdd, onClose }) {
   );
 }
 
-function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
+function BudgetEditModal({ categories, budgets, monthlyIncome, onUpsert, onClose }) {
   const [values, setValues] = useState(() => {
     const m = {};
     for (const b of budgets) m[b.category_id] = b.limit_amount.toString();
@@ -452,6 +494,10 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
   const toast = useToast();
 
   async function handleSave() {
+    if (monthlyIncome > 0 && total > monthlyIncome) {
+      toast(`Total budgets cannot exceed your salary of ₹${monthlyIncome.toLocaleString('en-IN')}`, 'error');
+      return;
+    }
     for (const [catId, val] of Object.entries(values)) {
       if (val && Number(val) > 0) await onUpsert(catId, Number(val));
     }
@@ -500,11 +546,17 @@ function BudgetEditModal({ categories, budgets, onUpsert, onClose }) {
         })}
       </div>
       {total > 0 && (
-        <div className="budget-edit-total">
+        <div className="budget-edit-total" style={monthlyIncome > 0 && total > monthlyIncome ? { color: 'var(--neg)' } : {}}>
           Total budget: <strong>₹{total.toLocaleString('en-IN')}/mo</strong>
+          {monthlyIncome > 0 && <span> · Salary: ₹{monthlyIncome.toLocaleString('en-IN')}/mo</span>}
+          {monthlyIncome > 0 && total > monthlyIncome && (
+            <div style={{ marginTop: 6, fontWeight: 700 }}>
+              Reduce budgets by ₹{(total - monthlyIncome).toLocaleString('en-IN')} to save.
+            </div>
+          )}
         </div>
       )}
-      <button className="btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={handleSave}>
+      <button className="btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={handleSave} disabled={monthlyIncome > 0 && total > monthlyIncome}>
         Save Budgets
       </button>
     </Modal>
