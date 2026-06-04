@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const OPENAI_MODEL = 'gpt-5-nano';
+const OPENAI_MODEL = 'gpt-5-mini';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,7 +53,7 @@ async function callOpenAI(prompt: string) {
       input: [{ role: 'user', content: prompt }],
       reasoning: { effort: 'minimal' },
       text: { verbosity: 'low' },
-      max_output_tokens: 400,
+      max_output_tokens: 1200,
       store: false,
     }),
   });
@@ -87,6 +87,20 @@ function parseCategoryResults(text: string, validTransactionIds: Set<string>, va
     .map((item) => ({ id: item.id, category_id: item.category_id }));
 }
 
+function categoryGuide(name: string) {
+  const key = name.toLowerCase();
+  if (key.includes('food')) return 'restaurants, Swiggy, Zomato, groceries, vegetables, milk, cafes, tea, snacks';
+  if (key.includes('transport')) return 'Uber, Ola, Rapido, auto, cab, metro, train, bus, petrol, diesel, fuel, parking, tolls';
+  if (key.includes('shopping')) return 'Amazon, Flipkart, Myntra, Ajio, clothes, footwear, electronics, stores, online purchases';
+  if (key.includes('entertainment')) return 'Netflix, Prime Video, Hotstar, Spotify, movies, games, events, bars, subscriptions';
+  if (key.includes('health')) return 'hospital, doctor, pharmacy, medicines, lab tests, medical insurance';
+  if (key.includes('util')) return 'electricity, water, gas, broadband, internet, mobile recharge, DTH, phone bills';
+  if (key.includes('rent')) return 'house rent, flat rent, landlord, maintenance';
+  if (key.includes('education')) return 'school, college, course, tuition, books, exam fees, learning apps';
+  if (key.includes('other')) return 'only use when no provided category is a reasonable fit';
+  return 'use when the merchant or description clearly matches this custom category';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -101,15 +115,33 @@ Deno.serve(async (req) => {
 
     const validTransactionIds = new Set(transactions.map((t: { id: string }) => String(t.id)));
     const validCategoryIds = new Set(categories.map((c: { id: string }) => String(c.id)));
-    const prompt = `You are categorizing Indian financial transactions. Given transactions and available categories, assign the best category to each transaction.
+    const prompt = `You are categorizing Indian bank statement transactions for a personal expense tracker.
+Choose the most accurate category_id from the user's available categories.
 
-Available categories: ${categories.map((c: { id: string; name: string }) => `${c.id}:${c.name}`).join(', ')}
+Available categories:
+${categories.map((c: { id: string; name: string }) => `- ${c.id}: ${c.name} (${categoryGuide(c.name)})`).join('\n')}
 
-Transactions to categorize (id: description):
-${transactions.map((t: { id: string; description: string }) => `${t.id}: ${t.description}`).join('\n')}
+Indian merchant clues:
+- SWIGGY, ZOMATO, restaurant, cafe, grocery, mart, milk, vegetable -> Food when Food exists.
+- UBER, OLA, RAPIDO, metro, train, bus, fuel, petrol, parking, toll -> Transport when Transport exists.
+- AMAZON, FLIPKART, MYNTRA, AJIO, retail stores -> Shopping when Shopping exists.
+- NETFLIX, SPOTIFY, PRIME, HOTSTAR, cinema, movie, gaming -> Entertainment when Entertainment exists.
+- APOLLO, PHARMEASY, hospital, clinic, doctor, pharmacy -> Health when Health exists.
+- AIRTEL, JIO, VI, BESCOM, electricity, gas, broadband, recharge -> Utilities when Utilities exists.
+- school, college, course, Udemy, Coursera, books -> Education when Education exists.
+- rent, landlord, flat maintenance -> Rent when Rent exists.
+
+Rules:
+- Return one result for every transaction id.
+- Use "Other" only when no specific available category reasonably fits.
+- Ignore payment rails and bank words such as UPI, IMPS, NEFT, POS, ACH, ECOM, ref, txn, pay, bank.
+- Do not invent category ids.
+
+Transactions to categorize:
+${transactions.map((t: { id: string; description: string; merchant?: string; amount?: number }) => `- id=${t.id}; merchant=${t.merchant || ''}; description=${t.description}; amount=${t.amount ?? ''}`).join('\n')}
 
 Return only a JSON array like [{"id":"transaction-id","category_id":"category-id"}].
-Match each transaction id to one provided category_id. If unsure, pick the closest match.`;
+Match each transaction id to one provided category_id.`;
 
     const text = await callOpenAI(prompt);
     const results = parseCategoryResults(text, validTransactionIds, validCategoryIds);

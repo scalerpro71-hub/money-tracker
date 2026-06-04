@@ -7,7 +7,8 @@ import { callAiCategorize } from '../lib/claudeApi';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
-const AI_CATEGORIZE_BATCH_SIZE = 50;
+const AI_CATEGORIZE_BATCH_SIZE = 25;
+const AI_CATEGORY_CACHE_VERSION = 2;
 const ACCEPTED_EXTENSIONS = /\.(csv|xlsx|xls)$/i;
 const AMOUNT_COLS = ['withdrawal amount(inr)', 'debit', 'debit amt', 'withdrawal amt (inr)', 'withdrawal amount', 'dr amount', 'debit amount', 'amount', 'transaction amount'];
 const INCOME_COLS = ['deposit amount(inr)', 'credit', 'credit amt', 'deposit amount', 'cr amount', 'credit amount'];
@@ -121,7 +122,7 @@ function cacheKey(categories) {
     .map(c => `${c.id}:${c.name}`)
     .sort()
     .join('|');
-  return `rupee-import-ai-categories:${signature}`;
+  return `rupee-import-ai-categories:v${AI_CATEGORY_CACHE_VERSION}:${signature}`;
 }
 
 function loadCategoryCache(categories) {
@@ -149,15 +150,17 @@ async function aiCategorizeRows(rows, categories) {
     if (row.type === 'income') continue;
     const key = merchantKey(row.note);
     if (!key) continue;
-    if (!byMerchant.has(key)) byMerchant.set(key, []);
-    byMerchant.get(key).push(row._id);
+    if (!byMerchant.has(key)) {
+      byMerchant.set(key, { ids: [], description: row.note || key, amount: row.amount });
+    }
+    byMerchant.get(key).ids.push(row._id);
   }
 
   const assignments = {};
   const missing = [];
-  for (const [key, ids] of byMerchant.entries()) {
+  for (const [key, merchant] of byMerchant.entries()) {
     if (cache[key] && validCategoryIds.has(cache[key])) {
-      ids.forEach(id => { assignments[id] = cache[key]; });
+      merchant.ids.forEach(id => { assignments[id] = cache[key]; });
     } else {
       missing.push(key);
     }
@@ -166,13 +169,21 @@ async function aiCategorizeRows(rows, categories) {
   for (let i = 0; i < missing.length; i += AI_CATEGORIZE_BATCH_SIZE) {
     const batch = missing.slice(i, i + AI_CATEGORIZE_BATCH_SIZE);
     const results = await callAiCategorize(
-      batch.map(key => ({ id: key, description: key })),
+      batch.map(key => {
+        const merchant = byMerchant.get(key);
+        return {
+          id: key,
+          description: merchant?.description || key,
+          merchant: key,
+          amount: merchant?.amount || null,
+        };
+      }),
       categories.map(c => ({ id: c.id, name: c.name }))
     );
     for (const result of results) {
       if (!validCategoryIds.has(result.category_id) || !byMerchant.has(result.id)) continue;
       cache[result.id] = result.category_id;
-      byMerchant.get(result.id).forEach(id => { assignments[id] = result.category_id; });
+      byMerchant.get(result.id).ids.forEach(id => { assignments[id] = result.category_id; });
     }
   }
 
