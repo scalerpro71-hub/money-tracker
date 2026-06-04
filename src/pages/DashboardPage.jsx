@@ -71,7 +71,8 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
   const monthTotal = monthExpenses.reduce((a, e) => a + Number(e.amount), 0);
   const income = Number(profile?.monthly_income) || monthIncome;
   const totalBudget = budgets.reduce((a, b) => a + b.limit_amount, 0);
-  const spendable = totalBudget > 0 ? totalBudget - monthTotal : income - monthTotal;
+  const incomeRemaining = income - monthTotal;
+  const budgetRemaining = totalBudget - monthTotal;
   const budgetPct = totalBudget > 0 ? Math.round((monthTotal / totalBudget) * 100) : 0;
   const savingsRate = income > 0 ? Math.round(((income - monthTotal) / income) * 100) : null;
   const saved = income > 0 ? income - monthTotal : 0;
@@ -134,7 +135,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   const dayOfMonth = today.getDate();
   const dailySafe = totalBudget > 0 && daysLeftInMonth() > 0
-    ? Math.max(0, spendable / daysLeftInMonth())
+    ? Math.max(0, budgetRemaining / daysLeftInMonth())
     : null;
   const projected = isCurrentMonth && dayOfMonth > 0
     ? Math.round((monthTotal / dayOfMonth) * daysInMonth)
@@ -163,12 +164,14 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
         </div>
         <div className="hero-bal">
           <span className="cur">₹</span>
-          <span className="num">{fmtK(Math.abs(spendable))}</span>
+          <span className="num">{fmtK(Math.max(0, incomeRemaining))}</span>
         </div>
         <div className="hero-sub">
-          {totalBudget > 0
-            ? `of ${cur(totalBudget)} budget · ${budgetPct}% used${isCurrentMonth ? ` · resets in ${daysLeftInMonth()} days` : ''}`
-            : monthTotal > 0 ? `spent of ${cur(income)} income` : 'No budget set · go to Settings'}
+          {income > 0
+            ? `${cur(monthTotal)} spent of ${cur(income)} income${totalBudget > 0 ? ` · ${cur(Math.max(0, budgetRemaining))} budget left` : ''}${isCurrentMonth ? ` · ${daysLeftInMonth()} days left` : ''}`
+            : totalBudget > 0
+              ? `${cur(Math.max(0, budgetRemaining))} left of ${cur(totalBudget)} budget · ${budgetPct}% used`
+              : 'Add monthly income in Settings'}
         </div>
         <div className="hero-splits">
           <div className="hero-split">
