@@ -90,6 +90,7 @@ function parseCategoryResults(text: string, validTransactionIds: Set<string>, va
 function categoryGuide(name: string) {
   const key = name.toLowerCase();
   if (key.includes('food')) return 'restaurants, Swiggy, Zomato, groceries, vegetables, milk, cafes, tea, snacks';
+  if (key.includes('travel')) return 'TSRTC, IRCTC, RedBus, railway, train, bus, flight, airline, hotel, trip bookings';
   if (key.includes('transport')) return 'Uber, Ola, Rapido, auto, cab, metro, train, bus, petrol, diesel, fuel, parking, tolls';
   if (key.includes('shopping')) return 'Amazon, Flipkart, Myntra, Ajio, clothes, footwear, electronics, stores, online purchases';
   if (key.includes('entertainment')) return 'Netflix, Prime Video, Hotstar, Spotify, movies, games, events, bars, subscriptions';
@@ -122,8 +123,9 @@ Available categories:
 ${categories.map((c: { id: string; name: string }) => `- ${c.id}: ${c.name} (${categoryGuide(c.name)})`).join('\n')}
 
 Indian merchant clues:
-- SWIGGY, ZOMATO, restaurant, cafe, grocery, mart, milk, vegetable -> Food when Food exists.
-- UBER, OLA, RAPIDO, metro, train, bus, fuel, petrol, parking, toll -> Transport when Transport exists.
+- SWIGGY, ZOMATO, ZEPTO, BLINKIT, restaurant, cafe, grocery, mart, milk, vegetable -> Food when Food exists.
+- TSRTC, IRCTC, REDBUS, KSRTC, APSRTC, train, bus, flight, airline -> Travel when Travel exists, otherwise Transport.
+- UBER, OLA, RAPIDO, metro, fuel, petrol, parking, toll -> Transport when Transport exists.
 - AMAZON, FLIPKART, MYNTRA, AJIO, retail stores -> Shopping when Shopping exists.
 - NETFLIX, SPOTIFY, PRIME, HOTSTAR, cinema, movie, gaming -> Entertainment when Entertainment exists.
 - APOLLO, PHARMEASY, hospital, clinic, doctor, pharmacy -> Health when Health exists.
