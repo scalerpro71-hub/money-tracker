@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { callAiChat } from '../lib/claudeApi';
+import { callAiChat, callAiSuggest } from '../lib/claudeApi';
 import { Icon } from '../components/layout/Icon';
 import { cur, fmtK } from '../lib/formatUtils';
 import { startOfMonthStr } from '../lib/dateUtils';
@@ -10,6 +10,15 @@ const SUGGESTIONS = [
   "How long to reach my goals?",
   "Am I saving enough?",
   "Where should I cut spending?",
+];
+
+const AI_INSIGHTS = [
+  { id: 'weekly_money_story', title: 'Weekly Money Story', body: 'What changed this week, in normal words.' },
+  { id: 'unusual_transactions', title: 'Unusual Spends', body: 'Transactions or merchants that stand out.' },
+  { id: 'hidden_patterns', title: 'Hidden Patterns', body: 'Repeated habits and leaks you may miss.' },
+  { id: 'monthly_summary', title: 'Monthly Summary', body: 'A clear summary of this month so far.' },
+  { id: 'why_spend_more', title: 'Why Spend Changed', body: 'Why this period is higher or lower.' },
+  { id: 'budget_explanation', title: 'Budget Warnings', body: 'Explain budget pressure by category.' },
 ];
 
 function coachFallback(q, context) {
@@ -89,10 +98,159 @@ function healthScore(savingsRate, budgetAdherence) {
   return Math.max(10, Math.min(99, score));
 }
 
+function sumEntries(entries) {
+  return entries.reduce((a, e) => a + Number(e.amount || 0), 0);
+}
+
+function compactEntries(entries, limit = 35) {
+  return [...entries]
+    .sort((a, b) => `${b.date}`.localeCompare(`${a.date}`))
+    .slice(0, limit)
+    .map(e => ({
+      date: e.date,
+      amount: Number(e.amount),
+      category: e.category?.name || 'Uncategorized',
+      note: e.note || e.category?.name || 'Expense',
+    }));
+}
+
+function totalsByCategory(entries) {
+  const map = {};
+  for (const e of entries) {
+    const name = e.category?.name || 'Uncategorized';
+    map[name] = (map[name] || 0) + Number(e.amount || 0);
+  }
+  return Object.entries(map)
+    .map(([name, amount]) => ({ name, amount: Math.round(amount) }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
+}
+
+function totalsByMerchant(entries) {
+  const map = {};
+  for (const e of entries) {
+    const key = (e.note || e.category?.name || 'Unknown').slice(0, 40);
+    if (!map[key]) map[key] = { merchant: key, amount: 0, count: 0 };
+    map[key].amount += Number(e.amount || 0);
+    map[key].count += 1;
+  }
+  return Object.values(map)
+    .map(x => ({ ...x, amount: Math.round(x.amount) }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
+}
+
+function topTransactions(entries, limit = 8) {
+  return [...entries]
+    .sort((a, b) => Number(b.amount) - Number(a.amount))
+    .slice(0, limit)
+    .map(e => ({
+      date: e.date,
+      amount: Number(e.amount),
+      category: e.category?.name || 'Uncategorized',
+      note: e.note || e.category?.name || 'Expense',
+    }));
+}
+
+function daysAgoIso(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().split('T')[0];
+}
+
+function monthKey(offset = 0) {
+  const d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  return d.toISOString().slice(0, 7);
+}
+
+function buildAiInsightData(feature, { expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
+  const spendEntries = (expenses || []).filter(e => e.type !== 'income');
+  const incomeEntries = (expenses || []).filter(e => e.type === 'income');
+  const weekStart = daysAgoIso(7);
+  const prevWeekStart = daysAgoIso(14);
+  const month = monthKey(0);
+  const prevMonth = monthKey(-1);
+  const week = spendEntries.filter(e => e.date >= weekStart);
+  const prevWeek = spendEntries.filter(e => e.date >= prevWeekStart && e.date < weekStart);
+  const monthSpend = spendEntries.filter(e => e.date?.startsWith(month));
+  const prevMonthSpend = spendEntries.filter(e => e.date?.startsWith(prevMonth));
+  const monthIncome = incomeEntries.filter(e => e.date?.startsWith(month));
+  const currentPeriod = feature === 'weekly_money_story' || feature === 'hidden_patterns' ? week : monthSpend;
+  const previousPeriod = feature === 'weekly_money_story' || feature === 'hidden_patterns' ? prevWeek : prevMonthSpend;
+  const categoryTotals = totalsByCategory(currentPeriod);
+  const monthByCategory = totalsByCategory(monthSpend);
+  const budgetStatus = (budgets || []).map(b => {
+    const spent = monthByCategory.find(c => c.name === b.category?.name)?.amount || 0;
+    return {
+      category: b.category?.name || 'Category',
+      limit: Number(b.limit_amount),
+      spent,
+      remaining: Number(b.limit_amount) - spent,
+    };
+  });
+
+  return {
+    feature,
+    generated_for: new Date().toISOString().slice(0, 10),
+    profile: {
+      monthly_income: Number(profile?.monthly_income || 0),
+      salary_date: profile?.salary_date || null,
+    },
+    current_period: {
+      label: feature === 'weekly_money_story' || feature === 'hidden_patterns' ? 'last 7 days' : month,
+      total_spent: Math.round(sumEntries(currentPeriod)),
+      transaction_count: currentPeriod.length,
+      by_category: categoryTotals,
+      by_merchant: totalsByMerchant(currentPeriod),
+      largest_transactions: topTransactions(currentPeriod),
+      recent_transactions: compactEntries(currentPeriod),
+    },
+    previous_period: {
+      label: feature === 'weekly_money_story' || feature === 'hidden_patterns' ? 'previous 7 days' : prevMonth,
+      total_spent: Math.round(sumEntries(previousPeriod)),
+      transaction_count: previousPeriod.length,
+      by_category: totalsByCategory(previousPeriod),
+      by_merchant: totalsByMerchant(previousPeriod),
+    },
+    this_month: {
+      total_spent: Math.round(sumEntries(monthSpend)),
+      income_logged: Math.round(sumEntries(monthIncome)),
+      by_category: monthByCategory,
+      largest_transactions: topTransactions(monthSpend),
+    },
+    budgets: budgetStatus,
+    goals: (goals || []).slice(0, 8).map(g => ({
+      name: g.name,
+      target: Number(g.target_amount),
+      saved: Number(g.current_amount || 0),
+      target_date: g.target_date,
+    })),
+    wealth: {
+      investments: (investments || []).slice(0, 8).map(i => ({
+        name: i.name,
+        type: i.type,
+        invested: Number(i.invested_amount || 0),
+        current: Number(i.current_value || i.invested_amount || 0),
+      })),
+      assets_total: Math.round((assets || []).reduce((a, x) => a + Number(x.value || 0), 0)),
+      liabilities_total: Math.round((liabilities || []).reduce((a, x) => a + Number(x.amount || 0), 0)),
+    },
+    upcoming_bills: (bills || []).slice(0, 8).map(b => ({
+      name: b.name,
+      amount: Number(b.amount),
+      due_day: b.due_day,
+      category: b.category?.name || null,
+    })),
+  };
+}
+
 export function AiPage({ expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const [insightResults, setInsightResults] = useState({});
+  const [insightLoading, setInsightLoading] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -178,6 +336,23 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
     }
   }
 
+  async function generateInsight(feature) {
+    if (insightLoading) return;
+    setInsightLoading(feature);
+    try {
+      const data = buildAiInsightData(feature, { expenses, budgets, goals, profile, investments, assets, liabilities, bills });
+      const suggestion = await callAiSuggest(feature, data);
+      setInsightResults(current => ({ ...current, [feature]: suggestion }));
+    } catch (err) {
+      setInsightResults(current => ({
+        ...current,
+        [feature]: `Could not generate this insight right now. ${err.message || 'Please try again.'}`,
+      }));
+    } finally {
+      setInsightLoading(null);
+    }
+  }
+
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input); }
   }
@@ -222,6 +397,31 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
               <div className={`ins-tag ${ins.tag}`}>{ins.emoji} {ins.tag === 'good' ? 'Great' : ins.tag === 'warn' ? 'Watch out' : 'Tip'}</div>
               <div className="ins-title">{ins.title}</div>
               <div className="ins-body">{ins.body}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="sec-head" style={{ marginTop: 24 }}><h3>AI money stories</h3></div>
+        <div className="ai-story-grid">
+          {AI_INSIGHTS.map(item => (
+            <div key={item.id} className="ai-story-card">
+              <div>
+                <div className="ai-story-title">{item.title}</div>
+                <div className="ai-story-sub">{item.body}</div>
+              </div>
+              <button
+                className="btn-ghost"
+                style={{ padding: '8px 12px', alignSelf: 'flex-start' }}
+                onClick={() => generateInsight(item.id)}
+                disabled={Boolean(insightLoading)}
+              >
+                {insightLoading === item.id ? 'Thinking...' : insightResults[item.id] ? 'Refresh' : 'Generate'}
+              </button>
+              {insightResults[item.id] && (
+                <div className="ai-story-result">
+                  {insightResults[item.id]}
+                </div>
+              )}
             </div>
           ))}
         </div>

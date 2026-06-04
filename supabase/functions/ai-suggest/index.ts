@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const OPENAI_MODEL = 'gpt-5-mini';
+const OPENAI_MODEL = 'gpt-5.4-nano';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +23,30 @@ const PROMPTS: Record<string, { system: string; buildUser: (data: unknown) => st
   savings_plan: {
     system: 'You are a savings goal planner for an Indian user. Calculate required monthly savings per goal, identify which spending categories to cut, and give a realistic timeline. Be specific with INR amounts. If goals are achievable, say so clearly.',
     buildUser: (data) => `Here are my savings goals and current financial situation:\n${JSON.stringify(data, null, 2)}\n\nBuild a practical monthly savings plan to reach these goals.`,
+  },
+  weekly_money_story: {
+    system: 'You are a plain-English money narrator for an Indian personal finance app. Explain what happened this week in 5-7 short bullets. Focus on things the user may not notice from numbers alone: shifts, repeated merchants, spending pace, category changes, and practical next steps. Use INR amounts. Do not shame the user.',
+    buildUser: (data) => `Here is my weekly spending data:\n${JSON.stringify(data, null, 2)}\n\nTell the story of my week in plain English.`,
+  },
+  unusual_transactions: {
+    system: 'You are a spending anomaly explainer. Identify unusual transactions, unusually high merchant/category spends, and repeated small leaks. Explain why each item stands out in plain English. Use INR amounts. If nothing is unusual, say that clearly and mention what looks normal.',
+    buildUser: (data) => `Here are my recent transactions, category totals, and averages:\n${JSON.stringify(data, null, 2)}\n\nExplain unusual transactions and why they matter.`,
+  },
+  hidden_patterns: {
+    system: 'You detect hidden spending patterns that are hard to see in tables. Look for repeated merchants, weekend/day patterns, category creep, many small payments, split spending, and changes versus the previous period. Use plain English and INR amounts.',
+    buildUser: (data) => `Here is my spending data:\n${JSON.stringify(data, null, 2)}\n\nFind hidden patterns I might miss.`,
+  },
+  monthly_summary: {
+    system: 'You write monthly finance summaries in simple words for an Indian user. Cover income, spend, savings, top categories, budget pressure, largest transactions, and one clear action for next month. Keep it concise and practical.',
+    buildUser: (data) => `Here is my monthly finance data:\n${JSON.stringify(data, null, 2)}\n\nWrite my monthly money summary.`,
+  },
+  why_spend_more: {
+    system: 'You answer why spending increased using evidence. Compare current period vs previous period, name the categories and merchants that caused the increase, and separate one-time spikes from repeated habits. Use INR amounts.',
+    buildUser: (data) => `Here is my current vs previous spending data:\n${JSON.stringify(data, null, 2)}\n\nExplain why I spent more or less.`,
+  },
+  budget_explanation: {
+    system: 'You explain budget warnings in words. For each over-budget or near-budget category, explain what caused it, which merchants contributed, whether it looks one-time or recurring, and the smallest practical correction. Use INR amounts.',
+    buildUser: (data) => `Here is my budget and spending data:\n${JSON.stringify(data, null, 2)}\n\nExplain my budget warnings in plain English.`,
   },
 };
 
@@ -70,7 +94,10 @@ async function callOpenAI(system: string, user: string) {
       model: OPENAI_MODEL,
       instructions: system,
       input: [{ role: 'user', content: user }],
-      max_output_tokens: 800,
+      reasoning: { effort: 'minimal' },
+      text: { verbosity: 'low' },
+      max_output_tokens: 900,
+      store: false,
     }),
   });
 
