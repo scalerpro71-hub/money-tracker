@@ -72,6 +72,7 @@ export function ExpensesPage({ expenses, categories, onUpdate, onDelete }) {
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
 
   async function handleDelete(id) {
+    if (!confirm('Delete this transaction? This cannot be undone.')) return;
     try { await onDelete(id); toast('Deleted'); } catch (err) { toast(err.message, 'error'); }
   }
 

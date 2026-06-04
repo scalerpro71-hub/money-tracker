@@ -31,6 +31,18 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
   const totalLiabilities = liabilities.reduce((a, x) => a + Number(x.amount), 0);
   const netWorth = totalAssets - totalLiabilities;
 
+  async function handleDeleteAsset(asset) {
+    if (!confirm(`Delete ${asset.name} asset? This cannot be undone.`)) return;
+    await onDeleteAsset(asset.id);
+    toast('Asset deleted');
+  }
+
+  async function handleDeleteLiability(liability) {
+    if (!confirm(`Delete ${liability.name} liability? This cannot be undone.`)) return;
+    await onDeleteLiability(liability.id);
+    toast('Liability deleted');
+  }
+
   return (
     <div>
       {/* Hero */}
@@ -76,7 +88,7 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
                   <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 8 }} onClick={() => setEditingAsset(a)}>
                     <Icon name="gear" size={14} />
                   </button>
-                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 6, color: 'var(--neg)' }} onClick={async () => { await onDeleteAsset(a.id); toast('Asset deleted'); }}>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 6, color: 'var(--neg)' }} onClick={() => handleDeleteAsset(a)}>
                     ×
                   </button>
                 </div>
@@ -109,7 +121,7 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
                   <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 8 }} onClick={() => setEditingLiab(l)}>
                     <Icon name="gear" size={14} />
                   </button>
-                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 6, color: 'var(--neg)' }} onClick={async () => { await onDeleteLiability(l.id); toast('Liability deleted'); }}>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 6, color: 'var(--neg)' }} onClick={() => handleDeleteLiability(l)}>
                     ×
                   </button>
                 </div>

@@ -25,6 +25,12 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
     }).reduce((a, e) => a + Number(e.amount), 0);
   }
 
+  async function handleDelete(event) {
+    if (!confirm(`Delete ${event.name} event budget? This cannot be undone.`)) return;
+    await onDelete(event.id);
+    toast('Event deleted');
+  }
+
   return (
     <div>
       <div className="sec-head" style={{ marginTop: 0 }}>
@@ -51,7 +57,7 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button className="icon-btn" style={{ width: 30, height: 30 }} onClick={() => setEditingEvent(ev)}><Icon name="gear" size={14} /></button>
-                  <button className="icon-btn" style={{ width: 30, height: 30, color: 'var(--neg)' }} onClick={() => onDelete(ev.id)}>×</button>
+                  <button className="icon-btn" style={{ width: 30, height: 30, color: 'var(--neg)' }} onClick={() => handleDelete(ev)}>×</button>
                 </div>
               </div>
               <div style={{ fontWeight: 800, fontSize: 15 }}>{ev.name}</div>

@@ -27,6 +27,12 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
   const taxSaved = Math.round(totalSaved * 0.3);
   const roomLeft = Math.max(0, 150000 - (filtered.filter(d => d.section === '80C').reduce((a, d) => a + Number(d.amount), 0)));
 
+  async function handleDelete(declaration) {
+    if (!confirm(`Delete ${declaration.name} declaration? This cannot be undone.`)) return;
+    await onDelete(declaration.id);
+    toast('Removed');
+  }
+
   return (
     <div>
       {/* Summary card */}
@@ -94,7 +100,7 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
                 <div className="tax-item-name">{d.name}</div>
                 <div className="tax-item-amt num">{fmtK(d.amount)}</div>
                 <button className="icon-btn" style={{ width: 28, height: 28, marginLeft: 8 }} onClick={() => setEditingDecl(d)}><Icon name="gear" size={13} /></button>
-                <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => { onDelete(d.id); toast('Removed'); }}>×</button>
+                <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => handleDelete(d)}>×</button>
               </div>
             ))}
           </div>

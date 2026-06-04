@@ -89,7 +89,15 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
     setCatName(''); setCatIcon('💰'); setCatColor('#6366F1');
   }
 
+  async function confirmDelete(label, action, successMessage) {
+    if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+    await action();
+    if (successMessage) toast(successMessage);
+  }
+
   const initials = (profile?.full_name || profile?.email || 'U').slice(0, 2).toUpperCase();
+  const budgetTotal = budgets.reduce((a, b) => a + Number(b.limit_amount || 0), 0);
+  const plannedSavings = Math.max(0, Number(profile?.monthly_income || 0) - budgetTotal);
 
   return (
     <div>
@@ -185,7 +193,21 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
         </div>
         {budgets.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>No budgets set — tap Edit to add limits</div>
-        ) : budgets.map(b => (
+        ) : (
+          <div style={{ marginBottom: 12, padding: '12px 14px', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', border: '1px solid var(--hair)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, fontWeight: 750 }}>
+              <span>Total budget</span>
+              <span className="num">{fmtK(budgetTotal)}</span>
+            </div>
+            {profile?.monthly_income && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 6, fontSize: 13, fontWeight: 750, color: 'var(--pos)' }}>
+                <span>Planned savings</span>
+                <span className="num">{fmtK(plannedSavings)}</span>
+              </div>
+            )}
+          </div>
+        )}
+        {budgets.map(b => (
           <div key={b.id} className="set-row" style={{ borderTop: '1px solid var(--hair)' }}>
             <span style={{ fontWeight: 600, fontSize: 14 }}>{b.category?.icon} {b.category?.name}</span>
             <span className="num" style={{ fontWeight: 700, fontSize: 14, color: 'var(--pos)' }}>{fmtK(b.limit_amount)}/mo</span>
@@ -215,7 +237,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input type="checkbox" checked={r.is_active} onChange={e => toggleRecurring(r.id, e.target.checked)} style={{ width: 36, height: 20, accentColor: 'var(--accent)' }} />
               </label>
-              <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => deleteRecurring(r.id)}>×</button>
+              <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => confirmDelete(r.name, () => deleteRecurring(r.id), 'Recurring expense deleted')}>×</button>
             </div>
           </div>
         ))}
@@ -237,7 +259,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
           {categories.map(c => (
             <div key={c.id} className="chip" style={{ background: c.color + '18', border: `1px solid ${c.color}44`, color: c.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
               {c.icon} {c.name}
-              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 0 0 4px', fontSize: 13, opacity: 0.7 }} onClick={() => onDeleteCategory(c.id)}>×</button>
+              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 0 0 4px', fontSize: 13, opacity: 0.7 }} onClick={() => confirmDelete(`${c.name} category`, () => onDeleteCategory(c.id), 'Category deleted')}>×</button>
             </div>
           ))}
         </div>
@@ -264,7 +286,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setEditingBill(b)}><Icon name="gear" size={13} /></button>
-              <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => onDeleteBill(b.id)}>×</button>
+              <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => confirmDelete(`${b.name} bill`, () => onDeleteBill(b.id), 'Bill deleted')}>×</button>
             </div>
           </div>
         ))}
@@ -297,7 +319,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setEditingEmi(e)}><Icon name="gear" size={13} /></button>
-                <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => onDeleteEmi(e.id)}>×</button>
+                <button className="icon-btn" style={{ width: 28, height: 28, color: 'var(--neg)' }} onClick={() => confirmDelete(`${e.name} EMI`, () => onDeleteEmi(e.id), 'EMI deleted')}>×</button>
               </div>
             </div>
           );

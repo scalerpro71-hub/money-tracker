@@ -33,6 +33,12 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
     toast('Value updated');
   }
 
+  async function handleDelete(inv) {
+    if (!confirm(`Delete ${inv.name} investment? This cannot be undone.`)) return;
+    await onDelete(inv.id);
+    toast('Investment deleted');
+  }
+
   return (
     <div>
       {/* Hero */}
@@ -115,7 +121,7 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
                       </div>
                     )}
                   </div>
-                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 10, color: 'var(--neg)' }} onClick={() => onDelete(inv.id)}>×</button>
+                  <button className="icon-btn" style={{ width: 30, height: 30, marginLeft: 10, color: 'var(--neg)' }} onClick={() => handleDelete(inv)}>×</button>
                 </div>
               );
             })}
