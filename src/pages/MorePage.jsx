@@ -1,8 +1,6 @@
 import { Icon } from '../components/layout/Icon';
 
 const MORE_ITEMS = [
-  { id: 'invest',   label: 'Investments', sub: 'Portfolio & SIPs',    icon: 'trend' },
-  { id: 'networth', label: 'Net Worth',   sub: 'Assets & liabilities', icon: 'gem' },
   { id: 'events',   label: 'Events',      sub: 'Budget envelopes',     icon: 'calendar' },
   { id: 'tax',      label: 'Tax Planner', sub: 'Deductions & 80C',     icon: 'shield' },
   { id: 'import',   label: 'Import',      sub: 'Bank statement',       icon: 'download' },

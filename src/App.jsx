@@ -18,11 +18,9 @@ import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { AiPage } from './pages/AiPage';
-import { GoalsPage } from './pages/GoalsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
-import { NetWorthPage } from './pages/NetWorthPage';
-import { InvestmentsPage } from './pages/InvestmentsPage';
+import { WealthPage } from './pages/WealthPage';
 import { EventsPage } from './pages/EventsPage';
 import { TaxPage } from './pages/TaxPage';
 import { MorePage } from './pages/MorePage';
@@ -31,39 +29,32 @@ import { Spinner } from './components/layout/Spinner';
 import { Icon } from './components/layout/Icon';
 
 const NAV_GROUPS = [
-  { label: 'Overview', items: [
+  { label: 'Money', items: [
     { id: 'home',     label: 'Home',        icon: 'home' },
-    { id: 'insights', label: 'Coach',       icon: 'sparkle' },
     { id: 'txns',     label: 'Activity',    icon: 'list' },
+    { id: 'insights', label: 'Coach',       icon: 'sparkle' },
+    { id: 'wealth',   label: 'Wealth',      icon: 'gem' },
   ]},
-  { label: 'Grow', items: [
-    { id: 'invest',   label: 'Investments', icon: 'trend' },
-    { id: 'goals',    label: 'Goals',       icon: 'target' },
-    { id: 'networth', label: 'Net Worth',   icon: 'gem' },
-    { id: 'events',   label: 'Events',      icon: 'calendar' },
-  ]},
-  { label: 'Plan', items: [
-    { id: 'tax',      label: 'Tax',         icon: 'shield' },
-    { id: 'import',   label: 'Import',      icon: 'download' },
-    { id: 'settings', label: 'Settings',    icon: 'gear' },
+  { label: 'Tools', items: [
+    { id: 'more',     label: 'More',        icon: 'grip' },
   ]},
 ];
 
 const MOBILE_NAV = [
   { id: 'home',     label: 'Home',     icon: 'home' },
-  { id: 'insights', label: 'Coach',    icon: 'sparkle' },
   { id: 'txns',     label: 'Activity', icon: 'list' },
-  { id: 'goals',    label: 'Goals',    icon: 'target' },
+  { id: 'insights', label: 'Coach',    icon: 'sparkle' },
+  { id: 'wealth',   label: 'Wealth',   icon: 'gem' },
   { id: 'more',     label: 'More',     icon: 'grip' },
 ];
 
 const PAGE_TITLES = {
-  home: 'Dashboard', insights: 'AI Coach', txns: 'Activity', goals: 'Goals',
-  networth: 'Net Worth', invest: 'Investments', events: 'Events',
-  tax: 'Tax Planner', import: 'Import', settings: 'Settings', more: 'More',
+  home: 'Dashboard', insights: 'AI Coach', txns: 'Activity', wealth: 'Wealth',
+  events: 'Events', tax: 'Tax Planner', import: 'Import', settings: 'Settings', more: 'More',
 };
 
 const MOBILE_IDS = new Set(MOBILE_NAV.map(n => n.id));
+const MORE_SECTION_IDS = new Set(['events', 'tax', 'import', 'settings']);
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -166,6 +157,10 @@ function AppInner() {
     setTab('settings');
   }
 
+  function isNavActive(id) {
+    return tab === id || (id === 'more' && MORE_SECTION_IDS.has(tab));
+  }
+
   function renderPage() {
     switch (tab) {
       case 'home':
@@ -174,12 +169,27 @@ function AppInner() {
         return <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} investments={investments} assets={assets} liabilities={liabilities} bills={bills} />;
       case 'txns':
         return <ExpensesPage expenses={expenses} categories={categories} onAdd={handleAddExpense} onUpdate={updateExpense} onDelete={deleteExpense} />;
-      case 'invest':
-        return <InvestmentsPage investments={investments} onAdd={addInvestment} onUpdate={updateInvestment} onDelete={deleteInvestment} />;
-      case 'goals':
-        return <GoalsPage goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />;
-      case 'networth':
-        return <NetWorthPage assets={assets} liabilities={liabilities} onAddAsset={addAsset} onUpdateAsset={updateAsset} onDeleteAsset={deleteAsset} onAddLiability={addLiability} onUpdateLiability={updateLiability} onDeleteLiability={deleteLiability} />;
+      case 'wealth':
+        return (
+          <WealthPage
+            goals={goals}
+            onAddGoal={addGoal}
+            onUpdateGoal={updateGoal}
+            onDeleteGoal={deleteGoal}
+            investments={investments}
+            onAddInvestment={addInvestment}
+            onUpdateInvestment={updateInvestment}
+            onDeleteInvestment={deleteInvestment}
+            assets={assets}
+            liabilities={liabilities}
+            onAddAsset={addAsset}
+            onUpdateAsset={updateAsset}
+            onDeleteAsset={deleteAsset}
+            onAddLiability={addLiability}
+            onUpdateLiability={updateLiability}
+            onDeleteLiability={deleteLiability}
+          />
+        );
       case 'events':
         return <EventsPage events={events} onAdd={addEvent} onUpdate={updateEvent} onDelete={deleteEvent} expenses={expenses} />;
       case 'tax':
@@ -220,7 +230,7 @@ function AppInner() {
               {group.items.map(item => (
                 <button
                   key={item.id}
-                  className={`rail-link${tab === item.id ? ' on' : ''}`}
+                  className={`rail-link${isNavActive(item.id) ? ' on' : ''}`}
                   onClick={() => setTab(item.id)}
                 >
                   <Icon name={item.icon} size={20} />
