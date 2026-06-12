@@ -7,7 +7,6 @@ import { SpendingStreak } from '../components/dashboard/SpendingStreak';
 import { EmiSummary } from '../components/dashboard/EmiSummary';
 import { SalaryCountdown } from '../components/dashboard/SalaryCountdown';
 import { CashbackWidget } from '../components/dashboard/CashbackWidget';
-import { HeroMoneyScene } from '../components/motion/HeroMoneyScene';
 
 function getMonthKey(date) {
   const d = new Date(date);
@@ -148,7 +147,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
     <div className="dash">
       {/* HERO CARD */}
       <div className="hero rise" style={{ '--d': '0ms' }}>
-        <HeroMoneyScene budgetPct={budgetPct} savingsRate={savingsRate || 0} />
+
         <div className="hero-top">
           <div className="hero-label">SPENDABLE THIS MONTH</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
