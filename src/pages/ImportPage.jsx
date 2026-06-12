@@ -3,6 +3,7 @@ import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { cur } from '../lib/formatUtils';
 import { supabase } from '../lib/supabase';
+import { merchantKey, categoryByMerchant } from '../lib/categorize';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
@@ -101,63 +102,6 @@ function cleanNote(str) {
   return str.slice(0, 80);
 }
 
-function merchantKey(note) {
-  return (note || '')
-    .toLowerCase()
-    .replace(/upi\/|imps\/|neft\/|rtgs\/|ach\/|pos\/|ecom\//g, ' ')
-    .replace(/[0-9a-f]{8,}/g, ' ')
-    .replace(/\b\d+\b/g, ' ')
-    .replace(/[^a-z ]+/g, ' ')
-    .replace(/\b(ref|txn|upi|pay|payment|ltd|limited|pvt|private|india|bank)\b/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 64);
-}
-
-function findCategory(categories, preferredNames) {
-  const normalized = categories.map(c => ({ ...c, key: c.name.toLowerCase().trim() }));
-  for (const name of preferredNames) {
-    const exact = normalized.find(c => c.key === name);
-    if (exact) return exact.id;
-  }
-  for (const name of preferredNames) {
-    const partial = normalized.find(c => c.key.includes(name) || name.includes(c.key));
-    if (partial) return partial.id;
-  }
-  return null;
-}
-
-function categoryByMerchant(note, key, categories) {
-  const text = `${note || ''} ${key || ''}`.toLowerCase();
-  const has = (words) => words.some(word => text.includes(word));
-
-  if (has(['swiggy', 'zomato', 'zepto', 'blinkit', 'bigbasket', 'instamart', 'restaurant', 'cafe', 'coffee', 'grocery', 'groceries', 'milk', 'dairy'])) {
-    return findCategory(categories, ['food', 'groceries', 'grocery', 'dining']);
-  }
-  if (has(['tsrtc', 'irctc', 'redbus', 'ksrtc', 'apsrtc', 'uber', 'ola', 'rapido', 'metro', 'railway', 'train', 'bus', 'airline', 'flight', 'petrol', 'fuel', 'parking', 'toll'])) {
-    return findCategory(categories, ['travel', 'transport']);
-  }
-  if (has(['amazon', 'flipkart', 'myntra', 'ajio', 'meesho', 'nykaa', 'decathlon', 'croma', 'reliance digital'])) {
-    return findCategory(categories, ['shopping']);
-  }
-  if (has(['netflix', 'prime video', 'hotstar', 'spotify', 'bookmyshow', 'cinema', 'movie', 'gaming'])) {
-    return findCategory(categories, ['entertainment']);
-  }
-  if (has(['apollo', 'pharmeasy', 'netmeds', 'hospital', 'clinic', 'doctor', 'pharmacy', 'medical'])) {
-    return findCategory(categories, ['health', 'medical']);
-  }
-  if (has(['airtel', 'jio', 'vi ', 'vodafone', 'bsnl', 'bescom', 'electricity', 'broadband', 'internet', 'recharge', 'water bill', 'gas bill'])) {
-    return findCategory(categories, ['utilities', 'utility', 'bills']);
-  }
-  if (has(['rent', 'landlord', 'maintenance'])) {
-    return findCategory(categories, ['rent']);
-  }
-  if (has(['school', 'college', 'course', 'udemy', 'coursera', 'tuition', 'books'])) {
-    return findCategory(categories, ['education']);
-  }
-  return null;
-}
-
 function categorizeRowsByRules(rows, categories) {
   const validCategoryIds = new Set(categories.map(c => c.id));
   const assignments = {};
@@ -166,7 +110,7 @@ function categorizeRowsByRules(rows, categories) {
     if (row.type === 'income') continue;
     const key = merchantKey(row.note);
     if (!key) continue;
-    const ruleCategory = categoryByMerchant(row.note, key, categories);
+    const ruleCategory = categoryByMerchant(row.note, categories);
     if (ruleCategory && validCategoryIds.has(ruleCategory)) {
       assignments[row._id] = ruleCategory;
     }

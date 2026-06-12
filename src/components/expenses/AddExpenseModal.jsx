@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { todayStr } from '../../lib/dateUtils';
+import { autoCategory } from '../../lib/categorize';
 
 const PAYMENT_MODES = [
   { value: 'upi', label: 'UPI' },
@@ -8,7 +9,7 @@ const PAYMENT_MODES = [
   { value: 'netbanking', label: 'Bank' },
 ];
 
-export function AddExpenseModal({ categories, onAdd, onClose, initialData = null, initialType = 'expense' }) {
+export function AddExpenseModal({ categories, expenses = [], onAdd, onClose, initialData = null, initialType = 'expense' }) {
   const editing = !!initialData;
   const [type, setType] = useState(initialData?.type || initialType);
   const [amountStr, setAmountStr] = useState(initialData?.amount?.toString() || '');
@@ -19,8 +20,17 @@ export function AddExpenseModal({ categories, onAdd, onClose, initialData = null
   const [cashback] = useState(initialData?.cashback_amount?.toString() || '');
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [suggested, setSuggested] = useState(false);
+  const manuallySet = useRef(false);
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+
+  useEffect(() => {
+    if (editing || manuallySet.current || type !== 'expense') return;
+    const id = autoCategory(note, categories, expenses);
+    if (id) { setCategoryId(id); setSuggested(true); }
+    else { setSuggested(false); }
+  }, [note, categories, expenses, editing, type]);
 
   function handleClose() {
     setVisible(false);
@@ -32,6 +42,12 @@ export function AddExpenseModal({ categories, onAdd, onClose, initialData = null
     if (k === '.' && amountStr.includes('.')) return;
     if (amountStr.length >= 10) return;
     setAmountStr(s => s + k);
+  }
+
+  function pickCategory(id) {
+    manuallySet.current = true;
+    setSuggested(false);
+    setCategoryId(prev => prev === id ? '' : id);
   }
 
   async function handleSubmit() {
@@ -79,7 +95,7 @@ export function AddExpenseModal({ categories, onAdd, onClose, initialData = null
           {displayAmt}
         </div>
 
-        {/* Payment mode segmented row */}
+        {/* Payment mode */}
         {type === 'expense' && (
           <div style={{ display: 'flex', gap: 6, padding: '0 20px 14px', overflowX: 'auto' }}>
             {PAYMENT_MODES.map(m => (
@@ -92,31 +108,49 @@ export function AddExpenseModal({ categories, onAdd, onClose, initialData = null
           </div>
         )}
 
-        {/* Category chips */}
-        {type === 'expense' && (
-          <div style={{ display: 'flex', gap: 6, padding: '0 20px 14px', overflowX: 'auto', flexWrap: 'nowrap' }}>
-            {categories.map(cat => (
-              <button key={cat.id}
-                className="cat-choice"
-                style={{ background: categoryId === cat.id ? cat.color + '22' : 'var(--surface-2)', border: `1px solid ${categoryId === cat.id ? cat.color : 'var(--hair)'}`, color: categoryId === cat.id ? cat.color : 'var(--ink-2)', fontWeight: 700 }}
-                onClick={() => setCategoryId(id => id === cat.id ? '' : cat.id)}>
-                {cat.icon} {cat.name}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Note / Source input */}
         <div style={{ padding: '0 20px 12px' }}>
           <input
             type="text"
             placeholder={type === 'income' ? 'Source (e.g. Salary, Freelance)' : 'Note (e.g. Zomato dinner)'}
             value={note}
-            onChange={e => setNote(e.target.value)}
+            onChange={e => { manuallySet.current = false; setNote(e.target.value); }}
             maxLength={100}
             style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--hair)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
+
+        {/* Category grid */}
+        {type === 'expense' && (
+          <div style={{ padding: '0 20px 14px' }}>
+            {suggested && categoryId && (
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>
+                ✦ Auto-categorized — tap to change
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+              {categories.map(cat => {
+                const active = categoryId === cat.id;
+                return (
+                  <button key={cat.id}
+                    onClick={() => pickCategory(cat.id)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                      padding: '8px 4px', borderRadius: 'var(--r-md)',
+                      border: `1.5px solid ${active ? cat.color : 'var(--hair)'}`,
+                      background: active ? cat.color + '18' : 'var(--surface-2)',
+                      color: active ? cat.color : 'var(--ink-2)',
+                      fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                      fontFamily: 'var(--font-body)', transition: 'all .15s',
+                    }}>
+                    <span style={{ fontSize: 20 }}>{cat.icon}</span>
+                    <span style={{ lineHeight: 1.2, textAlign: 'center' }}>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Date row */}
         <div style={{ padding: '0 20px 14px' }}>

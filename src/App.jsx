@@ -313,6 +313,7 @@ function AppInner() {
       {showAdd && (
         <AddExpenseModal
           categories={categories}
+          expenses={expenses}
           initialType={addEntryType}
           onAdd={handleAddExpense}
           onClose={() => setShowAdd(false)}
