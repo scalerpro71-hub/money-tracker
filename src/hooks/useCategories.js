@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const DEFAULT_CATEGORIES = [
@@ -13,8 +13,14 @@ const DEFAULT_CATEGORIES = [
   { name: 'Other', icon: '💰', color: '#6B7280', is_default: true },
 ];
 
+function dedup(cats) {
+  const seen = new Set();
+  return cats.filter(c => seen.has(c.name) ? false : seen.add(c.name));
+}
+
 export function useCategories(userId) {
   const [categories, setCategories] = useState([]);
+  const seeding = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!userId) return;
@@ -24,14 +30,17 @@ export function useCategories(userId) {
       .eq('user_id', userId)
       .order('name');
     if (data?.length) {
-      setCategories(data);
+      setCategories(dedup(data));
       return;
     }
+    if (seeding.current) return;
+    seeding.current = true;
     const { data: seeded, error } = await supabase
       .from('categories')
       .insert(DEFAULT_CATEGORIES.map(cat => ({ ...cat, user_id: userId })))
       .select('*')
       .order('name');
+    seeding.current = false;
     if (!error) setCategories(seeded ?? []);
   }, [userId]);
 
