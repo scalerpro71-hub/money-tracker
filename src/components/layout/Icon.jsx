@@ -22,6 +22,7 @@ const PATHS = {
   grip:    'M5 9h14M5 15h14',
   check:   'M20 6 9 17l-5-5',
   download:'M12 3v12M7 10l5 5 5-5M5 21h14',
+  logout:  'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
 };
 
 export function Icon({ name, size = 20, stroke = 2, style, className }) {

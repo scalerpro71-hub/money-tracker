@@ -248,6 +248,9 @@ function AppInner() {
               <div style={{ fontSize: 13.5, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userName}</div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontWeight: 600 }}>✦ Premium</div>
             </div>
+            <button onClick={signOut} title="Sign out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', padding: 4, display: 'flex', alignItems: 'center' }}>
+              <Icon name="logout" size={16} />
+            </button>
           </div>
         </div>
       </aside>
