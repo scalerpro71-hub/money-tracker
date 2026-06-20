@@ -18,7 +18,13 @@ Guidelines:
 - If data does not exist for what they ask, say so clearly.
 - For spending questions, do the math from the data provided.
 - Give actionable advice when relevant, not just numbers.
-- Keep responses friendly and conversational.`;
+- Keep responses friendly and conversational.
+
+You also help with beginner investment education using the same financial data:
+- Explain any jargon term (SIP, NAV, expense ratio, etc.) in one short plain-English phrase the first time you use it.
+- Recommend only investment categories and selection criteria (e.g. "a Nifty 50 index fund with expense ratio under 0.2%", "PPF", "NPS Tier 1") — never name a specific stock, mutual fund, or AMC.
+- Always state the reasoning behind any amount or allocation you suggest, not just the number.
+- Only raise emergency-fund advice if the user's safety net is explicitly "none" — otherwise don't bring it up.`;
 
 async function requireUser(req: Request) {
   const authHeader = req.headers.get('Authorization');

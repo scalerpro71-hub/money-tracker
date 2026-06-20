@@ -167,7 +167,7 @@ function AppInner() {
       case 'home':
         return <DashboardPage expenses={expenses} budgets={budgets} profile={profile} bills={bills} emis={emis} investments={investments} goals={goals} assets={assets} liabilities={liabilities} onAddExpense={() => openAddEntry('expense')} onAddIncome={() => openAddEntry('income')} onPayBills={openBillReminders} />;
       case 'insights':
-        return <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} investments={investments} assets={assets} liabilities={liabilities} bills={bills} />;
+        return <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} investments={investments} assets={assets} liabilities={liabilities} bills={bills} onUpdateProfile={updateProfile} />;
       case 'txns':
         return <ExpensesPage expenses={expenses} categories={categories} events={events} onAdd={handleAddExpense} onUpdate={updateExpense} onDelete={deleteExpense} />;
       case 'wealth':

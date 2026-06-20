@@ -3,6 +3,7 @@ import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { fmtK } from '../lib/formatUtils';
+import { investingGlossary } from '../lib/investingGlossary';
 
 const TYPES = [
   { id: 'sip', icon: '📈', label: 'SIP (Mutual Fund)' },
@@ -153,7 +154,13 @@ function InvForm({ onSave }) {
   return (
     <form onSubmit={e => { e.preventDefault(); onSave({ name, type, invested_amount: Number(invested), current_value: Number(current) || null, monthly_amount: Number(monthly) || null, notes: notes || null, start_date: startDate || null }); }} className="expense-form">
       <div className="form-group"><label>Name</label><input type="text" placeholder="e.g. Parag Parikh Flexi Cap" value={name} onChange={e => setName(e.target.value)} required /></div>
-      <div className="form-group"><label>Type</label><select value={type} onChange={e => setType(e.target.value)}>{TYPES.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}</select></div>
+      <div className="form-group">
+        <label>Type</label>
+        <select value={type} onChange={e => setType(e.target.value)}>{TYPES.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}</select>
+        {investingGlossary[type] && (
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6, lineHeight: 1.4 }}>{investingGlossary[type]}</div>
+        )}
+      </div>
       <div className="form-row">
         <div className="form-group"><label>Invested (₹)</label><input type="number" inputMode="decimal" value={invested} onChange={e => setInvested(e.target.value)} min="0" required /></div>
         <div className="form-group"><label>Current Value (₹)</label><input type="number" inputMode="decimal" value={current} onChange={e => setCurrent(e.target.value)} min="0" placeholder="Same as invested" /></div>

@@ -48,6 +48,10 @@ const PROMPTS: Record<string, { system: string; buildUser: (data: unknown) => st
     system: 'You explain budget warnings in words. For each over-budget or near-budget category, explain what caused it, which merchants contributed, whether it looks one-time or recurring, and the smallest practical correction. Use INR amounts.',
     buildUser: (data) => `Here is my budget and spending data:\n${JSON.stringify(data, null, 2)}\n\nExplain my budget warnings in plain English.`,
   },
+  investment_starter_plan: {
+    system: 'You are a beginner investing coach for an Indian user who has never invested before. Build a simple month-by-month starter plan using their real monthly surplus, income, and existing investments. Explain any jargon term (SIP, NAV, expense ratio, lock-in, etc.) in one short plain-English phrase the first time you use it. Recommend only investment categories with concrete selection criteria (e.g. "a Nifty 50 index fund with expense ratio under 0.2%", "PPF", "NPS Tier 1", "a short-duration debt fund") — never name a specific stock, mutual fund, or AMC. Only mention an emergency fund if their safety net is "none"; if it is "family_support" or "own_emergency_fund", skip that topic entirely. For every allocation or amount you suggest, state the reasoning behind it (their horizon, risk comfort, goal) — not just the number, since this is a beginner relying on the plan directly. Use concrete INR amounts and a simple percentage split of their surplus. Keep it to a short, scannable plan.',
+    buildUser: (data) => `Here is my financial data and investing profile:\n${JSON.stringify(data, null, 2)}\n\nBuild me a starter investing plan for my monthly surplus.`,
+  },
 };
 
 async function requireUser(req: Request) {

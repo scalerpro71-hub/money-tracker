@@ -10,6 +10,8 @@ const SUGGESTIONS = [
   "How long to reach my goals?",
   "Am I saving enough?",
   "Where should I cut spending?",
+  "How should I start investing my monthly surplus?",
+  "What's a SIP?",
 ];
 
 const AI_INSIGHTS = [
@@ -19,6 +21,19 @@ const AI_INSIGHTS = [
   { id: 'monthly_summary', title: 'Monthly Summary', body: 'A clear summary of this month so far.' },
   { id: 'why_spend_more', title: 'Why Spend Changed', body: 'Why this period is higher or lower.' },
   { id: 'budget_explanation', title: 'Budget Warnings', body: 'Explain budget pressure by category.' },
+  { id: 'investment_starter_plan', title: 'Investing Starter Plan', body: 'A beginner plan for your real surplus, explained.' },
+];
+
+const RISK_OPTIONS = [
+  { id: 'low', label: 'Low' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'high', label: 'High' },
+];
+
+const SAFETY_NET_OPTIONS = [
+  { id: 'family_support', label: 'Family support' },
+  { id: 'own_emergency_fund', label: 'I have my own emergency fund' },
+  { id: 'none', label: 'No safety net yet' },
 ];
 
 function coachFallback(q, context) {
@@ -55,7 +70,7 @@ function coachFallback(q, context) {
 
 function buildCoachPrompt(q, context) {
   const { income, monthTotal, spendable, savingsRate, netWorth, portfolioValue, sipMonthly,
-    topCategories, goals, upcomingBills } = context;
+    topCategories, goals, upcomingBills, monthlySurplus, riskTolerance, investingGoal, safetyNet } = context;
   const budgetPct = income > 0 ? Math.round((monthTotal / income) * 100) : 0;
 
   const topCats = (topCategories || []).slice(0, 4)
@@ -79,8 +94,14 @@ User's finances:
 - Top spending: ${topCats || 'no data'}
 - Goals: ${goalLines || 'none'}
 - Upcoming bills: ${billLines || 'none'}
+- Monthly surplus available to invest: ₹${fmtK(monthlySurplus || 0)}
+- Risk comfort: ${riskTolerance || 'not set yet'}
+- Investing goal: ${investingGoal || 'not set yet'}
+- Safety net: ${safetyNet || 'not set yet'}
 
 Answer only from the above data. Use ₹ Indian formatting. Keep to 2-4 short sentences. No markdown. If asked something outside personal finance, politely steer back.
+
+You also act as a beginner investing coach using this same data. When discussing investing: explain any jargon term in one short plain-English phrase the first time you use it; recommend only investment categories (e.g. index fund SIP, PPF, FD, NPS, gold ETF) and concrete selection criteria, never name a specific stock, mutual fund, or AMC; always state the reasoning behind any amount/allocation you suggest, not just the number; only raise emergency-fund advice if safety net is "none" — otherwise don't mention it.
 
 User: ${q}`;
 }
@@ -164,7 +185,7 @@ function monthKey(offset = 0) {
   return d.toISOString().slice(0, 7);
 }
 
-function buildAiInsightData(feature, { expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
+function buildAiInsightData(feature, { expenses, budgets, goals, profile, investments, assets, liabilities, bills, monthlySurplus }) {
   const spendEntries = (expenses || []).filter(e => e.type !== 'income');
   const incomeEntries = (expenses || []).filter(e => e.type === 'income');
   const weekStart = daysAgoIso(7);
@@ -196,6 +217,13 @@ function buildAiInsightData(feature, { expenses, budgets, goals, profile, invest
     profile: {
       monthly_income: Number(profile?.monthly_income || 0),
       payday_day: profile?.payday_day || null,
+    },
+    investor_profile: {
+      experience: profile?.investing_experience || 'beginner',
+      risk_tolerance: profile?.risk_tolerance || null,
+      goal: profile?.investing_goal || null,
+      safety_net: profile?.safety_net || null,
+      monthly_surplus: Math.round(monthlySurplus || 0),
     },
     current_period: {
       label: feature === 'weekly_money_story' || feature === 'hidden_patterns' ? 'last 7 days' : month,
@@ -245,12 +273,16 @@ function buildAiInsightData(feature, { expenses, budgets, goals, profile, invest
   };
 }
 
-export function AiPage({ expenses, budgets, goals, profile, investments, assets, liabilities, bills }) {
+export function AiPage({ expenses, budgets, goals, profile, investments, assets, liabilities, bills, onUpdateProfile }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [insightResults, setInsightResults] = useState({});
   const [insightLoading, setInsightLoading] = useState(null);
+  const [onboardRisk, setOnboardRisk] = useState(null);
+  const [onboardSafetyNet, setOnboardSafetyNet] = useState(null);
+  const [onboardGoal, setOnboardGoal] = useState('');
+  const [onboardSaving, setOnboardSaving] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -296,9 +328,15 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
     : 0;
   const score = healthScore(savingsRate, budgetAdherence);
 
+  const monthlySurplus = income - monthTotal;
+
   const context = {
     income, monthTotal, spendable, savingsRate, netWorth, portfolioValue, sipMonthly,
     topCategories, topCat, goals, upcomingBills: bills, txCount: monthExpenses.length,
+    monthlySurplus,
+    riskTolerance: profile?.risk_tolerance || null,
+    investingGoal: profile?.investing_goal || null,
+    safetyNet: profile?.safety_net || null,
   };
 
   const insightCards = useMemo(() => {
@@ -340,7 +378,7 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
     if (insightLoading) return;
     setInsightLoading(feature);
     try {
-      const data = buildAiInsightData(feature, { expenses, budgets, goals, profile, investments, assets, liabilities, bills });
+      const data = buildAiInsightData(feature, { expenses, budgets, goals, profile, investments, assets, liabilities, bills, monthlySurplus });
       const suggestion = await callAiSuggest(feature, data);
       setInsightResults(current => ({ ...current, [feature]: suggestion }));
     } catch (err) {
@@ -355,6 +393,20 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input); }
+  }
+
+  async function submitOnboarding() {
+    if (!onboardRisk || !onboardSafetyNet || onboardSaving) return;
+    setOnboardSaving(true);
+    try {
+      await onUpdateProfile?.({
+        risk_tolerance: onboardRisk,
+        safety_net: onboardSafetyNet,
+        investing_goal: onboardGoal.trim() || 'long-term wealth',
+      });
+    } finally {
+      setOnboardSaving(false);
+    }
   }
 
   return (
@@ -400,6 +452,66 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
             </div>
           ))}
         </div>
+
+        {!profile?.investing_goal && (
+          <div className="card pad rise" style={{ marginTop: 24 }}>
+            <div className="sec-head" style={{ marginBottom: 4 }}><h3>Help me coach your investing</h3></div>
+            <div className="ai-story-sub" style={{ marginBottom: 14 }}>
+              Quick one-time questions so the coach can tailor investing advice to you. Takes 30 seconds.
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div className="ss-label" style={{ marginBottom: 6 }}>How comfortable are you with risk?</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {RISK_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    className={onboardRisk === opt.id ? 'btn-accent' : 'btn-ghost'}
+                    style={{ padding: '6px 14px' }}
+                    onClick={() => setOnboardRisk(opt.id)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div className="ss-label" style={{ marginBottom: 6 }}>Do you have a safety net?</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {SAFETY_NET_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    className={onboardSafetyNet === opt.id ? 'btn-accent' : 'btn-ghost'}
+                    style={{ padding: '6px 14px' }}
+                    onClick={() => setOnboardSafetyNet(opt.id)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div className="ss-label" style={{ marginBottom: 6 }}>What's your investing goal? (optional)</div>
+              <input
+                className="chat-input"
+                placeholder="e.g. long-term wealth, a house down payment…"
+                value={onboardGoal}
+                onChange={e => setOnboardGoal(e.target.value)}
+              />
+            </div>
+
+            <button
+              className="btn-accent"
+              style={{ padding: '8px 16px' }}
+              onClick={submitOnboarding}
+              disabled={!onboardRisk || !onboardSafetyNet || onboardSaving}
+            >
+              {onboardSaving ? 'Saving…' : 'Save and start'}
+            </button>
+          </div>
+        )}
 
         <div className="sec-head" style={{ marginTop: 24 }}><h3>AI money stories</h3></div>
         <div className="ai-story-grid">
