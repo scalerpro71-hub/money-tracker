@@ -4,7 +4,7 @@ import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { Area } from '../components/charts/Area';
 import { cur, fmtK } from '../lib/formatUtils';
-import { startOfMonthStr, todayStr } from '../lib/dateUtils';
+import { localDateStr, startOfMonthStr, todayStr } from '../lib/dateUtils';
 
 const DATE_PRESETS = [
   { label: 'This month', value: 'month' },
@@ -16,8 +16,8 @@ const DATE_PRESETS = [
 function getPresetDates(preset) {
   const today = todayStr();
   if (preset === 'month') return { from: startOfMonthStr(), to: today };
-  if (preset === '7d') { const d = new Date(); d.setDate(d.getDate() - 7); return { from: d.toISOString().split('T')[0], to: today }; }
-  if (preset === '30d') { const d = new Date(); d.setDate(d.getDate() - 30); return { from: d.toISOString().split('T')[0], to: today }; }
+  if (preset === '7d') { const d = new Date(); d.setDate(d.getDate() - 7); return { from: localDateStr(d), to: today }; }
+  if (preset === '30d') { const d = new Date(); d.setDate(d.getDate() - 30); return { from: localDateStr(d), to: today }; }
   return { from: null, to: null };
 }
 
@@ -34,13 +34,13 @@ function groupByDate(expenses) {
 function dateLabel(dateStr) {
   const today = todayStr();
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = yesterday.toISOString().split('T')[0];
+  const yStr = localDateStr(yesterday);
   if (dateStr === today) return 'Today';
   if (dateStr === yStr) return 'Yesterday';
   return new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-export function ExpensesPage({ expenses, categories, onUpdate, onDelete }) {
+export function ExpensesPage({ expenses, categories, events, onUpdate, onDelete }) {
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [datePreset, setDatePreset] = useState('month');
@@ -185,7 +185,7 @@ export function ExpensesPage({ expenses, categories, onUpdate, onDelete }) {
       })}
 
       {editingExpense && (
-        <AddExpenseModal categories={categories} initialData={editingExpense} onAdd={handleUpdate} onClose={() => setEditingExpense(null)} />
+        <AddExpenseModal categories={categories} events={events} initialData={editingExpense} onAdd={handleUpdate} onClose={() => setEditingExpense(null)} />
       )}
     </div>
   );

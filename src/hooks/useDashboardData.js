@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { todayStr, startOfWeekStr, startOfMonthStr, getLast7Days, daysRemainingInMonth } from '../lib/dateUtils';
+import { localDateStr, todayStr, startOfWeekStr, startOfMonthStr, getLast7Days, daysRemainingInMonth } from '../lib/dateUtils';
 
 function getLast6Months() {
   return Array.from({ length: 6 }, (_, i) => {
@@ -17,7 +17,7 @@ function getLast30DaysArr() {
   return Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i));
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   });
 }
 
@@ -75,8 +75,8 @@ export function useDashboardData(expenses, timeRange = 'monthly') {
     prevWeekStart.setDate(prevWeekStart.getDate() - prevWeekStart.getDay() - 7);
     const prevWeekEnd = new Date(prevWeekStart);
     prevWeekEnd.setDate(prevWeekEnd.getDate() + 6);
-    const prevWeekStartStr = prevWeekStart.toISOString().split('T')[0];
-    const prevWeekEndStr = prevWeekEnd.toISOString().split('T')[0];
+    const prevWeekStartStr = localDateStr(prevWeekStart);
+    const prevWeekEndStr = localDateStr(prevWeekEnd);
     const prevWeekTotal = sum(spendEntries.filter(e => e.date >= prevWeekStartStr && e.date <= prevWeekEndStr));
     const weekChange = prevWeekTotal > 0 ? ((weekTotal - prevWeekTotal) / prevWeekTotal) * 100 : null;
 

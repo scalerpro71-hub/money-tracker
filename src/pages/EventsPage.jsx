@@ -3,6 +3,7 @@ import { Modal } from '../components/layout/Modal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { fmtK } from '../lib/formatUtils';
+import { todayStr } from '../lib/dateUtils';
 
 const EVENT_ICONS = ['🎉', '🪔', '💍', '🎂', '✈️', '🎓', '🏠', '🎊', '🛍️', '⭐'];
 
@@ -16,6 +17,10 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
   const [editingEvent, setEditingEvent] = useState(null);
 
   function getEventSpend(event) {
+    return expenses.filter(e => e.type !== 'income' && e.event_id === event.id).reduce((a, e) => a + Number(e.amount), 0);
+  }
+
+  function getDateRangeSpend(event) {
     if (!event.start_date && !event.end_date) return 0;
     return expenses.filter(e => {
       if (e.type === 'income') return false;
@@ -43,10 +48,11 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
       <div className="events-grid">
         {events.map((ev, i) => {
           const spent = getEventSpend(ev);
+          const dateRangeSpend = getDateRangeSpend(ev);
           const pct = ev.budget > 0 ? Math.min(100, Math.round((spent / ev.budget) * 100)) : 0;
           const remaining = ev.budget - spent;
           const over = spent > ev.budget;
-          const today = new Date().toISOString().split('T')[0];
+          const today = todayStr();
           const active = (!ev.start_date || ev.start_date <= today) && (!ev.end_date || ev.end_date >= today);
 
           return (
@@ -80,6 +86,11 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
                   {over ? `Over by ${fmtK(Math.abs(remaining))}` : `${fmtK(remaining)} left`}
                 </span>
               </div>
+              {dateRangeSpend > 0 && spent === 0 && (
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 8, fontWeight: 600 }}>
+                  {fmtK(dateRangeSpend)} spent in these dates. Edit transactions to link them to this event.
+                </div>
+              )}
             </div>
           );
         })}

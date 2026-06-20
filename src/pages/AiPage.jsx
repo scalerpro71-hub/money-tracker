@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { callAiChat, callAiSuggest } from '../lib/claudeApi';
 import { Icon } from '../components/layout/Icon';
 import { cur, fmtK } from '../lib/formatUtils';
-import { startOfMonthStr } from '../lib/dateUtils';
+import { localDateStr, startOfMonthStr } from '../lib/dateUtils';
 
 const SUGGESTIONS = [
   "Can I afford a ₹15,000 trip this month?",
@@ -155,7 +155,7 @@ function topTransactions(entries, limit = 8) {
 function daysAgoIso(days) {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }
 
 function monthKey(offset = 0) {
@@ -195,7 +195,7 @@ function buildAiInsightData(feature, { expenses, budgets, goals, profile, invest
     generated_for: new Date().toISOString().slice(0, 10),
     profile: {
       monthly_income: Number(profile?.monthly_income || 0),
-      salary_date: profile?.salary_date || null,
+      payday_day: profile?.payday_day || null,
     },
     current_period: {
       label: feature === 'weekly_money_story' || feature === 'hidden_patterns' ? 'last 7 days' : month,

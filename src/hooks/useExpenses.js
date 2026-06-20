@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { daysAgoStr } from '../lib/dateUtils';
 
 export function useExpenses(userId) {
   const [expenses, setExpenses] = useState([]);
@@ -12,7 +11,6 @@ export function useExpenses(userId) {
       .from('expenses')
       .select('*, category:categories(id,name,icon,color)')
       .eq('user_id', userId)
-      .gte('date', daysAgoStr(90))
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
     setExpenses(data ?? []);

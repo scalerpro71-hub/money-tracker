@@ -4,6 +4,7 @@ import { Icon } from '../components/layout/Icon';
 import { cur } from '../lib/formatUtils';
 import { supabase } from '../lib/supabase';
 import { merchantKey, categoryByMerchant } from '../lib/categorize';
+import { localDateStr } from '../lib/dateUtils';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
@@ -80,11 +81,17 @@ function parseCSV(text) {
 }
 
 function findCol(headers, candidates) { return candidates.find(c => headers.includes(c)) || null; }
-function parseAmount(str) { const n = parseFloat((str || '').replace(/[₹,\s]/g, '')); return isNaN(n) ? null : n; }
+function parseAmount(str) {
+  const raw = String(str || '').trim();
+  const negative = raw.startsWith('-') || (raw.startsWith('(') && raw.endsWith(')'));
+  const n = parseFloat(raw.replace(/[₹,\s()]/g, '').replace(/^-/, ''));
+  if (isNaN(n)) return null;
+  return negative ? -n : n;
+}
 const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
 function parseDate(str) {
   if (!str) return null;
-  if (str instanceof Date) return str.toISOString().split('T')[0];
+  if (str instanceof Date) return localDateStr(str);
   const s = String(str).trim();
   const mmmMatch = s.match(/^(\d{1,2})[-/]([A-Za-z]{3})[-/](\d{4})$/);
   if (mmmMatch) { const [, d, mon, y] = mmmMatch; const m = MONTHS[mon.toLowerCase()]; if (m) return `${y}-${String(m).padStart(2,'0')}-${d.padStart(2,'0')}`; }
@@ -153,8 +160,9 @@ export function ImportPage({ categories, onAdd }) {
     const valid = parsed.map((row, i) => {
       const withdrawal = amtCol ? parseAmount(row[amtCol]) : null;
       const deposit = incomeCol ? parseAmount(row[incomeCol]) : null;
-      const isIncome = (!withdrawal || withdrawal === 0) && deposit && deposit > 0;
-      const amount = isIncome ? deposit : withdrawal;
+      const rawAmount = withdrawal !== null ? withdrawal : deposit;
+      const isIncome = deposit !== null ? deposit > 0 && (!withdrawal || withdrawal === 0) : rawAmount > 0 && amtCol === incomeCol;
+      const amount = isIncome ? Math.abs(deposit || rawAmount) : Math.abs(rawAmount);
       if (!amount || amount <= 0) return null;
       const note = noteCol ? cleanNote(row[noteCol]) : '';
       return { _id: i, amount, type: isIncome ? 'income' : 'expense', date: dateCol ? parseDate(row[dateCol]) : null, note, raw: row };

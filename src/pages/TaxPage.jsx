@@ -12,11 +12,22 @@ const SECTIONS = [
   { id: 'HRA', label: 'HRA — House Rent Allowance', limit: null, examples: 'Rent paid if you are salaried and in rented accommodation', items: ['Rent Paid'] },
 ];
 
+function currentFinancialYear() {
+  const today = new Date();
+  const startYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`;
+}
+
+function fyOptions() {
+  const start = Number(currentFinancialYear().slice(0, 4));
+  return [start, start - 1, start - 2].map(y => `${y}-${String((y + 1) % 100).padStart(2, '0')}`);
+}
+
 export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
   const toast = useToast();
   const [showAdd, setShowAdd] = useState(null);
   const [editingDecl, setEditingDecl] = useState(null);
-  const [fy, setFy] = useState('2024-25');
+  const [fy, setFy] = useState(currentFinancialYear);
 
   const filtered = declarations.filter(d => d.financial_year === fy);
   const totalSaved = SECTIONS.reduce((acc, s) => {
@@ -40,6 +51,7 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h3 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.015em' }}>Tax Planner</h3>
           <select value={fy} onChange={e => setFy(e.target.value)} className="mini-select">
+            {fyOptions().map(option => <option key={option} value={option}>FY {option}</option>)}
             <option value="2024-25">FY 2024–25</option>
             <option value="2025-26">FY 2025–26</option>
             <option value="2023-24">FY 2023–24</option>

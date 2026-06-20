@@ -16,26 +16,31 @@ export function formatShortDate(dateStr) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+export function localDateStr(date = new Date()) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  return localDateStr();
 }
 
 export function startOfWeekStr() {
   const d = new Date();
   d.setDate(d.getDate() - d.getDay());
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }
 
 export function startOfMonthStr() {
   const d = new Date();
   d.setDate(1);
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }
 
 export function daysAgoStr(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }
 
 export function firstDayOfCurrentMonth() {
@@ -53,7 +58,7 @@ export function getLast7Days() {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   });
 }
 
@@ -61,6 +66,6 @@ export function getLast30Days() {
   return Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i));
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   });
 }

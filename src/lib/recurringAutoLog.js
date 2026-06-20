@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
+import { todayStr } from './dateUtils';
 
 export async function autoLogRecurring(userId) {
   if (!userId) return 0;
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayDate = todayStr();
   const dayOfMonth = today.getDate();
   const dayOfWeek = today.getDay();
 
@@ -22,7 +23,7 @@ export async function autoLogRecurring(userId) {
     .from('expenses')
     .select('note, category_id, amount')
     .eq('user_id', userId)
-    .eq('date', todayStr);
+      .eq('date', todayDate);
 
   let logged = 0;
   for (const r of recurring) {
@@ -35,6 +36,7 @@ export async function autoLogRecurring(userId) {
     // Check if already logged today (same name + amount + category)
     const alreadyLogged = todayExpenses?.some(
       e => e.note === r.name && Number(e.amount) === Number(r.amount) && e.category_id === r.category_id
+        || e.note === `${r.name} (auto)` && Number(e.amount) === Number(r.amount) && e.category_id === r.category_id
     );
     if (alreadyLogged) continue;
 
@@ -42,8 +44,8 @@ export async function autoLogRecurring(userId) {
       user_id: userId,
       amount: r.amount,
       category_id: r.category_id,
-      date: todayStr,
-      note: r.name,
+      date: todayDate,
+      note: `${r.name} (auto)`,
       payment_mode: 'netbanking',
       type: 'expense',
     });

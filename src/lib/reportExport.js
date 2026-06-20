@@ -1,4 +1,4 @@
-import { formatINR } from './dateUtils';
+import { formatINR, todayStr } from './dateUtils';
 
 export function exportExpensesCSV(expenses, filename = 'rupee-tracker-expenses.csv') {
   const headers = ['Date', 'Amount', 'Category', 'Note', 'Type'];
@@ -17,7 +17,7 @@ export function exportExpensesCSV(expenses, filename = 'rupee-tracker-expenses.c
 export function exportMonthlyReportCSV(expenses, budgets, profile) {
   const today = new Date();
   const month = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-  const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+  const monthStart = `${todayStr().slice(0, 7)}-01`;
   const monthEntries = expenses.filter(e => e.date >= monthStart);
   const monthExpenses = monthEntries.filter(e => e.type !== 'income');
   const monthIncome = monthEntries
@@ -51,7 +51,7 @@ export function exportMonthlyReportCSV(expenses, budgets, profile) {
     `Category,Amount,% of Spend`,
     ...Object.entries(byCategory)
       .sort((a, b) => b[1] - a[1])
-      .map(([cat, amt]) => `${cat},${formatINR(amt)},${Math.round((amt / totalSpent) * 100)}%`),
+      .map(([cat, amt]) => `${cat},${formatINR(amt)},${totalSpent > 0 ? Math.round((amt / totalSpent) * 100) : 0}%`),
     ``,
     `=== BUDGET STATUS ===`,
     `Category,Budget,Spent,Remaining,Status`,

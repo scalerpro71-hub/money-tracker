@@ -27,10 +27,14 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
   const gainPct = totalInvested > 0 ? ((gain / totalInvested) * 100).toFixed(1) : 0;
   const sipMonthly = investments.filter(i => i.type === 'sip').reduce((a, i) => a + Number(i.monthly_amount || 0), 0);
 
-  function saveCurrentValue(inv) {
-    onUpdate(inv.id, { current_value: Number(editValue) });
-    setEditingId(null);
-    toast('Value updated');
+  async function saveCurrentValue(inv) {
+    try {
+      await onUpdate(inv.id, { current_value: Number(editValue) });
+      setEditingId(null);
+      toast('Value updated');
+    } catch (err) {
+      toast(err.message, 'error');
+    }
   }
 
   async function handleDelete(inv) {

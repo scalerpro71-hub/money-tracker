@@ -13,6 +13,7 @@ import { useInvestments } from './hooks/useInvestments';
 import { useEvents } from './hooks/useEvents';
 import { useTax } from './hooks/useTax';
 import { autoLogRecurring } from './lib/recurringAutoLog';
+import { localDateStr, todayStr } from './lib/dateUtils';
 import { LoginPage } from './components/auth/LoginPage';
 import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { DashboardPage } from './pages/DashboardPage';
@@ -77,7 +78,7 @@ function AppInner() {
 
   useEffect(() => { if (userId) autoLogRecurring(userId); }, [userId]);
   const { categories, addCategory, deleteCategory } = useCategories(userId);
-  const { budgets, upsertBudget } = useBudgets(userId);
+  const { budgets, upsertBudget, deleteBudget } = useBudgets(userId);
   const { goals, addGoal, updateGoal, deleteGoal } = useGoals(userId);
   const { profile, updateProfile } = useProfile(userId);
   const { emis, addEmi, updateEmi, deleteEmi } = useEmis(userId);
@@ -121,11 +122,11 @@ function AppInner() {
 
   async function updateStreakIfNeeded() {
     if (!profile || !budgets.length) return;
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayStr();
     if (profile.last_streak_date === today) return;
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = localDateStr(yesterday);
     const totalBudget = budgets.reduce((a, b) => a + b.limit_amount, 0);
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const dailyBudget = totalBudget / daysInMonth;
@@ -143,7 +144,7 @@ function AppInner() {
     }
   }
 
-  const userName = profile?.name || user?.email?.split('@')[0] || 'there';
+  const userName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there';
   const userInitial = userName.charAt(0).toUpperCase();
   const mobileActive = MOBILE_IDS.has(tab) ? tab : 'more';
 
@@ -168,7 +169,7 @@ function AppInner() {
       case 'insights':
         return <AiPage userId={userId} expenses={expenses} budgets={budgets} goals={goals} profile={profile} investments={investments} assets={assets} liabilities={liabilities} bills={bills} />;
       case 'txns':
-        return <ExpensesPage expenses={expenses} categories={categories} onAdd={handleAddExpense} onUpdate={updateExpense} onDelete={deleteExpense} />;
+        return <ExpensesPage expenses={expenses} categories={categories} events={events} onAdd={handleAddExpense} onUpdate={updateExpense} onDelete={deleteExpense} />;
       case 'wealth':
         return (
           <WealthPage
@@ -199,9 +200,9 @@ function AppInner() {
       case 'settings':
         return (
           <SettingsPage
-            profile={profile} onUpdateProfile={updateProfile}
+            profile={profile} user={user} onUpdateProfile={updateProfile}
             categories={categories} onAddCategory={addCategory} onDeleteCategory={deleteCategory}
-            budgets={budgets} onUpsertBudget={upsertBudget}
+            budgets={budgets} onUpsertBudget={upsertBudget} onDeleteBudget={deleteBudget}
             emis={emis} onAddEmi={addEmi} onUpdateEmi={updateEmi} onDeleteEmi={deleteEmi}
             bills={bills} onAddBill={addBill} onUpdateBill={updateBill} onDeleteBill={deleteBill}
             expenses={expenses} userId={userId} onSignOut={signOut}
@@ -314,6 +315,7 @@ function AppInner() {
         <AddExpenseModal
           categories={categories}
           expenses={expenses}
+          events={events}
           initialType={addEntryType}
           onAdd={handleAddExpense}
           onClose={() => setShowAdd(false)}

@@ -300,7 +300,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
               <div key={txn.id} className="txn">
                 <div className="txn-ico">{txn.category?.icon || '💰'}</div>
                 <div className="txn-mid">
-                  <div className="txn-name">{txn.description || txn.category?.name || 'Expense'}</div>
+                  <div className="txn-name">{txn.note || txn.category?.name || 'Expense'}</div>
                   <div className="txn-meta">
                     <span>{new Date(txn.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                     {txn.payment_mode && <><span>·</span><span>{txn.payment_mode}</span></>}

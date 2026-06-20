@@ -1,4 +1,7 @@
+import { useId } from 'react';
+
 export function Area({ data, w = 320, h = 80, color = 'var(--accent)', fillOpacity = 0.22 }) {
+  const uid = useId().replace(/:/g, '');
   if (!data || data.length < 2) return null;
   const max = Math.max(...data), min = Math.min(...data);
   const range = max - min || 1;
@@ -8,7 +11,7 @@ export function Area({ data, w = 320, h = 80, color = 'var(--accent)', fillOpaci
   ]);
   const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   const area = line + ` L ${w} ${h} L 0 ${h} Z`;
-  const id = 'ar' + Math.abs(data[0] | 0) + data.length;
+  const id = `ar-${uid}`;
   return (
     <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block' }}>
       <defs>

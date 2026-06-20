@@ -9,7 +9,7 @@ const PAYMENT_MODES = [
   { value: 'netbanking', label: 'Bank' },
 ];
 
-export function AddExpenseModal({ categories, expenses = [], onAdd, onClose, initialData = null, initialType = 'expense' }) {
+export function AddExpenseModal({ categories, expenses = [], events = [], onAdd, onClose, initialData = null, initialType = 'expense', initialEventId = '' }) {
   const editing = !!initialData;
   const [type, setType] = useState(initialData?.type || initialType);
   const [amountStr, setAmountStr] = useState(initialData?.amount?.toString() || '');
@@ -17,6 +17,7 @@ export function AddExpenseModal({ categories, expenses = [], onAdd, onClose, ini
   const [date, setDate] = useState(initialData?.date || todayStr());
   const [note, setNote] = useState(initialData?.note || '');
   const [paymentMode, setPaymentMode] = useState(initialData?.payment_mode || 'upi');
+  const [eventId, setEventId] = useState(initialData?.event_id || initialEventId);
   const [cashback] = useState(initialData?.cashback_amount?.toString() || '');
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -63,6 +64,7 @@ export function AddExpenseModal({ categories, expenses = [], onAdd, onClose, ini
         note: note.trim() || null,
         payment_mode: paymentMode,
         cashback_amount: Number(cashback) || 0,
+        event_id: type === 'expense' ? eventId || null : null,
       });
       handleClose();
     } finally {
@@ -159,6 +161,19 @@ export function AddExpenseModal({ categories, expenses = [], onAdd, onClose, ini
             style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--hair)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
+
+        {type === 'expense' && events.length > 0 && (
+          <div style={{ padding: '0 20px 14px' }}>
+            <select
+              value={eventId}
+              onChange={e => setEventId(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--hair)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
+            >
+              <option value="">No event budget</option>
+              {events.map(ev => <option key={ev.id} value={ev.id}>{ev.icon} {ev.name}</option>)}
+            </select>
+          </div>
+        )}
 
         {/* Numeric keypad */}
         <div className="keypad" style={{ padding: '0 20px 14px' }}>

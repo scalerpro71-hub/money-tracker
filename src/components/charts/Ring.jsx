@@ -1,10 +1,13 @@
+import { useId } from 'react';
+
 export function Ring({ pct, size = 120, stroke = 13 }) {
+  const uid = useId().replace(/:/g, '');
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const clamped = Math.min(pct, 100);
   const off = c - (clamped / 100) * c;
   const over = pct > 100;
-  const id = 'rg' + Math.round(size) + Math.round(pct);
+  const id = `rg-${uid}`;
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
       <defs>

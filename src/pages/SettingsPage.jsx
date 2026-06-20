@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useRecurring } from '../hooks/useRecurring';
 import { fmtK } from '../lib/formatUtils';
 import { exportMonthlyReportCSV, exportExpensesCSV } from '../lib/reportExport';
+import { localDateStr } from '../lib/dateUtils';
 
 const COLORS = ['#F97316','#3B82F6','#A855F7','#EC4899','#10B981','#F59E0B','#6366F1','#14B8A6','#6B7280','#EF4444'];
 
@@ -34,7 +35,7 @@ function ordinalDay(day) {
   return `${n}${suffix}`;
 }
 
-export function SettingsPage({ profile, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut, focusSection, onFocusHandled }) {
+export function SettingsPage({ profile, user, onUpdateProfile, categories, onAddCategory, onDeleteCategory, budgets, onUpsertBudget, onDeleteBudget, emis, onAddEmi, onUpdateEmi, onDeleteEmi, bills, onAddBill, onUpdateBill, onDeleteBill, expenses, userId, onSignOut, focusSection, onFocusHandled }) {
   const toast = useToast();
   const { theme, toggle: toggleTheme } = useTheme();
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring(userId);
@@ -95,7 +96,9 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
     if (successMessage) toast(successMessage);
   }
 
-  const initials = (profile?.full_name || profile?.email || 'U').slice(0, 2).toUpperCase();
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Your Name';
+  const displayEmail = user?.email || '';
+  const initials = displayName.slice(0, 2).toUpperCase();
   const budgetTotal = budgets.reduce((a, b) => a + Number(b.limit_amount || 0), 0);
   const plannedSavings = Math.max(0, Number(profile?.monthly_income || 0) - budgetTotal);
 
@@ -107,10 +110,10 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
           <div className="avatar" style={{ width: 56, height: 56, fontSize: 20, borderRadius: 18, flexShrink: 0 }}>{initials}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile?.full_name || 'Your Name'}
+              {displayName}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile?.email || ''}
+              {displayEmail}
             </div>
           </div>
           <span className="chip" style={{ background: 'linear-gradient(135deg,#0a9d72,#0a8a86)', color: '#fff', fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', padding: '4px 10px' }}>PRO</span>
@@ -408,7 +411,7 @@ export function SettingsPage({ profile, onUpdateProfile, categories, onAddCatego
       )}
 
       {showBudgets && (
-        <BudgetEditModal categories={categories} budgets={budgets} monthlyIncome={Number(profile?.monthly_income) || 0} onUpsert={onUpsertBudget} onClose={() => setShowBudgets(false)} />
+        <BudgetEditModal categories={categories} budgets={budgets} monthlyIncome={Number(profile?.monthly_income) || 0} onUpsert={onUpsertBudget} onDeleteBudget={onDeleteBudget} onClose={() => setShowBudgets(false)} />
       )}
 
       {showSuggestedCats && (
@@ -507,7 +510,7 @@ function AddRecurringModal({ categories, onAdd, onClose }) {
   );
 }
 
-function BudgetEditModal({ categories, budgets, monthlyIncome, onUpsert, onClose }) {
+function BudgetEditModal({ categories, budgets, monthlyIncome, onUpsert, onDeleteBudget, onClose }) {
   const [values, setValues] = useState(() => {
     const m = {};
     for (const b of budgets) m[b.category_id] = b.limit_amount.toString();
@@ -521,7 +524,12 @@ function BudgetEditModal({ categories, budgets, monthlyIncome, onUpsert, onClose
       return;
     }
     for (const [catId, val] of Object.entries(values)) {
-      if (val && Number(val) > 0) await onUpsert(catId, Number(val));
+      const existing = budgets.find(b => b.category_id === catId);
+      if (val && Number(val) > 0) {
+        await onUpsert(catId, Number(val));
+      } else if (existing && onDeleteBudget) {
+        await onDeleteBudget(existing.id);
+      }
     }
     toast('Budgets saved');
     onClose();
@@ -631,7 +639,7 @@ function AddEmiModal({ onAdd, onClose, initial, submitLabel = 'Add EMI' }) {
   const [principal, setPrincipal] = useState(initial?.principal?.toString() || '');
   const [emiAmt, setEmiAmt] = useState(initial?.emi_amount?.toString() || '');
   const [rate, setRate] = useState(initial?.interest_rate?.toString() || '');
-  const [startDate, setStartDate] = useState(initial?.start_date || new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(initial?.start_date || localDateStr());
   const [tenure, setTenure] = useState(initial?.tenure_months?.toString() || '');
 
   async function handleSubmit(e) {

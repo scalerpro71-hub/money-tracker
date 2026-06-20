@@ -1,5 +1,16 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+function localDateStr(date = new Date(), timeZone = 'Asia/Kolkata') {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const get = (type: string) => parts.find(p => p.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
 Deno.serve(async () => {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -7,7 +18,7 @@ Deno.serve(async () => {
   );
 
   const today = new Date();
-  const todayDate = today.toISOString().split('T')[0];
+  const todayDate = localDateStr(today);
   const dayOfMonth = today.getDate();
   const dayOfWeek = today.getDay();
 
