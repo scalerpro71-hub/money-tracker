@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, tbl } from '../lib/supabase';
 
 export function useExpenses(userId) {
   const [expenses, setExpenses] = useState([]);
@@ -9,7 +9,7 @@ export function useExpenses(userId) {
     if (!userId) return;
     const { data } = await supabase
       .from('expenses')
-      .select('*, category:categories(id,name,icon,color)')
+      .select(`*, category:${tbl('categories')}(id,name,icon,color)`)
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
@@ -23,7 +23,7 @@ export function useExpenses(userId) {
     if (!userId) return;
     const channel = supabase
       .channel('expenses-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses', filter: `user_id=eq.${userId}` }, fetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: tbl('expenses'), filter: `user_id=eq.${userId}` }, fetch)
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [userId, fetch]);

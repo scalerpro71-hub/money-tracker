@@ -21,7 +21,12 @@ const rawClient = createClient(
 // Dev/prod table separation: in dev, every .from('x') call transparently
 // becomes .from(`${prefix}x`) so dev never reads/writes real user data.
 // Auth, edge functions, and storage are untouched - only data tables are scoped.
-const TABLE_PREFIX = import.meta.env.VITE_TABLE_PREFIX || '';
+// PostgREST embedded-relationship hints inside .select() strings (e.g.
+// 'category:categories(...)') are NOT rewritten by the .from() wrapper below -
+// any call site embedding a foreign table must reference `tbl('categories')`
+// itself so the hint points at the matching dev_/real sibling table.
+export const TABLE_PREFIX = import.meta.env.VITE_TABLE_PREFIX || '';
+export const tbl = (name) => `${TABLE_PREFIX}${name}`;
 
 export const supabase = TABLE_PREFIX
   ? new Proxy(rawClient, {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, tbl } from '../lib/supabase';
 import { firstDayOfCurrentMonth } from '../lib/dateUtils';
 
 export function useBudgets(userId) {
@@ -9,7 +9,7 @@ export function useBudgets(userId) {
     if (!userId) return;
     const { data } = await supabase
       .from('budgets')
-      .select('*, category:categories(id,name,icon,color)')
+      .select(`*, category:${tbl('categories')}(id,name,icon,color)`)
       .eq('user_id', userId)
       .eq('month', firstDayOfCurrentMonth());
     setBudgets(data ?? []);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, tbl } from '../lib/supabase';
 
 export function useRecurring(userId) {
   const [recurring, setRecurring] = useState([]);
@@ -8,7 +8,7 @@ export function useRecurring(userId) {
     if (!userId) return;
     const { data } = await supabase
       .from('recurring_expenses')
-      .select('*, category:categories(id,name,icon,color)')
+      .select(`*, category:${tbl('categories')}(id,name,icon,color)`)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     setRecurring(data ?? []);

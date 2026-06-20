@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, tbl } from '../lib/supabase';
 
 export function useBills(userId) {
   const [bills, setBills] = useState([]);
 
   const fetch = useCallback(async () => {
     if (!userId) return;
-    const { data } = await supabase.from('bills').select('*, category:categories(name,icon,color)')
+    const { data } = await supabase.from('bills').select(`*, category:${tbl('categories')}(name,icon,color)`)
       .eq('user_id', userId).eq('is_active', true).order('due_day');
     setBills(data || []);
   }, [userId]);
