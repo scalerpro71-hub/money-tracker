@@ -15,14 +15,14 @@ function GoalCard({ goal, onEdit, onDelete, index }) {
   const monthlyNeeded = monthsLeft ? Math.ceil(remaining / monthsLeft) : null;
 
   return (
-    <div className="goal-card rise" style={{ '--d': `${index * 60}ms` }}>
+    <div className="goal-card rise" style={{ '--d': `${index * 60}ms` }} onClick={() => onEdit(goal)}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div className="goal-emoji-tile">{goal.emoji || '🎯'}</div>
+        <div className="goal-emoji-tile">🎯</div>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={() => onEdit(goal)}>
+          <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={e => { e.stopPropagation(); onEdit(goal); }}>
             <Icon name="gear" size={15} />
           </button>
-          <button className="icon-btn" style={{ width: 32, height: 32, color: 'var(--neg)' }} onClick={() => onDelete(goal.id)}>
+          <button className="icon-btn" style={{ width: 32, height: 32, color: 'var(--neg)' }} onClick={e => { e.stopPropagation(); onDelete(goal.id); }}>
             ×
           </button>
         </div>
