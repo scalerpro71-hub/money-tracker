@@ -59,7 +59,7 @@ function extractText(data: Record<string, unknown>) {
   return '';
 }
 
-async function callOpenAI(input: Array<{ role: string; content: string }>, maxOutputTokens = 600) {
+async function callOpenAI(input: Array<{ role: string; content: string }>, maxOutputTokens = 800) {
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -70,6 +70,7 @@ async function callOpenAI(input: Array<{ role: string; content: string }>, maxOu
       model: OPENAI_MODEL,
       instructions: SYSTEM_PROMPT,
       input,
+      reasoning: { effort: 'low' },
       max_output_tokens: maxOutputTokens,
     }),
   });

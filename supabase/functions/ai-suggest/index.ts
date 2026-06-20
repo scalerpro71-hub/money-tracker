@@ -98,7 +98,7 @@ async function callOpenAI(system: string, user: string) {
       model: OPENAI_MODEL,
       instructions: system,
       input: [{ role: 'user', content: user }],
-      reasoning: { effort: 'minimal' },
+      reasoning: { effort: 'low' },
       text: { verbosity: 'low' },
       max_output_tokens: 900,
       store: false,
