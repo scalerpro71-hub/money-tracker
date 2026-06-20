@@ -72,7 +72,9 @@
   animation: sheetUp .3s cubic-bezier(.2,.8,.2,1);
 }
 .sheet::-webkit-scrollbar { display: none; }
-@media (min-width: 921px) { .sheet { bottom: 24px; border-radius: 28px; border-bottom: 1px solid var(--hair-2); } .sheet-backdrop { align-items: center; } }
+@media (min-width: 921px) { .sheet { bottom: 24px; max-width: 520px; border-radius: 28px; border-bottom: 1px solid var(--hair-2); } .sheet-backdrop { align-items: center; } }
+.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+@media (min-width: 640px) { .cat-grid { grid-template-columns: repeat(4, 1fr); } }
 .sheet-grip { width: 40px; height: 5px; border-radius: 99px; background: var(--hair-2); margin: 4px auto 14px; }
 .sheet-amt { text-align: center; font-family: var(--font-num); font-size: 46px; font-weight: 700; letter-spacing: -0.04em; padding: 16px 0 10px; }
 .sheet-amt .cur { color: var(--ink-3); font-size: 28px; }

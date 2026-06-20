@@ -40,6 +40,7 @@
   background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.18);
   padding: 6px 12px; border-radius: var(--r-pill); color: rgba(255,255,255,0.95);
 }
+.hero-pill:focus-visible { outline: 2px solid rgba(255,255,255,0.9); outline-offset: 2px; }
 .hero-bal { font-family: var(--font-num); font-size: clamp(40px, 6vw, 58px); font-weight: 700; letter-spacing: -0.035em; margin: 16px 0 4px; position: relative; z-index: 1; display: flex; align-items: baseline; gap: 3px; }
 .hero-bal .cur { font-size: 0.55em; opacity: .8; font-weight: 600; }
 .hero-sub { font-size: 13.5px; color: rgba(255,255,255,0.68); font-weight: 600; position: relative; z-index: 1; }
@@ -78,4 +79,5 @@
   .hero-money-scene { opacity: 0.45; transform: translateX(12%); }
   .hero-splits { gap: 8px; }
   .hero-split { padding: 10px 12px; }
+  .ring-card { gap: 16px; }
 }

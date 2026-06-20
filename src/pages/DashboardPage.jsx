@@ -155,7 +155,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
               value={activeMonth}
               onChange={e => setSelectedMonth(e.target.value)}
               className="hero-pill"
-              style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)', cursor: 'pointer', outline: 'none' }}
+              style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)', cursor: 'pointer' }}
             >
               {availableMonths.map(m => (
                 <option key={m} value={m} style={{ background: '#14181f', color: '#eef1f5' }}>{monthShort(m)}</option>
@@ -206,7 +206,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
         <div className="card pad rise" style={{ '--d': '60ms' }}>
           <div className="eyebrow" style={{ marginBottom: 18 }}>Budget Overview</div>
           <div className="ring-card">
-            <div className="ring-wrap" style={{ width: 130, height: 130 }}>
+            <div className="ring-wrap">
               <Ring pct={budgetPct} size={130} stroke={14} />
               <div className="ring-center">
                 <div className="rc-pct num">{budgetPct}%</div>
@@ -223,7 +223,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
               {projected !== null && (
                 <div className="ring-fact">
                   <div className="rf-label">Projected month-end</div>
-                  <div className="rf-val num" style={{ color: projected > totalBudget ? 'var(--neg)' : 'inherit' }}>
+                  <div className="rf-val num" style={{ color: totalBudget > 0 && projected > totalBudget ? 'var(--neg)' : 'inherit' }}>
                     {cur(projected)}
                   </div>
                 </div>
@@ -353,7 +353,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
       )}
       <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
         <EmiSummary emis={emis} />
-        <CashbackWidget expenses={monthExpenses} />
+        <CashbackWidget expenses={expenses} />
       </div>
     </div>
   );

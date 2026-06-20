@@ -130,7 +130,7 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
                 ✦ Auto-categorized — tap to change
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+            <div className="cat-grid">
               {categories.map(cat => {
                 const active = categoryId === cat.id;
                 return (

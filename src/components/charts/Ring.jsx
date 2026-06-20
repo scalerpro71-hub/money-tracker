@@ -9,7 +9,7 @@ export function Ring({ pct, size = 120, stroke = 13 }) {
   const over = pct > 100;
   const id = `rg-${uid}`;
   return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
+    <svg viewBox={`0 0 ${size} ${size}`} className="ring-svg" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="var(--accent)" />

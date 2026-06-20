@@ -210,10 +210,16 @@ button { font-family: inherit; }
 .bill-amt { font-family: var(--font-num); font-size: 15px; font-weight: 700; }
 
 /* ring */
-.ring-wrap { position: relative; flex: 0 0 auto; }
+.ring-wrap { position: relative; flex: 0 0 auto; width: 130px; height: 130px; }
+.ring-svg { width: 100%; height: 100%; }
 .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .ring-center .rc-pct { font-family: var(--font-num); font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
 .ring-center .rc-cap { font-size: 10px; color: var(--ink-3); font-weight: 800; text-transform: uppercase; letter-spacing: .09em; margin-top: 2px; }
+
+@media (max-width: 480px) {
+  .ring-wrap { width: 96px; height: 96px; }
+  .ring-center .rc-pct { font-size: 20px; }
+}
 
 /* insight cards */
 .ins-card {
