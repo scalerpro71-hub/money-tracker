@@ -38,6 +38,12 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
     setTimeout(onClose, 280);
   }
 
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') { setVisible(false); setTimeout(onClose, 280); } };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   function pressKey(k) {
     if (k === '⌫') { setAmountStr(s => s.slice(0, -1)); return; }
     if (k === '.' && amountStr.includes('.')) return;
@@ -118,6 +124,7 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
             value={note}
             onChange={e => { manuallySet.current = false; setNote(e.target.value); }}
             maxLength={100}
+            className="focus-ring"
             style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--hair)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
@@ -158,6 +165,7 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
         <div style={{ padding: '0 20px 14px' }}>
           <input
             type="date" value={date} onChange={e => setDate(e.target.value)}
+            className="focus-ring"
             style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--hair)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
@@ -167,6 +175,7 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
             <select
               value={eventId}
               onChange={e => setEventId(e.target.value)}
+              className="focus-ring"
               style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--hair)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' }}
             >
               <option value="">No event budget</option>

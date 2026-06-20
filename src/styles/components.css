@@ -122,3 +122,11 @@
   background: var(--color-surface);
   color: var(--color-text);
 }
+
+/* Shared focus-visible ring for inputs/selects styled entirely via inline
+   style (outline:none with no class-based replacement) - keeps keyboard
+   focus visible without fighting each inline style's own outline value. */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

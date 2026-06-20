@@ -124,8 +124,9 @@ export function ExpensesPage({ expenses, categories, events, onUpdate, onDelete 
         <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
           <Icon name="search" size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
           <input
-            type="search" placeholder="Search transactions…" value={search}
+            type="search" placeholder="Search…" value={search}
             onChange={e => setSearch(e.target.value)}
+            className="focus-ring"
             style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 'var(--r-pill)', border: '1px solid var(--hair)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 13.5, fontFamily: 'var(--font-body)', outline: 'none' }}
           />
         </div>
