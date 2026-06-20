@@ -13,7 +13,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(
+const rawClient = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder'
 );
+
+// Dev/prod table separation: in dev, every .from('x') call transparently
+// becomes .from(`${prefix}x`) so dev never reads/writes real user data.
+// Auth, edge functions, and storage are untouched - only data tables are scoped.
+const TABLE_PREFIX = import.meta.env.VITE_TABLE_PREFIX || '';
+
+export const supabase = TABLE_PREFIX
+  ? new Proxy(rawClient, {
+      get(target, prop, receiver) {
+        if (prop === 'from') {
+          return (table) => target.from(`${TABLE_PREFIX}${table}`);
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    })
+  : rawClient;
