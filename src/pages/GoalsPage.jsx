@@ -3,6 +3,7 @@ import { AddGoalModal } from '../components/goals/AddGoalModal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
 import { Confetti } from '../components/layout/Confetti';
+import { Tilt } from '../components/layout/Tilt';
 import { useRevealOnScroll } from '../hooks/useRevealOnScroll';
 import { fmtK } from '../lib/formatUtils';
 
@@ -19,7 +20,7 @@ function GoalCard({ goal, onEdit, onDelete, index }) {
   const monthlyNeeded = monthsLeft ? Math.ceil(remaining / monthsLeft) : null;
 
   return (
-    <div className="goal-card rise" data-reveal style={{ '--d': `${index * 60}ms` }} onClick={() => onEdit(goal)}>
+    <Tilt max={6} glow className="goal-card rise" data-reveal style={{ '--d': `${index * 60}ms` }} onClick={() => onEdit(goal)}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div className="goal-emoji-tile">🎯</div>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -47,7 +48,7 @@ function GoalCard({ goal, onEdit, onDelete, index }) {
         {monthsLeft && <div className="goal-stat">{monthsLeft} <span>mo left</span></div>}
         {monthlyNeeded && <div className="goal-stat">{fmtK(monthlyNeeded)}<span>/mo</span></div>}
       </div>
-    </div>
+    </Tilt>
   );
 }
 

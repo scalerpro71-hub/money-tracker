@@ -103,7 +103,9 @@
 .goals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 @media (max-width: 560px) { .goals-grid { grid-template-columns: 1fr; } }
 .goal-card { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-md); box-shadow: var(--shadow-sm); padding: 20px; cursor: pointer; transition: transform .18s, box-shadow .2s; }
-.goal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+/* hover lift now owned by the <Tilt> wrapper's JS-driven transform, not CSS,
+   so the two systems don't fight over the transform property */
+.goal-card:hover { box-shadow: var(--shadow-md); }
 .goal-emoji-tile { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; font-size: 24px; background: var(--surface-2); border: 1px solid var(--hair); margin-bottom: 14px; }
 .goal-name { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
 .goal-sub { font-size: 12px; color: var(--ink-3); font-weight: 600; margin-top: 3px; }
