@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { Icon } from '../components/layout/Icon';
 import { Ring } from '../components/charts/Ring';
 import { cur, fmtK } from '../lib/formatUtils';
@@ -7,6 +7,8 @@ import { SpendingStreak } from '../components/dashboard/SpendingStreak';
 import { EmiSummary } from '../components/dashboard/EmiSummary';
 import { SalaryCountdown } from '../components/dashboard/SalaryCountdown';
 import { CashbackWidget } from '../components/dashboard/CashbackWidget';
+
+const HeroOrb = lazy(() => import('../components/three/HeroOrb'));
 
 function getMonthKey(date) {
   const d = new Date(date);
@@ -147,6 +149,11 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
     <div className="dash">
       {/* HERO CARD */}
       <div className="hero rise" style={{ '--d': '0ms' }}>
+        <div className="hero-money-scene">
+          <Suspense fallback={null}>
+            <HeroOrb budgetPct={budgetPct} />
+          </Suspense>
+        </div>
 
         <div className="hero-top">
           <div className="hero-label">SPENDABLE THIS MONTH</div>
