@@ -20,8 +20,11 @@
 .btn-lift:active { transform: translateY(0); }
 
 /* ── Glassmorphism (Step 12) ── */
-:root { --glass-border: rgba(255,255,255,0.70); }
-[data-theme="dark"] { --glass-border: rgba(255,255,255,0.10); }
+/* Tinted to match --hair's color family (not the guide's literal white
+   value, which only reads on a dark/colorful background - here the page
+   background is light, so a white border was invisible). */
+:root { --glass-border: rgba(24,28,34,0.12); }
+[data-theme="dark"] { --glass-border: rgba(255,255,255,0.12); }
 .header-bar {
   background: var(--nav-bg);
   backdrop-filter: blur(16px);
