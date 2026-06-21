@@ -107,3 +107,11 @@
 .anim-ringGrow { animation: ringGrow 0.9s cubic-bezier(0.4,0,0.2,1) both; }
 
 /* `spin` is already defined in base.css for .spinner - reused, not redefined. */
+
+/* ── Scroll-reveal (Step 9, paired with useRevealOnScroll) ── */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s cubic-bezier(0.2,0.7,0.2,1), transform 0.5s cubic-bezier(0.2,0.7,0.2,1);
+}
+[data-reveal].visible { opacity: 1; transform: none; }

@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AddGoalModal } from '../components/goals/AddGoalModal';
 import { useToast } from '../components/layout/Toast';
 import { Icon } from '../components/layout/Icon';
+import { Confetti } from '../components/layout/Confetti';
+import { useRevealOnScroll } from '../hooks/useRevealOnScroll';
 import { fmtK } from '../lib/formatUtils';
 
+function goalPct(goal) {
+  return goal.target_amount > 0 ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100)) : 0;
+}
+
 function GoalCard({ goal, onEdit, onDelete, index }) {
-  const pct = goal.target_amount > 0
-    ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100))
-    : 0;
+  const pct = goalPct(goal);
   const remaining = Math.max(0, goal.target_amount - goal.current_amount);
   const monthsLeft = goal.target_date
     ? Math.max(1, Math.ceil((new Date(goal.target_date) - new Date()) / (1000 * 60 * 60 * 24 * 30)))
@@ -15,7 +19,7 @@ function GoalCard({ goal, onEdit, onDelete, index }) {
   const monthlyNeeded = monthsLeft ? Math.ceil(remaining / monthsLeft) : null;
 
   return (
-    <div className="goal-card rise" style={{ '--d': `${index * 60}ms` }} onClick={() => onEdit(goal)}>
+    <div className="goal-card rise" data-reveal style={{ '--d': `${index * 60}ms` }} onClick={() => onEdit(goal)}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div className="goal-emoji-tile">🎯</div>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -50,7 +54,17 @@ function GoalCard({ goal, onEdit, onDelete, index }) {
 export function GoalsPage({ goals, onAdd, onUpdate, onDelete }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [celebrate, setCelebrate] = useState(false);
   const toast = useToast();
+  const revealRef = useRevealOnScroll();
+  const prevPctById = useRef({});
+
+  useEffect(() => {
+    const prev = prevPctById.current;
+    const newlyFunded = goals.some(g => goalPct(g) >= 100 && (prev[g.id] ?? 0) < 100);
+    if (newlyFunded) setCelebrate(true);
+    prevPctById.current = Object.fromEntries(goals.map(g => [g.id, goalPct(g)]));
+  }, [goals]);
 
   async function handleAdd(data) { await onAdd(data); toast('Goal added!'); setShowAdd(false); }
   async function handleUpdate(data) { await onUpdate(editingGoal.id, data); toast('Goal updated'); setEditingGoal(null); }
@@ -61,7 +75,8 @@ export function GoalsPage({ goals, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div>
+    <div ref={revealRef}>
+      <Confetti trigger={celebrate} onDone={() => setCelebrate(false)} />
       <div className="sec-head" style={{ marginTop: 0 }}>
         <h3>Savings Goals</h3>
         <button className="btn-accent" onClick={() => setShowAdd(true)}>
