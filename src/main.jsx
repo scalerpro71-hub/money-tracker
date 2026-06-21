@@ -5,6 +5,7 @@ import './styles/tokens.css'
 import './styles/aurora-base.css'
 import './styles/aurora-dashboard.css'
 import './styles/aurora-screens.css'
+import './styles/motion.css'
 import './index.css'
 import App from './App.jsx'
 

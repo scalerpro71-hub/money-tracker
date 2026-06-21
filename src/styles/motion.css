@@ -1,0 +1,109 @@
+/* ============================================================
+   Motion / animation system - shared base classes + keyframes.
+   Built from existing tokens.css vars, not new hardcoded values.
+   ============================================================ */
+
+/* ── Gradient utility (Step 5) ── */
+.bg-grad-accent { background: var(--accent-grad); }
+
+/* ── Shared base classes (Step 6) ── */
+.surf {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.btn-lift {
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.btn-lift:active { transform: translateY(0); }
+
+/* ── Glassmorphism (Step 12) ── */
+:root { --glass-border: rgba(255,255,255,0.70); }
+[data-theme="dark"] { --glass-border: rgba(255,255,255,0.10); }
+.header-bar {
+  background: var(--nav-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ── Tilt wrapper support (Step 10) ── */
+.tilt-layer { transform-style: preserve-3d; }
+.tilt-layer .sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+  opacity: 0;
+  transition: opacity 0.25s;
+  border-radius: inherit;
+}
+.tilt-layer:hover .sheen { opacity: 1; }
+.card-locked {
+  filter: grayscale(0.15);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ── Keyframe library (Step 7) ── */
+@keyframes tab-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.tab-enter { animation: tab-enter 0.22s ease-out; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.anim-fadeIn { animation: fadeIn 0.3s ease-out; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.anim-fadeUp { animation: fadeUp 0.35s ease-out; }
+
+@keyframes riseIn { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: none; } }
+.anim-riseIn { animation: riseIn 0.4s cubic-bezier(0.2,0.7,0.2,1); }
+
+@keyframes dropIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+.anim-dropIn { animation: dropIn 0.3s ease-out; }
+
+@keyframes cardReveal { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
+.anim-cardReveal { animation: cardReveal 0.45s cubic-bezier(0.2,0.7,0.2,1) both; }
+
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+.anim-slideInLeft { animation: slideInLeft 0.3s ease-out both; }
+
+@keyframes slideInRight { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+.anim-slideInRight { animation: slideInRight 0.3s ease-out both; }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.anim-shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+
+@keyframes float1 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes float2 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes float3 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.anim-float1 { animation: float1 4.5s ease-in-out infinite; }
+.anim-float2 { animation: float2 5.5s ease-in-out infinite; }
+.anim-float3 { animation: float3 3.8s ease-in-out infinite; }
+
+@keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.03); opacity: 1; } }
+.anim-breathe { animation: breathe 3s ease-in-out infinite; }
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow); }
+  50% { box-shadow: 0 0 0 6px var(--glow); }
+}
+.anim-badge-pulse { animation: badge-pulse 2s ease-in-out infinite; }
+
+@keyframes barGrow { from { width: 0; } }
+.anim-barGrow { animation: barGrow 0.7s cubic-bezier(0.4,0,0.2,1) both; }
+
+@keyframes ringGrow { from { stroke-dashoffset: var(--ring-circumference, 0); } }
+.anim-ringGrow { animation: ringGrow 0.9s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* `spin` is already defined in base.css for .spinner - reused, not redefined. */

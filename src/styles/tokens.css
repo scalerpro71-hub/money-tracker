@@ -123,6 +123,9 @@
 /* default accent (green) when no data-accent set */
 :root { --accent:#0a9d72; --accent-2:#0a8a86; --accent-soft:rgba(10,157,114,0.12); --glow:rgba(10,157,114,0.22); --on-accent:#fff; }
 
+/* shared gradient, built from the accent pair above so it re-themes automatically */
+:root, [data-theme="dark"] { --accent-grad: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+
 /* ---------- FONTS & RADII ---------- */
 :root {
   --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
