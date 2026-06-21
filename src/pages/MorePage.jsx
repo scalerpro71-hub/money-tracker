@@ -9,7 +9,7 @@ const MORE_ITEMS = [
 
 export function MorePage({ onNav }) {
   return (
-    <div>
+    <div className="tab-enter">
       <div className="sec-head" style={{ marginTop: 0 }}><h3>More</h3></div>
       <div className="more-grid">
         {MORE_ITEMS.map((item, i) => (

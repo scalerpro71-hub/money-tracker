@@ -45,7 +45,7 @@ export function InvestmentsPage({ investments, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div>
+    <div className="tab-enter">
       {/* Hero */}
       <div className="invest-hero rise" style={{ '--d': '0ms' }}>
         <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>PORTFOLIO VALUE</div>

@@ -83,7 +83,7 @@ export function ExpensesPage({ expenses, categories, events, onUpdate, onDelete 
   }
 
   return (
-    <div>
+    <div className="tab-enter">
       {/* Summary cards */}
       <div className="activity-summary">
         <div className="activity-summary-card rise" style={{ '--d': '0ms', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

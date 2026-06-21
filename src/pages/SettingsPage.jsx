@@ -103,7 +103,7 @@ export function SettingsPage({ profile, user, onUpdateProfile, categories, onAdd
   const plannedSavings = Math.max(0, Number(profile?.monthly_income || 0) - budgetTotal);
 
   return (
-    <div>
+    <div className="tab-enter">
       {/* Profile card */}
       <div className="card pad rise" style={{ '--d': '0ms', marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

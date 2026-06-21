@@ -227,7 +227,7 @@ export function ImportPage({ categories, onAdd }) {
   const categorizedCount = rows.filter(r => catAssign[r._id]).length;
 
   return (
-    <div>
+    <div className="tab-enter">
       {rows.length === 0 ? (
         <>
           <div className="dropzone rise" style={{ '--d': '0ms' }} onClick={() => fileRef.current.click()}>

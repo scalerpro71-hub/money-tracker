@@ -146,7 +146,7 @@ export function DashboardPage({ expenses, budgets, profile, bills, emis, onAddEx
   const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
   return (
-    <div className="dash">
+    <div className="dash tab-enter">
       {/* HERO CARD */}
       <div className="hero rise" style={{ '--d': '0ms' }}>
         <div className="hero-money-scene">

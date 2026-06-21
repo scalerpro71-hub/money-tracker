@@ -410,7 +410,7 @@ export function AiPage({ expenses, budgets, goals, profile, investments, assets,
   }
 
   return (
-    <div className="coach-layout">
+    <div className="coach-layout tab-enter">
       {/* LEFT: Score + insights */}
       <div>
         <div className="score-hero rise" style={{ '--d': '0ms' }}>

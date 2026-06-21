@@ -37,7 +37,7 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
   }
 
   return (
-    <div>
+    <div className="tab-enter">
       <div className="sec-head" style={{ marginTop: 0 }}>
         <h3>Event Budgets</h3>
         <button className="btn-accent" onClick={() => setShowAdd(true)}>

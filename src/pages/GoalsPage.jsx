@@ -76,7 +76,7 @@ export function GoalsPage({ goals, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div ref={revealRef}>
+    <div ref={revealRef} className="tab-enter">
       <Confetti trigger={celebrate} onDone={() => setCelebrate(false)} />
       <div className="sec-head" style={{ marginTop: 0 }}>
         <h3>Savings Goals</h3>

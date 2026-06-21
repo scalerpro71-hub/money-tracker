@@ -31,7 +31,7 @@ export function WealthPage({
   const [active, setActive] = useState('goals');
 
   return (
-    <div>
+    <div className="tab-enter">
       <div className="sec-head" style={{ marginTop: 0 }}>
         <h3>Wealth</h3>
       </div>

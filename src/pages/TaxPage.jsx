@@ -45,7 +45,7 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div>
+    <div className="tab-enter">
       {/* Summary card */}
       <div className="card pad rise" style={{ '--d': '0ms', marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

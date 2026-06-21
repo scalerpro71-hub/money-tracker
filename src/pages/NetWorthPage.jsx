@@ -44,7 +44,7 @@ export function NetWorthPage({ assets, liabilities, onAddAsset, onUpdateAsset, o
   }
 
   return (
-    <div>
+    <div className="tab-enter">
       {/* Hero */}
       <div className="nw-hero rise" style={{ '--d': '0ms' }}>
         <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>NET WORTH</div>
