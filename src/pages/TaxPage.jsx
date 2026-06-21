@@ -52,9 +52,6 @@ export function TaxPage({ declarations, onAdd, onUpdate, onDelete }) {
           <h3 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.015em' }}>Tax Planner</h3>
           <select value={fy} onChange={e => setFy(e.target.value)} className="mini-select">
             {fyOptions().map(option => <option key={option} value={option}>FY {option}</option>)}
-            <option value="2024-25">FY 2024–25</option>
-            <option value="2025-26">FY 2025–26</option>
-            <option value="2023-24">FY 2023–24</option>
           </select>
         </div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
