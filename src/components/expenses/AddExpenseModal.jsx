@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { todayStr } from '../../lib/dateUtils';
 import { autoCategory } from '../../lib/categorize';
 
@@ -8,6 +9,8 @@ const PAYMENT_MODES = [
   { value: 'cash', label: 'Cash' },
   { value: 'netbanking', label: 'Bank' },
 ];
+
+const SHEET_SPRING = { type: 'spring', stiffness: 360, damping: 32, mass: 0.8 };
 
 export function AddExpenseModal({ categories, expenses = [], events = [], onAdd, onClose, initialData = null, initialType = 'expense', initialEventId = '' }) {
   const editing = !!initialData;
@@ -20,11 +23,9 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
   const [eventId, setEventId] = useState(initialData?.event_id || initialEventId);
   const [cashback] = useState(initialData?.cashback_amount?.toString() || '');
   const [loading, setLoading] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [suggested, setSuggested] = useState(false);
   const manuallySet = useRef(false);
-
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
   useEffect(() => {
     if (editing || manuallySet.current || type !== 'expense') return;
@@ -35,14 +36,13 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
 
   function handleClose() {
     setVisible(false);
-    setTimeout(onClose, 280);
   }
 
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') { setVisible(false); setTimeout(onClose, 280); } };
+    const handler = (e) => { if (e.key === 'Escape') setVisible(false); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, []);
 
   function pressKey(k) {
     if (k === '⌫') { setAmountStr(s => s.slice(0, -1)); return; }
@@ -81,9 +81,20 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
   const displayAmt = amountStr ? `₹${Number(amountStr).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '₹0';
 
   return (
-    <>
-      <div className="sheet-backdrop" style={{ opacity: visible ? 1 : 0, transition: 'opacity .28s' }} onClick={handleClose} />
-      <div className="sheet" style={{ transform: visible ? 'translateY(0)' : 'translateY(100%)', transition: 'transform .28s cubic-bezier(.4,0,.2,1)' }}>
+    <AnimatePresence onExitComplete={onClose}>
+      {visible && (
+      <>
+      <motion.div
+        className="sheet-backdrop"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={handleClose}
+      />
+      <motion.div
+        className="sheet"
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%', transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } }}
+        transition={SHEET_SPRING}
+      >
         {/* Grip */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
           <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--hair-2)' }} />
@@ -202,7 +213,9 @@ export function AddExpenseModal({ categories, expenses = [], events = [], onAdd,
             {loading ? 'Saving…' : editing ? 'Save Changes' : `${type === 'income' ? 'Log' : 'Add'} ${displayAmt}`}
           </button>
         </div>
-      </div>
-    </>
+      </motion.div>
+      </>
+      )}
+    </AnimatePresence>
   );
 }
