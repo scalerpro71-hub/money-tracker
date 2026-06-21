@@ -56,14 +56,14 @@ export function EventsPage({ events, onAdd, onUpdate, onDelete, expenses }) {
           const active = (!ev.start_date || ev.start_date <= today) && (!ev.end_date || ev.end_date >= today);
 
           return (
-            <div key={ev.id} className="event-card rise" style={{ '--d': `${i * 60}ms` }}>
+            <div key={ev.id} className="event-card rise" style={{ '--d': `${i * 60}ms` }} onClick={() => setEditingEvent(ev)}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ width: 48, height: 48, borderRadius: 15, display: 'grid', placeItems: 'center', fontSize: 24, background: 'var(--surface-2)', border: '1px solid var(--hair)' }}>
                   {ev.icon}
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <button className="icon-btn" style={{ width: 30, height: 30 }} onClick={() => setEditingEvent(ev)}><Icon name="gear" size={14} /></button>
-                  <button className="icon-btn" style={{ width: 30, height: 30, color: 'var(--neg)' }} onClick={() => handleDelete(ev)}>×</button>
+                  <button className="icon-btn" style={{ width: 30, height: 30 }} onClick={e => { e.stopPropagation(); setEditingEvent(ev); }}><Icon name="gear" size={14} /></button>
+                  <button className="icon-btn" style={{ width: 30, height: 30, color: 'var(--neg)' }} onClick={e => { e.stopPropagation(); handleDelete(ev); }}>×</button>
                 </div>
               </div>
               <div style={{ fontWeight: 800, fontSize: 15 }}>{ev.name}</div>
