@@ -177,6 +177,11 @@
   background: var(--color-surface-2);
   transition: all var(--transition-fast);
 }
+.budget-edit-row:focus-within {
+  /* !important: the filled-row inline style sets its own borderColor, which
+     would otherwise always win over this and hide keyboard focus entirely */
+  border-color: var(--color-brand) !important;
+}
 .budget-edit-row--filled {
   border-width: 2px;
 }
@@ -230,7 +235,7 @@
   text-align: right;
   outline: none;
   font-variant-numeric: tabular-nums;
-  font-family: var(--font-sans);
+  font-family: var(--font-num);
 }
 .budget-edit-input::placeholder {
   color: var(--color-text-muted);

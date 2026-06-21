@@ -162,6 +162,7 @@ export function SettingsPage({ profile, user, onUpdateProfile, categories, onAdd
                 <input
                   type="number" inputMode="decimal" placeholder="50000" value={income}
                   onChange={e => setIncome(e.target.value)} min="1"
+                  className="focus-ring"
                   style={{ width: 110, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'right' }}
                 />
               </div>
@@ -176,6 +177,7 @@ export function SettingsPage({ profile, user, onUpdateProfile, categories, onAdd
                 <input
                   type="number" inputMode="numeric" placeholder="1" value={payday}
                   onChange={e => setPayday(e.target.value)} min="1" max="31"
+                  className="focus-ring"
                   style={{ width: 54, padding: '6px 10px', border: '1px solid var(--hair-2)', borderRadius: 'var(--r-sm)', background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 14, fontFamily: 'var(--font-num)', fontWeight: 700, outline: 'none', textAlign: 'center' }}
                 />
                 <span className="set-val">of month</span>
@@ -372,9 +374,9 @@ export function SettingsPage({ profile, user, onUpdateProfile, categories, onAdd
 
       {/* Sign out */}
       <button
-        className="rise" style={{ '--d': '510ms' }}
+        className="rise"
         onClick={onSignOut}
-        style={{ width: '100%', padding: '13px', border: '1px solid var(--neg)', borderRadius: 'var(--r-md)', background: 'transparent', color: 'var(--neg)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+        style={{ '--d': '510ms', width: '100%', padding: '13px', border: '1px solid var(--neg)', borderRadius: 'var(--r-md)', background: 'transparent', color: 'var(--neg)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
       >
         Sign Out
       </button>

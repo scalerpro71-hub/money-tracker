@@ -135,4 +135,5 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-pill: 9999px;
+  --transition-fast: .15s ease;
 }
