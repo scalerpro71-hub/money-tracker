@@ -1,4 +1,4 @@
-const CACHE = 'rupee-tracker-v1';
+const CACHE = 'rupee-tracker-v2';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -24,6 +24,19 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Don't cache Supabase API calls
   if (url.hostname.includes('supabase')) return;
+
+  if (e.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok && url.origin === self.location.origin) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then(cached => {
