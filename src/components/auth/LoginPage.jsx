@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useToast } from '../layout/Toast';
 
+function getErrorMessage(err) {
+  if (!err) return 'Login failed. Please try again.';
+  if (typeof err === 'string') return err;
+  return err.message || 'Login failed. Please try again.';
+}
+
 export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
@@ -8,10 +14,18 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [error, setError] = useState('');
   const toast = useToast();
+
+  function changeMode(nextMode) {
+    setMode(nextMode);
+    setError('');
+    setMagicSent(false);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setError('');
     setLoading(true);
     try {
       if (mode === 'login') {
@@ -24,7 +38,9 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
         setMagicSent(true);
       }
     } catch (err) {
-      toast(err.message, 'error');
+      const message = getErrorMessage(err);
+      setError(message);
+      toast(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -38,9 +54,9 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
         <p className="auth-subtitle">Track every rupee. Save smarter.</p>
 
         <div className="auth-tabs">
-          <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Login</button>
-          <button className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>Sign Up</button>
-          <button className={mode === 'magic' ? 'active' : ''} onClick={() => setMode('magic')}>Magic Link</button>
+          <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => changeMode('login')}>Login</button>
+          <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => changeMode('signup')}>Sign Up</button>
+          <button type="button" className={mode === 'magic' ? 'active' : ''} onClick={() => changeMode('magic')}>Magic Link</button>
         </div>
 
         {mode === 'magic' && magicSent ? (
@@ -67,6 +83,11 @@ export function LoginPage({ onSignIn, onSignUp, onMagicLink }) {
               <div className="form-group">
                 <label htmlFor="auth-password">Password</label>
                 <input id="auth-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              </div>
+            )}
+            {error && (
+              <div className="auth-error" role="alert">
+                {error}
               </div>
             )}
             <button type="submit" className="btn-primary" disabled={loading} aria-label={mode === 'login' ? 'Submit login' : mode === 'signup' ? 'Create account' : 'Send magic link'}>

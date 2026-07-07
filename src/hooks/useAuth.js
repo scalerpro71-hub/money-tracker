@@ -1,15 +1,34 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
+
+const CONFIG_ERROR = 'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the app.';
+
+function requireSupabase() {
+  if (!isSupabaseConfigured) throw new Error(CONFIG_ERROR);
+}
 
 export function useAuth() {
   const [session, setSession] = useState(undefined);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
+    if (!isSupabaseConfigured) {
+      setSession(null);
+      setUser(null);
+      return;
+    }
+
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) throw error;
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch(err => {
+        console.error('[Rupee] Failed to restore auth session:', err);
+        setSession(null);
+        setUser(null);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -20,21 +39,24 @@ export function useAuth() {
   }, []);
 
   async function signIn(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    requireSupabase();
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) throw error;
   }
 
   async function signUp(email, password, fullName) {
+    requireSupabase();
     const { error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: { full_name: fullName.trim() } },
     });
     if (error) throw error;
   }
 
   async function signInWithMagicLink(email) {
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    requireSupabase();
+    const { error } = await supabase.auth.signInWithOtp({ email: email.trim() });
     if (error) throw error;
   }
 

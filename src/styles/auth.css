@@ -67,6 +67,15 @@
   transition: border-color .15s;
 }
 .form-group input:focus { border-color: var(--accent, #0a9d72); }
+.auth-error {
+  padding: 10px 12px;
+  border-radius: var(--r-md, 10px);
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger-text, #b91c1c);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
 .btn-primary {
   margin-top: 8px;
   width: 100%;
