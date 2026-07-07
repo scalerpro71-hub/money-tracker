@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { clearLegacyAuthStateOnce, clearSavedAuthState, isSupabaseConfigured, supabase } from '../lib/supabase';
 
 const CONFIG_ERROR = 'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the app.';
 
@@ -7,11 +7,17 @@ function requireSupabase() {
   if (!isSupabaseConfigured) throw new Error(CONFIG_ERROR);
 }
 
+function isFetchFailure(error) {
+  return error?.message?.toLowerCase().includes('failed to fetch');
+}
+
 export function useAuth() {
   const [session, setSession] = useState(undefined);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    clearLegacyAuthStateOnce();
+
     if (!isSupabaseConfigured) {
       setSession(null);
       setUser(null);
@@ -26,6 +32,7 @@ export function useAuth() {
       })
       .catch(err => {
         console.error('[Rupee] Failed to restore auth session:', err);
+        if (isFetchFailure(err)) clearSavedAuthState({ includeCurrent: true });
         setSession(null);
         setUser(null);
       });
@@ -40,12 +47,14 @@ export function useAuth() {
 
   async function signIn(email, password) {
     requireSupabase();
+    clearSavedAuthState({ includeCurrent: true });
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) throw error;
   }
 
   async function signUp(email, password, fullName) {
     requireSupabase();
+    clearSavedAuthState({ includeCurrent: true });
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -56,12 +65,14 @@ export function useAuth() {
 
   async function signInWithMagicLink(email) {
     requireSupabase();
+    clearSavedAuthState({ includeCurrent: true });
     const { error } = await supabase.auth.signInWithOtp({ email: email.trim() });
     if (error) throw error;
   }
 
   async function signOut() {
     await supabase.auth.signOut();
+    clearSavedAuthState({ includeCurrent: true });
   }
 
   return { session, user, signIn, signUp, signInWithMagicLink, signOut };
