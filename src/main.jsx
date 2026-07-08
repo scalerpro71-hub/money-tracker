@@ -3,11 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './styles/tailwind.css'
 import './styles/tokens.css'
 import './styles/aurora-base.css'
-import './styles/aurora-dashboard.css'
 import './styles/aurora-screens.css'
 import './styles/motion.css'
-import './index.css'
-import App from './App.jsx'
+import './styles/aurora-v2.css'
+import App from './app/App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
