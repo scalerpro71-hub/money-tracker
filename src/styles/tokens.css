@@ -116,6 +116,24 @@
   --color-warning-text: #f2b53b;
 }
 
+/* ---------- DATA-VIZ CATEGORICAL (fixed order, CVD-validated) ---------- */
+:root, [data-theme="light"] {
+  --viz-1: #0a9d72; /* equity funds */
+  --viz-2: #3b82f6; /* stocks */
+  --viz-3: #d97706; /* gold */
+  --viz-4: #7c3aed; /* retirement */
+  --viz-5: #0891b2; /* deposits */
+  --viz-6: #db2777; /* other */
+}
+[data-theme="dark"] {
+  --viz-1: #059669;
+  --viz-2: #3b82f6;
+  --viz-3: #d97706;
+  --viz-4: #8b5cf6;
+  --viz-5: #0891b2;
+  --viz-6: #ec4899;
+}
+
 /* ---------- ACCENTS ---------- */
 [data-accent="green"]  { --accent:#0a9d72; --accent-2:#0a8a86; --accent-soft:rgba(10,157,114,0.12); --glow:rgba(10,157,114,0.22); --on-accent:#fff; }
 [data-theme="dark"][data-accent="green"]  { --accent:#34e0a8; --accent-2:#19b9c9; --accent-soft:rgba(52,224,168,0.15); --glow:rgba(52,224,168,0.32); --on-accent:#04130d; }
