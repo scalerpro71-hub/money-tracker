@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router';
-import { useSnapshot } from '../../lib/journey/useSnapshot';
+import { useJourney } from '../../lib/journey/useJourney';
 import { useOpenAdd } from '../../app/shell/AppShell';
 import { Icon } from '../../components/layout/Icon';
 import { Spinner } from '../../components/layout/Spinner';
+import { Confetti } from '../../components/layout/Confetti';
 import { BarChart } from '../../components/charts/BarChart';
 import { Ring } from '../../components/charts/Ring';
 import { cur, fmtK } from '../../lib/formatUtils';
@@ -12,7 +13,8 @@ function dayLetter(dateStr) {
 }
 
 export function HomePage() {
-  const { snapshot: s, loading } = useSnapshot();
+  const journey = useJourney();
+  const { snapshot: s, loading, current, nextStep, celebrating, clearCelebration } = journey;
   const openAdd = useOpenAdd();
   const navigate = useNavigate();
 
@@ -24,6 +26,7 @@ export function HomePage() {
 
   return (
     <div className="dash">
+      <Confetti trigger={celebrating} onDone={clearCelebration} />
       {/* HERO — what's safe to spend */}
       <div className="hero rise" style={{ '--d': '0ms' }}>
         <div className="hero-top">
@@ -61,17 +64,27 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* JOURNEY NUDGE */}
-      <Link to="/learn" style={{ textDecoration: 'none', color: 'inherit' }}>
+      {/* JOURNEY NUDGE — the coach's next concrete step */}
+      <Link
+        to={nextStep?.kind === 'lesson' ? `/learn/${nextStep.levelId}/${nextStep.lesson.id}` : '/learn'}
+        style={{ textDecoration: 'none', color: 'inherit' }}
+      >
         <div className="card pad rise btn-lift" style={{ '--d': '60ms', marginTop: 18, display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}>
-          <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: 'var(--accent-grad)', display: 'grid', placeItems: 'center', color: 'var(--on-accent)', boxShadow: '0 8px 18px -8px var(--glow)' }}>
-            <Icon name="book" size={22} />
+          <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: 'var(--accent-grad)', display: 'grid', placeItems: 'center', fontSize: 22, boxShadow: '0 8px 18px -8px var(--glow)' }}>
+            {current?.emoji || '🗺️'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em' }}>Continue your journey</div>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-3)', fontWeight: 650, marginTop: 2 }}>
-              From "where does my money go?" to your first investment — one level at a time.
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--accent)' }}>
+              {current ? `Level ${current.order} · ${current.title}` : 'Your journey'}
             </div>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em', marginTop: 3 }}>
+              {nextStep?.kind === 'lesson' ? nextStep.label : 'Continue your journey'}
+            </div>
+            {nextStep?.kind === 'criteria' && (
+              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', fontWeight: 650, marginTop: 2 }}>
+                To finish this level: {nextStep.label}
+              </div>
+            )}
           </div>
           <Icon name="chevR" size={18} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
         </div>

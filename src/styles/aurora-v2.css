@@ -241,3 +241,162 @@
   width: 100%; justify-content: center; padding: 15px; font-size: 16px;
 }
 .ob-cta:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ============================================================
+   JOURNEY MAP (Learn)
+   ============================================================ */
+.jm-page { max-width: 720px; margin: 0 auto; }
+.jm-levelup {
+  position: sticky; top: 74px; z-index: 40;
+  background: var(--accent-grad); color: var(--on-accent);
+  padding: 12px 18px; border-radius: var(--r-md); margin-bottom: 16px;
+  font-size: 14px; box-shadow: 0 12px 28px -12px var(--glow); text-align: center;
+}
+.jm-header { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
+.jm-header-title { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; }
+.jm-header-sub { font-size: 12.5px; color: var(--ink-3); font-weight: 600; margin-top: 3px; }
+.jm-xp { text-align: center; padding: 8px 16px; border-radius: var(--r-md); background: var(--accent-soft); }
+.jm-xp-num { font-size: 24px; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+.jm-xp-cap { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: var(--accent); opacity: .8; }
+
+.jm-map { display: flex; flex-direction: column; }
+.jm-row { display: flex; gap: 18px; }
+.jm-spine { display: flex; flex-direction: column; align-items: center; width: 56px; flex: 0 0 auto; }
+.jm-connector { width: 3px; flex: 1; background: var(--surface-3); min-height: 14px; }
+.jm-row.done .jm-connector { background: var(--accent); }
+.jm-row:first-child .jm-connector.top { visibility: hidden; }
+.jm-row:last-child .jm-connector.bottom { visibility: hidden; }
+.jm-node {
+  position: relative; width: 56px; height: 56px; border-radius: 50%; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: var(--surface); border: 2px solid var(--hair-2);
+  color: var(--ink-3); box-shadow: var(--shadow-sm);
+}
+.jm-emoji { font-size: 24px; }
+.jm-row.done .jm-node { background: var(--accent-grad); border-color: transparent; color: var(--on-accent); box-shadow: 0 8px 18px -8px var(--glow); }
+.jm-row.current .jm-node { border-color: var(--accent); }
+.jm-row.locked .jm-node { background: var(--surface-2); }
+.jm-row.locked .jm-emoji { filter: grayscale(1); opacity: .5; }
+.jm-pulse {
+  position: absolute; inset: -2px; border-radius: 50%;
+  border: 2px solid var(--accent); animation: badge-pulse 2s ease-in-out infinite;
+}
+.jm-card { flex: 1; min-width: 0; padding: 18px; margin: 8px 0 22px; }
+.jm-card-current { border-color: var(--accent); box-shadow: 0 10px 30px -14px var(--glow); }
+.jm-row.locked .jm-card { opacity: .68; }
+.jm-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.jm-level-label { font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.jm-row.locked .jm-level-label { color: var(--ink-4); }
+.jm-title { font-size: 16.5px; font-weight: 800; letter-spacing: -0.015em; margin-top: 3px; }
+.jm-tagline { font-size: 12.5px; color: var(--ink-3); font-weight: 600; margin-top: 2px; }
+.jm-bar { height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; margin: 13px 0 4px; }
+.jm-bar-fill { height: 100%; border-radius: 99px; background: var(--accent-grad); transition: width .6s cubic-bezier(.4,0,.2,1); }
+.jm-lessons { display: flex; flex-direction: column; margin-top: 8px; }
+.jm-lesson {
+  display: flex; align-items: center; gap: 10px; padding: 9px 6px;
+  border-radius: var(--r-xs); text-decoration: none; color: var(--ink);
+  transition: background .15s;
+}
+.jm-lesson:hover { background: var(--surface-2); }
+.jm-lesson-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: var(--surface-3); color: var(--ink-3);
+}
+.jm-lesson.done .jm-lesson-dot { background: var(--accent-soft); color: var(--accent); }
+.jm-lesson-title { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; }
+.jm-lesson.done .jm-lesson-title { color: var(--ink-3); }
+.jm-lesson-min { font-size: 11px; font-weight: 700; color: var(--ink-4); }
+.jm-criteria {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  padding: 10px 12px; border-radius: var(--r-xs);
+  background: var(--warn-soft); color: var(--warn);
+  font-size: 12.5px; font-weight: 700;
+}
+.jm-locked-hint { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--ink-4); }
+.jm-foot { text-align: center; font-size: 12.5px; color: var(--ink-3); font-weight: 600; padding: 6px 0 20px; }
+
+/* ============================================================
+   LESSON PLAYER
+   ============================================================ */
+.lp-page { max-width: 680px; margin: 0 auto; }
+.lp-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.lp-crumb { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.lp-title { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; }
+.lp-body { padding: 26px 26px 28px; }
+@media (max-width: 560px) { .lp-body { padding: 20px 18px 22px; } }
+.lp-p { font-size: 15px; line-height: 1.72; color: var(--ink-2); font-weight: 500; margin-bottom: 16px; }
+.lp-p strong { color: var(--ink); font-weight: 750; }
+.lp-list { margin: 0 0 16px 4px; padding-left: 18px; display: flex; flex-direction: column; gap: 9px; }
+.lp-list li { font-size: 14.5px; line-height: 1.6; color: var(--ink-2); font-weight: 500; }
+.lp-list li strong { color: var(--ink); }
+.lp-list li::marker { color: var(--accent); }
+.lp-callout {
+  display: flex; gap: 14px; padding: 16px; margin: 4px 0 18px;
+  border-radius: var(--r-md); background: var(--accent-soft);
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+}
+.lp-callout-emoji { font-size: 26px; flex: 0 0 auto; }
+.lp-callout-title { font-size: 14px; font-weight: 800; color: var(--ink); }
+.lp-callout-text { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); font-weight: 550; margin-top: 4px; }
+.lp-disclaimer {
+  font-size: 11.5px; line-height: 1.55; color: var(--ink-4); font-weight: 600;
+  border-top: 1px dashed var(--hair-2); padding-top: 12px; margin: 6px 0 14px;
+}
+.lp-calc { border: 1px solid var(--hair-2); border-radius: var(--r-md); padding: 18px; margin: 4px 0 18px; background: var(--surface-2); }
+.lp-calc-title { font-size: 13px; font-weight: 800; letter-spacing: .02em; margin-bottom: 10px; }
+.lp-calc-sub { font-size: 12.5px; color: var(--ink-3); font-weight: 650; margin-bottom: 8px; }
+.lp-calc-controls { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.lp-calc-controls label { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.lp-slider { width: 100%; accent-color: var(--accent); margin: 8px 0; }
+.lp-split-row { display: flex; gap: 8px; margin-top: 12px; }
+.lp-split { flex: 1; border-radius: var(--r-xs); padding: 10px 12px; text-align: center; }
+.lp-split.need { background: var(--chip-bg); }
+.lp-split.want { background: var(--warn-soft); }
+.lp-split.save { background: var(--pos-soft); }
+.lp-split-cap { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; color: var(--ink-3); text-transform: uppercase; }
+.lp-split.save .lp-split-cap { color: var(--pos); }
+.lp-split.want .lp-split-cap { color: var(--warn); }
+.lp-split-val { font-size: 16px; font-weight: 700; margin-top: 4px; }
+.lp-calc-big { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: 12px; text-align: center; }
+.lp-calc-big .num { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+.lp-calc-big-cap { font-size: 11.5px; color: var(--ink-3); font-weight: 650; }
+.lp-action {
+  display: flex; align-items: center; gap: 13px; padding: 14px 16px; margin: 6px 0 18px;
+  border-radius: var(--r-md); border: 1.5px dashed var(--accent);
+  background: color-mix(in oklab, var(--accent) 6%, var(--surface));
+}
+.lp-action.done { border-style: solid; border-color: var(--pos); background: var(--pos-soft); }
+.lp-action-ico {
+  width: 38px; height: 38px; border-radius: 12px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent);
+}
+.lp-action.done .lp-action-ico { background: var(--pos); color: #fff; }
+.lp-action-cap { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.lp-action.done .lp-action-cap { color: var(--pos); }
+.lp-action-label { font-size: 13.5px; font-weight: 700; margin-top: 2px; line-height: 1.4; }
+.lp-cta { width: 100%; justify-content: center; padding: 14px; font-size: 15px; margin-top: 6px; }
+.lp-doneline { display: flex; align-items: center; gap: 8px; color: var(--pos); font-size: 13.5px; font-weight: 800; padding-top: 6px; }
+.lp-quiz { border-top: 1px solid var(--hair); margin-top: 8px; padding-top: 18px; }
+.lp-quiz-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.lp-quiz-count { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.lp-quiz-q { font-size: 16px; font-weight: 800; line-height: 1.45; letter-spacing: -0.01em; margin-bottom: 14px; }
+.lp-quiz-options { display: flex; flex-direction: column; gap: 9px; }
+.lp-quiz-opt {
+  text-align: left; padding: 13px 15px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--hair-2); background: var(--surface);
+  font-size: 14px; font-weight: 650; color: var(--ink); cursor: pointer;
+  font-family: var(--font-body); transition: border-color .15s, background .15s;
+}
+.lp-quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+.lp-quiz-opt.correct { border-color: var(--pos); background: var(--pos-soft); color: var(--pos); }
+.lp-quiz-opt.wrong { border-color: var(--neg); background: var(--neg-soft); color: var(--neg); }
+.lp-quiz-explain {
+  margin-top: 12px; padding: 12px 14px; border-radius: var(--r-xs);
+  background: var(--surface-2); font-size: 13px; line-height: 1.55;
+  color: var(--ink-2); font-weight: 550;
+}
+.lp-quiz-explain.good { background: var(--pos-soft); color: var(--ink); }
+.lp-finish { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 0 6px; text-align: center; }
+.lp-finish-title { font-size: 17px; font-weight: 800; }
