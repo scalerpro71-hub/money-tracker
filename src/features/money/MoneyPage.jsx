@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { ActivityTab } from './ActivityTab';
 import { BudgetsTab } from './BudgetsTab';
 import { CommitmentsTab } from './CommitmentsTab';
+import { ImportTab } from './ImportTab';
 
 const TABS = [
   { id: 'activity', label: 'Activity' },
   { id: 'budgets', label: 'Budgets' },
   { id: 'commitments', label: 'Commitments' },
+  { id: 'import', label: 'Import' },
 ];
 
 export function MoneyPage() {
@@ -24,6 +26,7 @@ export function MoneyPage() {
       {tab === 'activity' && <ActivityTab />}
       {tab === 'budgets' && <BudgetsTab />}
       {tab === 'commitments' && <CommitmentsTab />}
+      {tab === 'import' && <ImportTab />}
     </div>
   );
 }

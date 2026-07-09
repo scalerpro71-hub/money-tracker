@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
-import { useToast } from '../components/layout/Toast';
-import { Icon } from '../components/layout/Icon';
-import { cur } from '../lib/formatUtils';
-import { supabase } from '../lib/supabase';
-import { merchantKey, categoryByMerchant } from '../lib/categorize';
-import { localDateStr } from '../lib/dateUtils';
+import { useToast } from '../../components/layout/Toast';
+import { Icon } from '../../components/layout/Icon';
+import { cur } from '../../lib/formatUtils';
+import { supabase } from '../../lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCategories } from '../../lib/queries';
+import { useUserId } from '../../app/auth-context';
+import { merchantKey, categoryByMerchant } from '../../lib/categorize';
+import { localDateStr } from '../../lib/dateUtils';
 
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 1000;
@@ -126,7 +129,10 @@ function categorizeRowsByRules(rows, categories) {
   return assignments;
 }
 
-export function ImportPage({ categories, onAdd }) {
+export function ImportTab() {
+  const { data: categories = [] } = useCategories();
+  const userId = useUserId();
+  const qc = useQueryClient();
   const [rows, setRows] = useState([]);
   const [selected, setSelected] = useState([]);
   const [catAssign, setCatAssign] = useState({});
@@ -216,18 +222,32 @@ export function ImportPage({ categories, onAdd }) {
   async function handleImport() {
     const toImport = rows.filter(r => selected.includes(r._id));
     setImporting(true);
-    let count = 0;
-    for (const row of toImport) {
-      try { await onAdd({ amount: row.amount, type: row.type || 'expense', category_id: catAssign[row._id] || null, date: row.date, note: row.note || null, payment_mode: 'netbanking' }, true); count++; } catch (err) { toast(err.message, 'error'); }
+    try {
+      const payload = toImport.map(row => ({
+        user_id: userId,
+        amount: row.amount,
+        type: row.type || 'expense',
+        category_id: catAssign[row._id] || null,
+        date: row.date,
+        note: row.note || null,
+        payment_mode: 'netbanking',
+      }));
+      const { error } = await supabase.from('expenses').insert(payload);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      setDone(payload.length); setRows([]); setSelected([]); setCatAssign({}); setAutoCategorizedAttempted(false);
+      toast(`${payload.length} transactions imported!`);
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setImporting(false);
     }
-    setImporting(false); setDone(count); setRows([]); setSelected([]); setCatAssign({}); setAutoCategorizedAttempted(false);
-    toast(`${count} transactions imported!`);
   }
 
   const categorizedCount = rows.filter(r => catAssign[r._id]).length;
 
   return (
-    <div className="tab-enter">
+    <div>
       {rows.length === 0 ? (
         <>
           <div className="dropzone rise" style={{ '--d': '0ms' }} onClick={() => fileRef.current.click()}>

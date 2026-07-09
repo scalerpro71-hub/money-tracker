@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router';
 import { Providers } from './providers';
 import { useAuthCtx } from './auth-context';
@@ -5,14 +6,15 @@ import { useProfile } from '../lib/queries';
 import { AppShell } from './shell/AppShell';
 import { Spinner } from '../components/layout/Spinner';
 import { LoginPage } from '../features/auth/LoginPage';
-import { OnboardingPage } from '../features/onboarding/OnboardingPage';
 import { HomePage } from '../features/home/HomePage';
-import { MoneyPage } from '../features/money/MoneyPage';
-import { LearnPage } from '../features/learn/LearnPage';
-import { LessonPage } from '../features/learn/LessonPage';
-import { InvestPage } from '../features/invest/InvestPage';
-import { CoachPage } from '../features/coach/CoachPage';
-import { SettingsPage } from '../features/settings/SettingsPage';
+
+const OnboardingPage = lazy(() => import('../features/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
+const MoneyPage = lazy(() => import('../features/money/MoneyPage').then(m => ({ default: m.MoneyPage })));
+const LearnPage = lazy(() => import('../features/learn/LearnPage').then(m => ({ default: m.LearnPage })));
+const LessonPage = lazy(() => import('../features/learn/LessonPage').then(m => ({ default: m.LessonPage })));
+const InvestPage = lazy(() => import('../features/invest/InvestPage').then(m => ({ default: m.InvestPage })));
+const CoachPage = lazy(() => import('../features/coach/CoachPage').then(m => ({ default: m.CoachPage })));
+const SettingsPage = lazy(() => import('../features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 function LoadingScreen() {
   return (
@@ -75,6 +77,7 @@ export default function App() {
   return (
     <Providers>
       <BrowserRouter>
+        <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/onboarding" element={<Protected><OnboardingPage /></Protected>} />
@@ -89,6 +92,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </Providers>
   );

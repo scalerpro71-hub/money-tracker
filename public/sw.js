@@ -1,4 +1,4 @@
-const CACHE = 'rupee-tracker-v2';
+const CACHE = 'paisacoach-v1';
 const PRECACHE = [
   '/',
   '/index.html',

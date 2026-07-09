@@ -1,4 +1,4 @@
-import { supabase, tbl } from './supabase';
+import { supabase } from './supabase';
 import { todayStr } from './dateUtils';
 
 export async function autoLogRecurring(userId) {
@@ -12,7 +12,7 @@ export async function autoLogRecurring(userId) {
   // Get active recurring expenses
   const { data: recurring } = await supabase
     .from('recurring_expenses')
-    .select(`*, category:${tbl('categories')}(id,name,icon,color)`)
+    .select('*, category:categories(id,name,icon,color)')
     .eq('user_id', userId)
     .eq('is_active', true);
 

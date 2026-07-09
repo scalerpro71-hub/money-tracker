@@ -1,11 +1,11 @@
 {
-  "name": "Rupee Tracker",
-  "short_name": "Rupee",
-  "description": "Personal finance tracker for India — expenses, budgets, investments, net worth",
+  "name": "PaisaCoach",
+  "short_name": "PaisaCoach",
+  "description": "Your lifetime money coach — track spending, build savings, learn to invest. Made for India.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#6366f1",
+  "background_color": "#f4f2ec",
+  "theme_color": "#0a9d72",
   "orientation": "portrait",
   "icons": [
     {
@@ -21,6 +21,6 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "productivity"],
+  "categories": ["finance", "education", "productivity"],
   "lang": "en-IN"
 }

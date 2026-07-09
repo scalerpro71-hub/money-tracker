@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, Suspense, useContext, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { Spinner } from '../../components/layout/Spinner';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthCtx } from '../auth-context';
 import { useProfile, useExpensesRealtime } from '../../lib/queries';
@@ -125,7 +126,9 @@ export function AppShell() {
 
           <main className="content">
             <div className="wrap tab-enter" key={location.pathname}>
-              <Outlet />
+              <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Spinner size={32} /></div>}>
+                <Outlet />
+              </Suspense>
             </div>
           </main>
         </div>
