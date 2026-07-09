@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.parse-bank-statement]
 verify_jwt = false
+
+[functions.weekly-review]
+verify_jwt = false

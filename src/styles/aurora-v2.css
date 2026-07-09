@@ -416,3 +416,24 @@
   margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--hair-2);
   font-size: 12px; color: var(--ink-4); font-weight: 600; line-height: 1.6; max-width: 420px;
 }
+
+/* ============================================================
+   COACH — weekly reviews
+   ============================================================ */
+.rv-card { margin-bottom: 12px; overflow: hidden; }
+.rv-summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 15px 18px; cursor: pointer; list-style: none; user-select: none;
+}
+.rv-summary::-webkit-details-marker { display: none; }
+.rv-week { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; }
+.rv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.rv-body { padding: 0 18px 16px; }
+.rv-p { font-size: 13.5px; line-height: 1.65; color: var(--ink-2); font-weight: 550; margin-bottom: 10px; }
+.rv-line {
+  display: block; padding: 10px 13px; border-radius: var(--r-xs);
+  font-size: 13px; line-height: 1.55; font-weight: 600; color: var(--ink-2); margin-bottom: 8px;
+}
+.rv-line strong { color: var(--ink); margin-right: 2px; }
+.rv-line.win { background: var(--pos-soft); }
+.rv-line.focus { background: var(--warn-soft); }
