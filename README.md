@@ -34,7 +34,7 @@ Edge functions: deploy `ai-chat`, `ai-suggest`, `weekly-review`, `parse-bank-sta
 ## Scripts
 
 - `npm run dev` — dev server
-- `npm run build` — production build (deployed via `wrangler` / Cloudflare)
+- `npm run build` — production build (auto-deployed by Cloudflare Pages on push to `main`)
 - `npm run lint` — eslint
 - `npm run test:e2e` — Playwright suite against a fully mocked backend (no credentials needed)
 
