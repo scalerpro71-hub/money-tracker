@@ -9,6 +9,8 @@ Write EXACTLY this structure, in plain text (no markdown headers):
 - Then a line starting with "Win:" - the single best thing they did this week.
 - Then a line starting with "Focus:" - the single most useful thing to do next week, concrete and small.
 
+If the metrics include investments, the Focus may be an investing-quality nudge instead of a spending one - pick the weakest principle among: diversification (one holding dominating), consistency (missed/irregular investing), cost (high-fee choices), or allocation vs goals. Frame it as the principle to fix, never a product to buy.
+
 Never name specific stocks, funds or AMCs. Keep the whole review under 130 words.`;
 
 Deno.serve(async (req) => {

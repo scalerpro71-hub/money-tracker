@@ -54,11 +54,11 @@ const CRITERIA = {
   }),
 
   l5_complete: (s) => {
-    const hasSip = s.investments.some(i => i.type === 'sip' || i.type === 'mf');
+    const hasInvestment = s.investments.length > 0;
     return {
-      met: hasSip,
-      progress: hasSip ? 1 : 0,
-      label: hasSip ? 'First SIP logged 🎉' : 'Log your first SIP / mutual fund under Invest',
+      met: hasInvestment,
+      progress: hasInvestment ? 1 : 0,
+      label: hasInvestment ? 'First investment logged 🎉' : 'Log your first investment under Invest',
     };
   },
 
@@ -92,7 +92,7 @@ export function actionDone(action, snapshot) {
     case 'set_budgets': return snapshot.budgetCount >= (action.count || 3);
     case 'add_commitment': return snapshot.billCount + snapshot.emiCount + snapshot.recurringCount > 0;
     case 'create_ef_goal': return !!snapshot.efGoal;
-    case 'log_investment': return snapshot.investments.some(i => i.type === 'sip' || i.type === 'mf');
+    case 'log_investment': return snapshot.investments.length > 0;
     case 'diversify': return snapshot.investmentTypes.length >= 2;
     default: return true;
   }

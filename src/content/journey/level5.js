@@ -9,7 +9,7 @@ export default {
   unlockCriteria: 'l5_unlock',
   unlockHint: 'Complete Level 4 and fund your emergency fund to at least 1 month of expenses',
   completeCriteria: 'l5_complete',
-  completeHint: 'Start a real SIP with your broker, then log it under Invest',
+  completeHint: 'Start a real investment (a SIP is the classic first step, but any counts), then log it under Invest',
   lessons: [
     {
       id: 'l5-01',
@@ -58,10 +58,10 @@ export default {
           '**Log it here** — add it under Invest so your coach sees the full picture',
         ] },
         { t: 'callout', emoji: '🧘', title: 'Pre-commit to the rules', text: 'Before the first debit, say these out loud: (1) This money has a 5+ year horizon. (2) A red month means units on sale, not an emergency. (3) The SIP stops for job loss — never for headlines.' },
-        { t: 'p', text: "When the first installment goes through, log the investment in the Invest tab. That log is what completes this level — the journey celebrates real actions, not finished readings." },
+        { t: 'p', text: "When the first installment goes through, log the investment in the Invest tab. That log is what completes this level — the journey celebrates real actions, not finished readings. And if your first real step turns out to be an FD, PPF or gold instead of a SIP, that counts too: log it, then ask your coach how to do that instrument well." },
         { t: 'disclaimer' },
       ],
-      action: { type: 'log_investment', label: 'Log your first SIP / mutual fund under Invest' },
+      action: { type: 'log_investment', label: 'Log your first investment under Invest' },
       quiz: [
         { q: 'Direct plan vs Regular plan of the same fund —', options: ['Direct skips distributor commission, so returns are higher', 'Regular is safer', 'No difference'], answer: 0, explain: 'Same fund, same manager; Direct just removes the middleman\'s cut.' },
         { q: 'Best SIP date?', options: ['Month-end, from what\'s left', 'A few days after payday', 'The 15th, always'], answer: 1, explain: 'Payday +2: invest before the month can spend it — pay yourself first, market edition.' },
