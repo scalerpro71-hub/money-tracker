@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { ActivityTab } from './ActivityTab';
 import { BudgetsTab } from './BudgetsTab';
 import { CommitmentsTab } from './CommitmentsTab';
+import { WishlistTab } from './WishlistTab';
+import { TaxTab } from './TaxTab';
 import { ImportTab } from './ImportTab';
 
 const TABS = [
   { id: 'activity', label: 'Activity' },
   { id: 'budgets', label: 'Budgets' },
   { id: 'commitments', label: 'Commitments' },
+  { id: 'wishlist', label: 'Wishlist' },
+  { id: 'tax', label: 'Tax' },
   { id: 'import', label: 'Import' },
 ];
 
@@ -26,6 +30,8 @@ export function MoneyPage() {
       {tab === 'activity' && <ActivityTab />}
       {tab === 'budgets' && <BudgetsTab />}
       {tab === 'commitments' && <CommitmentsTab />}
+      {tab === 'wishlist' && <WishlistTab />}
+      {tab === 'tax' && <TaxTab />}
       {tab === 'import' && <ImportTab />}
     </div>
   );
