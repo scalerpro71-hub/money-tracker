@@ -118,6 +118,44 @@ export function buildSnapshot({
   const billsTotal = bills.filter(b => b.is_active).reduce((a, b) => a + Number(b.amount), 0);
   const emiPctOfIncome = monthlyIncome > 0 ? Math.round((activeEmiTotal / monthlyIncome) * 100) : 0;
 
+  const daysLeft = daysRemainingInMonth();
+  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  const daysPassed = daysInMonth - daysLeft;
+
+  /* committed outflows still to come this month — commitments auto-log as
+     expenses on their due day, so anything due after today isn't in
+     monthSpend yet and must be reserved before "safe to spend" */
+  const dueDayOf = d => Math.min(Number(d), daysInMonth);
+  let upcomingCommitments = 0;
+  for (const b of bills.filter(b => b.is_active)) {
+    if (dueDayOf(b.due_day) > daysPassed) upcomingCommitments += Number(b.amount);
+  }
+  for (const e of emis) {
+    const start = new Date(e.start_date + 'T00:00:00');
+    const now = new Date();
+    const elapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    const active = elapsed >= 0 && elapsed < e.tenure_months;
+    if (active && dueDayOf(start.getDate()) > daysPassed) upcomingCommitments += Number(e.emi_amount);
+  }
+  for (const r of recurring.filter(r => r.is_active)) {
+    if (r.frequency === 'monthly' && r.day_of_month > daysPassed) {
+      upcomingCommitments += Number(r.amount);
+    } else if (r.frequency === 'weekly') {
+      let occurrences = 0;
+      const cursor = new Date();
+      for (let i = 0; i < daysLeft; i++) {
+        cursor.setDate(cursor.getDate() + 1);
+        if (cursor.getDay() === r.day_of_week) occurrences++;
+      }
+      upcomingCommitments += Number(r.amount) * occurrences;
+    }
+  }
+
+  /* safe to spend: what's left after spending so far, upcoming commitments
+     and the monthly SIP promise — spread over the remaining days */
+  const safeMonthLeft = monthlyIncome - monthSpend - upcomingCommitments - sipMonthly;
+  const safeToSpendToday = monthlyIncome > 0 ? Math.max(0, safeMonthLeft / (daysLeft + 1)) : 0;
+
   /* budgets for the current month */
   const monthKey = `${monthStart.slice(0, 7)}`;
   const monthBudgets = budgets.filter(b => b.month?.startsWith(monthKey));
@@ -127,9 +165,14 @@ export function buildSnapshot({
   const assetsTotal = assets.reduce((a, x) => a + Number(x.value || 0), 0);
   const liabilitiesTotal = liabilities.reduce((a, x) => a + Number(x.amount || 0), 0);
 
-  const daysLeft = daysRemainingInMonth();
-  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-  const daysPassed = daysInMonth - daysLeft;
+  /* runway: how long liquid money lasts if income stopped. Bank + FD assets;
+     the emergency-fund goal usually sits in those same accounts, so take the
+     larger of the two instead of adding (avoids double counting). */
+  const liquidAssetsTotal = assets
+    .filter(a => a.category === 'bank' || a.category === 'fd')
+    .reduce((a, x) => a + Number(x.value || 0), 0);
+  const liquidTotal = Math.max(liquidAssetsTotal, efCurrent);
+  const runwayMonths = monthlyExpenseBaseline > 0 ? liquidTotal / monthlyExpenseBaseline : 0;
 
   return {
     today,
@@ -139,6 +182,9 @@ export function buildSnapshot({
     monthIncomeLogged,
     monthlyIncome,
     spendable: Math.max(0, monthlyIncome - monthSpend),
+    upcomingCommitments,
+    safeMonthLeft,
+    safeToSpendToday,
     currentSavingsRate,
     lastFullMonthSavingsRate,
     monthHistory,
@@ -173,6 +219,8 @@ export function buildSnapshot({
     recurringCount: recurring.length,
     assetsTotal,
     liabilitiesTotal,
+    liquidTotal,
+    runwayMonths,
     netWorth: assetsTotal + portfolioValue - liabilitiesTotal,
   };
 }

@@ -29,20 +29,20 @@ export function HomePage() {
   return (
     <div className="dash">
       <Confetti trigger={celebrating} onDone={clearCelebration} />
-      {/* HERO — what's safe to spend */}
+      {/* HERO — what's safe to spend today */}
       <div className="hero rise" style={{ '--d': '0ms' }}>
         <div className="hero-top">
-          <div className="hero-label">Left to spend this month</div>
+          <div className="hero-label">Safe to spend today</div>
           {s.loggingStreak > 1 && (
             <div className="hero-pill"><Icon name="flame" size={14} />{s.loggingStreak}-day streak</div>
           )}
         </div>
         <div className="hero-bal">
-          <span className="cur">₹</span>{fmtK(Math.round(s.spendable)).replace('₹', '')}
+          <span className="cur">₹</span>{fmtK(Math.round(s.safeToSpendToday)).replace('₹', '')}
         </div>
         <div className="hero-sub">
           {s.monthlyIncome > 0
-            ? `of ${cur(Math.round(s.monthlyIncome))} income · ${s.daysLeft} days left`
+            ? `${cur(Math.max(0, Math.round(s.safeMonthLeft)))} left this month after ${cur(Math.round(s.upcomingCommitments + s.sipMonthly))} in upcoming bills, EMIs & SIPs · ${s.daysLeft} days to go`
             : 'Set your income in Settings to see this'}
         </div>
         <div className="hero-splits">
@@ -55,6 +55,10 @@ export function HomePage() {
             <div className="hs-val">{fmtK(Math.round(s.monthSpend))}</div>
           </div>
           <div className="hero-split">
+            <div className="hs-label"><span className="dot out" />Reserved</div>
+            <div className="hs-val">{fmtK(Math.round(s.upcomingCommitments + s.sipMonthly))}</div>
+          </div>
+          <div className="hero-split">
             <div className="hs-label"><span className="dot save" />Kept</div>
             <div className="hs-val">{s.currentSavingsRate != null ? `${s.currentSavingsRate}%` : '—'}</div>
           </div>
@@ -65,6 +69,35 @@ export function HomePage() {
           <button className="ha" onClick={() => navigate('/coach')}><Icon name="sparkle" size={16} />Ask coach</button>
         </div>
       </div>
+
+      {/* RUNWAY — how long liquid money lasts if income stopped */}
+      {s.monthlyIncome > 0 && s.monthlyExpenseBaseline > 0 && s.entryCount > 0 && (() => {
+        const months = s.runwayMonths;
+        const color = months >= 3 ? 'var(--accent)' : months >= 1 ? '#d97706' : '#dc2626';
+        const pct = Math.min(100, Math.round((months / 6) * 100));
+        return (
+          <Link to="/invest?tab=goals" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="card pad rise btn-lift" style={{ '--d': '30ms', marginTop: 18, cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, border: '1px solid var(--hair)', display: 'grid', placeItems: 'center', fontSize: 22 }}>🛟</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="eyebrow">If your income stopped today</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em', marginTop: 3 }}>
+                    You could last <span style={{ color }}>{months >= 1 ? `${months.toFixed(1).replace(/\.0$/, '')} month${months >= 2 ? 's' : ''}` : months > 0 ? 'less than a month' : '0 months'}</span> on liquid savings
+                  </div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)', fontWeight: 650, marginTop: 2 }}>
+                    {cur(Math.round(s.liquidTotal))} liquid ÷ {cur(s.monthlyExpenseBaseline)}/month burn · aim for 6 months
+                  </div>
+                </div>
+                <Icon name="chevR" size={18} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
+              </div>
+              <div className="catbar-track" style={{ marginTop: 12 }}>
+                <div className="catbar-fill anim-barGrow" style={{ width: `${pct}%`, background: color }} />
+              </div>
+            </div>
+          </Link>
+        );
+      })()}
 
       {/* JOURNEY NUDGE — the coach's next concrete step */}
       <Link

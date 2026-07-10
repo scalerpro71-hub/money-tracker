@@ -248,6 +248,20 @@ export function useLiabilityMutations() {
   return useTableMutations('liabilities');
 }
 
+export function useWishlist() {
+  return useListQuery('wishlist_items');
+}
+export function useWishlistMutations() {
+  return useTableMutations('wishlist_items');
+}
+
+export function useTaxDeclarations() {
+  return useListQuery('tax_declarations');
+}
+export function useTaxDeclarationMutations() {
+  return useTableMutations('tax_declarations');
+}
+
 /* ---------- journey ---------- */
 
 export function useJourneyState() {

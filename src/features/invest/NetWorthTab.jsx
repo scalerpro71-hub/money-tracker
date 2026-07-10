@@ -80,7 +80,7 @@ function Column({ title, rows, cats, valueField, onAdd, onEdit, onDelete, negati
   );
 }
 
-export function NetWorthTab() {
+export function NetWorthTab({ snapshot }) {
   const { data: assets = [] } = useAssets();
   const { data: liabilities = [] } = useLiabilities();
   const { data: investments = [] } = useInvestments();
@@ -126,6 +126,12 @@ export function NetWorthTab() {
           <div className="nw-split"><div className="ns-label">Assets</div><div className="ns-val">{fmtK(Math.round(assetsTotal))}</div></div>
           <div className="nw-split"><div className="ns-label">Investments</div><div className="ns-val">{fmtK(Math.round(portfolioTotal))}</div></div>
           <div className="nw-split"><div className="ns-label">Owed</div><div className="ns-val">{liabilitiesTotal > 0 ? `−${fmtK(Math.round(liabilitiesTotal))}` : '0'}</div></div>
+          {snapshot?.monthlyExpenseBaseline > 0 && (
+            <div className="nw-split">
+              <div className="ns-label">Runway</div>
+              <div className="ns-val">{snapshot.runwayMonths.toFixed(1).replace(/\.0$/, '')} mo</div>
+            </div>
+          )}
         </div>
       </div>
 

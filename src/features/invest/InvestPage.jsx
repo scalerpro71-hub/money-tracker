@@ -41,7 +41,7 @@ export function InvestPage() {
       {tab === 'plan' && <PlanTab snapshot={journey.snapshot} onSwitchTab={setTab} />}
       {tab === 'explore' && <ExploreTab />}
       {tab === 'portfolio' && <PortfolioTab snapshot={journey.snapshot} />}
-      {tab === 'networth' && <NetWorthTab />}
+      {tab === 'networth' && <NetWorthTab snapshot={journey.snapshot} />}
       {tab === 'goals' && <GoalsTab snapshot={journey.snapshot} />}
       {tab === 'glossary' && <GlossaryTab />}
     </div>
