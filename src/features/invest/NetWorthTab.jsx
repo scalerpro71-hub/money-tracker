@@ -9,25 +9,30 @@ import { currentValue } from './investMeta';
 const ASSET_CATS = { bank: '🏦 Bank', fd: '📜 FD', gold: '🪙 Gold', property: '🏠 Property', other: '📦 Other' };
 const LIABILITY_CATS = { homeloan: '🏠 Home loan', carloan: '🚗 Vehicle loan', creditcard: '💳 Credit card', other: '📦 Other' };
 
-function AddRowModal({ kind, onClose, onSave }) {
+function AddRowModal({ kind, initial, onClose, onSave }) {
   const cats = kind === 'asset' ? ASSET_CATS : LIABILITY_CATS;
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState(Object.keys(cats)[0]);
-  const [amount, setAmount] = useState('');
+  const editing = !!initial;
+  const valueField = kind === 'asset' ? 'value' : 'amount';
+  const [name, setName] = useState(initial?.name || '');
+  const [category, setCategory] = useState(initial?.category || Object.keys(cats)[0]);
+  const [amount, setAmount] = useState(initial?.[valueField] ?? '');
   const [saving, setSaving] = useState(false);
 
   async function save() {
     setSaving(true);
     try {
-      await onSave({ name: name.trim(), category, [kind === 'asset' ? 'value' : 'amount']: Number(amount) });
+      await onSave({ name: name.trim(), category, [valueField]: Number(amount) });
       onClose();
     } finally {
       setSaving(false);
     }
   }
 
+  const title = editing
+    ? (kind === 'asset' ? 'Edit asset' : 'Edit liability')
+    : (kind === 'asset' ? 'Add asset' : 'Add liability');
   return (
-    <Modal title={kind === 'asset' ? 'Add asset' : 'Add liability'} onClose={onClose}>
+    <Modal title={title} onClose={onClose}>
       <div className="form-group">
         <label>Name</label>
         <input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder={kind === 'asset' ? 'e.g. Savings account' : 'e.g. Bike loan balance'} />
@@ -43,13 +48,13 @@ function AddRowModal({ kind, onClose, onSave }) {
         <input type="number" inputMode="numeric" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder="₹" />
       </div>
       <button className="btn-primary" onClick={save} disabled={saving || !name.trim() || !(Number(amount) > 0)}>
-        {saving ? 'Saving…' : 'Save'}
+        {saving ? 'Saving…' : editing ? 'Save changes' : 'Save'}
       </button>
     </Modal>
   );
 }
 
-function Column({ title, rows, cats, valueField, onAdd, onDelete, negative }) {
+function Column({ title, rows, cats, valueField, onAdd, onEdit, onDelete, negative }) {
   return (
     <div className="card pad">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -65,7 +70,10 @@ function Column({ title, rows, cats, valueField, onAdd, onDelete, negative }) {
             <div className="nw-sub">{(cats[row.category] || 'Other').split(' ').slice(1).join(' ')}</div>
           </div>
           <div className={`nw-amt num${negative ? ' neg' : ''}`}>{negative ? '−' : ''}{cur(Math.round(row[valueField]))}</div>
-          <button className="icon-btn" style={{ width: 28, height: 28, marginLeft: 8 }} aria-label="Delete" onClick={() => onDelete(row.id)}>×</button>
+          <button className="icon-btn" style={{ width: 28, height: 28, marginLeft: 8 }} aria-label="Edit" onClick={() => onEdit(row)}>
+            <Icon name="edit" size={12} />
+          </button>
+          <button className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Delete" onClick={() => onDelete(row.id)}>×</button>
         </div>
       ))}
     </div>
@@ -79,17 +87,24 @@ export function NetWorthTab() {
   const assetMut = useAssetMutations();
   const liabilityMut = useLiabilityMutations();
   const toast = useToast();
-  const [adding, setAdding] = useState(null); // 'asset' | 'liability'
+  const [modal, setModal] = useState(null); // { kind: 'asset' | 'liability', initial? }
 
   const assetsTotal = assets.reduce((a, x) => a + Number(x.value || 0), 0);
   const portfolioTotal = investments.reduce((a, i) => a + currentValue(i), 0);
   const liabilitiesTotal = liabilities.reduce((a, x) => a + Number(x.amount || 0), 0);
   const netWorth = assetsTotal + portfolioTotal - liabilitiesTotal;
 
-  async function handleAdd(row) {
-    const mut = adding === 'asset' ? assetMut : liabilityMut;
-    try { await mut.add.mutateAsync(row); toast('Added'); }
-    catch (err) { toast(err.message, 'error'); throw err; }
+  async function handleSave(row) {
+    const mut = modal.kind === 'asset' ? assetMut : liabilityMut;
+    try {
+      if (modal.initial) {
+        await mut.update.mutateAsync({ id: modal.initial.id, ...row });
+        toast('Updated');
+      } else {
+        await mut.add.mutateAsync(row);
+        toast('Added');
+      }
+    } catch (err) { toast(err.message, 'error'); throw err; }
   }
 
   async function handleDelete(kind, id) {
@@ -117,11 +132,13 @@ export function NetWorthTab() {
       <div className="nw-cols" style={{ marginTop: 18 }}>
         <Column
           title="Assets" rows={assets} cats={ASSET_CATS} valueField="value"
-          onAdd={() => setAdding('asset')} onDelete={(id) => handleDelete('asset', id)}
+          onAdd={() => setModal({ kind: 'asset' })} onEdit={(row) => setModal({ kind: 'asset', initial: row })}
+          onDelete={(id) => handleDelete('asset', id)}
         />
         <Column
           title="Liabilities" rows={liabilities} cats={LIABILITY_CATS} valueField="amount" negative
-          onAdd={() => setAdding('liability')} onDelete={(id) => handleDelete('liability', id)}
+          onAdd={() => setModal({ kind: 'liability' })} onEdit={(row) => setModal({ kind: 'liability', initial: row })}
+          onDelete={(id) => handleDelete('liability', id)}
         />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12.5, color: 'var(--ink-3)', fontWeight: 600 }}>
@@ -129,7 +146,7 @@ export function NetWorthTab() {
         Your investment portfolio is counted automatically — no need to add it as an asset.
       </div>
 
-      {adding && <AddRowModal kind={adding} onClose={() => setAdding(null)} onSave={handleAdd} />}
+      {modal && <AddRowModal kind={modal.kind} initial={modal.initial} onClose={() => setModal(null)} onSave={handleSave} />}
     </div>
   );
 }

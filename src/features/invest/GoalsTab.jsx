@@ -105,10 +105,16 @@ export function GoalsTab({ snapshot }) {
             <div key={goal.id} className="goal-card" onClick={() => setModal(goal)}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="goal-emoji-tile">{isEf ? '🛡️' : '🎯'}</div>
-                <button
-                  className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Delete goal"
-                  onClick={e => { e.stopPropagation(); handleDelete(goal); }}
-                >×</button>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Edit goal"
+                    onClick={e => { e.stopPropagation(); setModal(goal); }}
+                  ><Icon name="edit" size={12} /></button>
+                  <button
+                    className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Delete goal"
+                    onClick={e => { e.stopPropagation(); handleDelete(goal); }}
+                  >×</button>
+                </div>
               </div>
               <div className="goal-name">{goal.name}</div>
               {isEf && (
