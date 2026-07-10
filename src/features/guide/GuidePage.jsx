@@ -18,17 +18,20 @@ const SECTIONS = [
   {
     id: 'home', title: 'Home', to: '/', sub: "Your 10-second morning glance: what's safe to spend, and the one next thing worth doing.",
     feats: [
-      { name: 'Left to spend', text: 'Income minus this month\'s spending — the honest "can I afford it" number, with money in, out, and the % you kept.' },
+      { name: 'Safe to spend today', text: 'One daily number: income minus what you\'ve spent, minus upcoming bills, EMIs and your SIP promise, divided over the days left. If a purchase fits under it, it\'s genuinely fine.' },
+      { name: 'Runway meter', text: '"If your income stopped today, you\'d last X months" — liquid savings against your real monthly burn. The most honest measure of how safe you actually are; aim for 6 months.' },
       { name: 'Journey & plan nudges', text: 'Two tap-through cards: your next lesson, and your current plan step with a suggested ₹ amount sized from your numbers. If you only ever tap these, the app still works.' },
-      { name: 'Charts', text: 'Last-7-days bars spot the leaky weekday; the budget ring makes overshoot visible mid-month, not after.' },
+      { name: 'Charts & milestones', text: 'Last-7-days bars spot the leaky weekday; the budget ring makes overshoot visible mid-month. Milestone badges (first log → 3-month fund → ₹1L net worth → EMI-free) light up on their own as your numbers move.' },
     ],
   },
   {
-    id: 'money', title: 'Money', to: '/money', sub: 'Four sub-tabs: Activity, Budgets, Commitments, Import.',
+    id: 'money', title: 'Money', to: '/money', sub: 'Six sub-tabs: Activity, Budgets, Commitments, Wishlist, Tax, Import.',
     feats: [
       { name: 'Activity', text: 'Every entry — filter, edit, delete. Log income here too (salary, refunds, cashback); your savings rate needs both sides.' },
-      { name: 'Budgets', text: 'Monthly limits per category. Set once — they feed the Home ring and the coach\'s advice.' },
-      { name: 'Commitments', text: 'EMIs (with %-of-income tracking, target under 30%), bills, and subscriptions. All of them auto-log themselves as expenses on their due day, in the category you pick — add once, counted forever.' },
+      { name: 'Budgets + creep check', text: 'Monthly limits per category, plus a lifestyle-creep card that flags any category running 30%+ hotter than your last two months — creep is invisible day to day.' },
+      { name: 'Commitments', text: 'EMIs, bills, and subscriptions auto-log themselves as expenses on their due day. Every active EMI also gets a "Prepay or invest?" calculator that answers the classic dilemma with your actual loan rate.' },
+      { name: 'Wishlist — the 30-day rule', text: 'Want something big? Park it here instead of buying. After 30 days the app asks "still want it?" — most wants fade, and the ones that don\'t you buy guilt-free. Watch your "saved by waiting" total grow.' },
+      { name: 'Tax', text: '80C progress against the ₹1.5L cap (plus 80D and friends) per financial year — so January never turns into a panic-buy of a bad insurance policy.' },
       { name: 'Import — most people miss this', text: 'Upload a bank statement (CSV/Excel — HDFC, ICICI, SBI, Axis, Kotak and more) and weeks of transactions land at once, auto-categorized.' },
     ],
     callout: { emoji: '⚡', title: 'The + button works from every screen', text: 'Don\'t navigate anywhere to log — hit +, type the amount, done in 5 seconds. Low friction is the whole game.' },
@@ -45,10 +48,11 @@ const SECTIONS = [
   {
     id: 'invest', title: 'Invest', to: '/invest', sub: 'Six sub-tabs. The first two get you from "scared to start" to invested; the rest track what you own.',
     feats: [
-      { name: 'My plan — start here', text: 'Your 5-step roadmap: cushion → small index SIP → automate 3 months → second asset → (optional) stocks. Every step shows a ₹ amount from your numbers, the worst case measured in your rupees, a pre-filled "Log it" button, and "Ask coach about this".' },
+      { name: 'My plan — start here', text: 'Opens with a protection check (term & health cover vs your income — insurance is step zero), then your 5-step roadmap: cushion → small index SIP → automate 3 months → second asset → (optional) stocks. Every step shows a ₹ amount from your numbers and an "Ask coach" shortcut.' },
       { name: 'Explore — before you buy anything', text: 'Nine instruments, each with returns, lock-in, taxes, exact steps to start in India, beginner mistakes, and a worst-year calculator. Read, then hit "Start this".' },
-      { name: 'Portfolio', text: 'Log every investment; get total value, returns, and an allocation donut by asset group.' },
-      { name: 'Net worth, Goals, Glossary', text: 'Assets minus liabilities; your Emergency Fund and custom goals; searchable plain-English definitions (NAV, ELSS, XIRR…).' },
+      { name: 'Portfolio + decision journal', text: 'When you log an investment, the app asks why you\'re buying it. Your reason shows on the row — and gets read back to you on the day you\'ll need it most.' },
+      { name: 'The Steady page', text: 'Markets falling? A calm page with your own written reasons, your goals\' real deadlines, and how every Indian crash so far recovered. Linked from Portfolio — read it before touching anything.' },
+      { name: 'Net worth, Goals, Glossary', text: 'Assets minus liabilities with your runway in months; your Emergency Fund and custom goals; searchable plain-English definitions (NAV, ELSS, XIRR…).' },
     ],
     callout: { emoji: '✍️', title: 'No live prices — on purpose', text: 'Update values yourself from your broker app, monthly is plenty. No live ticker means no doomscrolling your portfolio — the exact habit that ruins beginners.' },
   },
@@ -68,6 +72,8 @@ const DONT_MISS = [
   ['The worst-year calculator', 'On every Explore page — fear shrinks when the worst case is a number you\'ve seen.'],
   ['Pre-filled logging', '"Log it" on a plan step and "Start this" on an option open the form already set up.'],
   ['Commitments auto-log', 'Bills, EMIs and subscriptions log themselves as expenses on their due day. Never forget rent or Netflix again.'],
+  ['Prepay or invest?', 'On every active EMI in Commitments — guaranteed interest saved vs likely market growth, computed from your own loan.'],
+  ['Tell the app your insurance', 'Settings → Protection. Two numbers, and the plan\'s step-zero check starts watching your back.'],
   ['Install it as an app', 'Use "Add to Home Screen" on your phone — PaisaCoach opens full-screen like a native app.'],
 ];
 
@@ -76,7 +82,7 @@ const RHYTHM = [
   ['Monday · 2 min', 'Read your weekly review on Coach. Keep the Win, act on the Focus.'],
   ['Payday · 2 min', 'Log the income. Your SIP debits 2–3 days later; top up the Emergency Fund.'],
   ['Monthly · 5 min', 'Update portfolio values from your broker app. Adjust any budget that turned out to be fantasy.'],
-  ['Market drops · 0 min', 'Nothing. Open My plan, reread the fear check, let the SIP buy cheap units.'],
+  ['Market drops · 0 min', 'Nothing. Open the Steady page (Invest → Portfolio), reread your own reasons, let the SIP buy cheap units.'],
 ];
 
 function Callout({ emoji, title, text }) {

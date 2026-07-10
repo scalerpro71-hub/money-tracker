@@ -14,11 +14,19 @@ test('un-onboarded users are sent to the onboarding wizard', async ({ page }) =>
   await expect(page.getByText('Welcome to PaisaCoach')).toBeVisible();
 });
 
-test('home shows the spendable hero and journey nudge', async ({ page }) => {
+test('home shows the safe-to-spend hero, runway and journey nudge', async ({ page }) => {
   await mockBackend(page);
   await page.goto('/');
-  await expect(page.getByText('Left to spend this month')).toBeVisible();
+  await expect(page.getByText('Safe to spend today')).toBeVisible();
+  await expect(page.getByText('If your income stopped today')).toBeVisible();
   await expect(page.getByText(/Level 1 · Know Your Money/i)).toBeVisible();
+});
+
+test('home lists milestones with the first one earned', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Milestones' })).toBeVisible();
+  await expect(page.getByText('First expense logged')).toBeVisible();
 });
 
 test('add-entry sheet opens from the shell', async ({ page }) => {
@@ -72,6 +80,52 @@ test('ask coach prefills the chat input from an option page', async ({ page }) =
   await page.getByRole('button', { name: 'Ask coach about this' }).click();
   await expect(page).toHaveURL(/\/coach/);
   await expect(page.locator('.chat-input')).toHaveValue(/index fund SIP/);
+});
+
+test('wishlist item past 30 days asks for a decision', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/money');
+  await page.getByRole('button', { name: 'Wishlist' }).click();
+  await expect(page.getByText('Saved by waiting')).toBeVisible();
+  await expect(page.getByText('Noise-cancelling headphones')).toBeVisible();
+  await expect(page.getByText('30 days up — still want it?')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Let it go/ })).toBeVisible();
+});
+
+test('tax tab tracks 80C against the 1.5L cap', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/money');
+  await page.getByRole('button', { name: 'Tax', exact: true }).click();
+  await expect(page.getByText(/Section 80C · FY/)).toBeVisible();
+  await expect(page.getByText('PPF deposit')).toBeVisible();
+  await expect(page.getByText(/of room left/)).toBeVisible();
+});
+
+test('active EMI offers the prepay-or-invest calculator', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/money');
+  await page.getByRole('button', { name: 'Commitments' }).click();
+  await expect(page.getByText('Bike loan')).toBeVisible();
+  await page.getByRole('button', { name: 'Prepay or invest? →' }).click();
+  await expect(page.getByText('Prepay Bike loan or invest?')).toBeVisible();
+  // 12% expected vs 11% loan rate: within 1% margin, prepay wins
+  await expect(page.getByText('Prepaying wins here')).toBeVisible();
+});
+
+test('steady page keeps its head when markets fall', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/invest/steady');
+  await expect(page.getByText("Markets fall. Plans don't have to.")).toBeVisible();
+  await expect(page.getByText('2020 COVID crash')).toBeVisible();
+  await expect(page.getByText("Don't sell")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ask the coach' })).toBeVisible();
+});
+
+test('plan opens with the protection check', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/invest?tab=plan');
+  await expect(page.getByText('Before the plan: protection check')).toBeVisible();
+  await expect(page.getByText('Add cover in Settings →')).toBeVisible();
 });
 
 test('guide page renders from the settings link', async ({ page }) => {

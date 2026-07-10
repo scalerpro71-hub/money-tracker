@@ -11,6 +11,12 @@ const d = (offset) => {
 };
 const monthFirst = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
 
+// Indian FY (April-March), matching TaxTab's currentFY()
+const currentFY = () => {
+  const y = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  return `${y}-${String((y + 1) % 100).padStart(2, '0')}`;
+};
+
 const cats = [
   { id: 'c1', name: 'Food', icon: '🍔', color: '#F59E0B' },
   { id: 'c2', name: 'Transport', icon: '🚗', color: '#3B82F6' },
@@ -52,11 +58,19 @@ export function buildFixtures({ onboarded = true } = {}) {
       { id: 'g1', user_id: USER_ID, name: 'Emergency Fund', kind: 'emergency_fund', target_amount: 120000, current_amount: 30000, created_at: d(9) },
     ],
     investments: [],
-    emis: [],
+    emis: [
+      { id: 'em1', user_id: USER_ID, name: 'Bike loan', principal: 80000, emi_amount: 3000, interest_rate: 11, start_date: d(95), tenure_months: 24, category_id: null, created_at: d(95) },
+    ],
     bills: [],
     recurring_expenses: [],
     assets: [],
     liabilities: [],
+    wishlist_items: [
+      { id: 'w1', user_id: USER_ID, name: 'Noise-cancelling headphones', amount: 24000, note: 'For focus at work', decided_at: null, decision: null, created_at: d(31) + 'T10:00:00Z' },
+    ],
+    tax_declarations: [
+      { id: 't1', user_id: USER_ID, name: 'PPF deposit', section: '80C', amount: 50000, financial_year: currentFY(), created_at: d(20) },
+    ],
     user_journey_state: [{
       user_id: USER_ID, content_version: 1, current_level_id: 'l1',
       unlocked_level_ids: ['l1'], completed_level_ids: [], criteria_snapshot: {}, xp: 0, updated_at: d(0),
