@@ -8,6 +8,7 @@ import { Confetti } from '../../components/layout/Confetti';
 import { BarChart } from '../../components/charts/BarChart';
 import { Ring } from '../../components/charts/Ring';
 import { cur, fmtK } from '../../lib/formatUtils';
+import { Milestones } from './Milestones';
 
 function dayLetter(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short' }).slice(0, 2);
@@ -221,6 +222,9 @@ export function HomePage() {
           </div>
         </>
       )}
+
+      {/* MILESTONES — the wealth-building path as badges */}
+      {s.entryCount > 0 && <Milestones snapshot={s} />}
 
       {/* EMPTY FIRST-RUN STATE */}
       {s.entryCount === 0 && (
