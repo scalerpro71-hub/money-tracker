@@ -8,6 +8,7 @@ import {
 } from '../../lib/queries';
 import { useToast } from '../../components/layout/Toast';
 import { Icon } from '../../components/layout/Icon';
+import { PrepayEmiModal } from './PrepayEmiModal';
 import { cur, fmtK } from '../../lib/formatUtils';
 import { todayStr } from '../../lib/dateUtils';
 
@@ -27,6 +28,7 @@ function AddCommitmentModal({ kind, initial, onClose, onSave }) {
   const [frequency, setFrequency] = useState(initial?.frequency || 'monthly');
   const [principal, setPrincipal] = useState(initial?.principal || '');
   const [tenure, setTenure] = useState(initial?.tenure_months || '');
+  const [rate, setRate] = useState(initial?.interest_rate || '');
   const [startDate, setStartDate] = useState(initial?.start_date || todayStr());
   const [categoryId, setCategoryId] = useState(initial?.category_id || '');
   const [saving, setSaving] = useState(false);
@@ -41,7 +43,7 @@ function AddCommitmentModal({ kind, initial, onClose, onSave }) {
       if (kind === 'bill') {
         await onSave({ name: name.trim(), amount: Number(amount), due_day: Number(day), is_active: true, category_id });
       } else if (kind === 'emi') {
-        await onSave({ name: name.trim(), emi_amount: Number(amount), principal: Number(principal), tenure_months: Number(tenure), start_date: startDate, category_id });
+        await onSave({ name: name.trim(), emi_amount: Number(amount), principal: Number(principal), tenure_months: Number(tenure), start_date: startDate, interest_rate: Number(rate) || 0, category_id });
       } else {
         await onSave({
           name: name.trim(), amount: Number(amount), frequency,
@@ -80,6 +82,10 @@ function AddCommitmentModal({ kind, initial, onClose, onSave }) {
               <label>Tenure (months)</label>
               <input type="number" inputMode="numeric" min="1" value={tenure} onChange={e => setTenure(e.target.value)} placeholder="24" />
             </div>
+          </div>
+          <div className="form-group">
+            <label>Interest rate (% per year)</label>
+            <input type="number" inputMode="decimal" min="0" step="0.1" value={rate} onChange={e => setRate(e.target.value)} placeholder="e.g. 10.5" />
           </div>
           <div className="form-group">
             <label>Started on</label>
@@ -148,6 +154,7 @@ export function CommitmentsTab() {
   const emiMut = useEmiMutations();
   const recurringMut = useRecurringMutations();
   const [modal, setModal] = useState(null); // { kind: 'bill' | 'emi' | 'recurring', initial? }
+  const [prepayEmi, setPrepayEmi] = useState(null);
   const toast = useToast();
 
   const catById = Object.fromEntries(categories.map(c => [c.id, c]));
@@ -236,6 +243,11 @@ export function CommitmentsTab() {
                   {left > 0 ? `${left} months to go` : 'Paid off 🎉'}
                   {catLabel(e.category_id) ? ` · ${catLabel(e.category_id)}` : ''}
                 </div>
+                {left > 0 && (
+                  <button className="more-link" style={{ marginTop: 3, padding: 0 }} onClick={() => setPrepayEmi(e)}>
+                    Prepay or invest? →
+                  </button>
+                )}
               </div>
               <div className="num" style={{ fontSize: 14.5, fontWeight: 700 }}>{cur(e.emi_amount)}<span style={{ fontSize: 11, color: 'var(--ink-3)' }}>/mo</span></div>
             </>
@@ -266,6 +278,7 @@ export function CommitmentsTab() {
       {modal && (
         <AddCommitmentModal kind={modal.kind} initial={modal.initial} onClose={() => setModal(null)} onSave={handleSave} />
       )}
+      {prepayEmi && <PrepayEmiModal emi={prepayEmi} onClose={() => setPrepayEmi(null)} />}
     </div>
   );
 }
