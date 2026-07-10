@@ -4,6 +4,7 @@ import {
   useBills, useBillMutations,
   useEmis, useEmiMutations,
   useRecurring, useRecurringMutations,
+  useCategories,
 } from '../../lib/queries';
 import { useToast } from '../../components/layout/Toast';
 import { cur, fmtK } from '../../lib/formatUtils';
@@ -17,6 +18,7 @@ function monthsLeft(emi) {
 }
 
 function AddCommitmentModal({ kind, onClose, onSave }) {
+  const { data: categories = [] } = useCategories();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [day, setDay] = useState(1);
@@ -24,6 +26,7 @@ function AddCommitmentModal({ kind, onClose, onSave }) {
   const [principal, setPrincipal] = useState('');
   const [tenure, setTenure] = useState('');
   const [startDate, setStartDate] = useState(todayStr());
+  const [categoryId, setCategoryId] = useState('');
   const [saving, setSaving] = useState(false);
 
   const valid = name.trim() && Number(amount) > 0 &&
@@ -32,16 +35,17 @@ function AddCommitmentModal({ kind, onClose, onSave }) {
   async function save() {
     setSaving(true);
     try {
+      const category_id = categoryId || null;
       if (kind === 'bill') {
-        await onSave({ name: name.trim(), amount: Number(amount), due_day: Number(day), is_active: true });
+        await onSave({ name: name.trim(), amount: Number(amount), due_day: Number(day), is_active: true, category_id });
       } else if (kind === 'emi') {
-        await onSave({ name: name.trim(), emi_amount: Number(amount), principal: Number(principal), tenure_months: Number(tenure), start_date: startDate });
+        await onSave({ name: name.trim(), emi_amount: Number(amount), principal: Number(principal), tenure_months: Number(tenure), start_date: startDate, category_id });
       } else {
         await onSave({
           name: name.trim(), amount: Number(amount), frequency,
           day_of_month: frequency === 'monthly' ? Math.min(28, Number(day)) : null,
           day_of_week: frequency === 'weekly' ? Number(day) % 7 : null,
-          is_active: true,
+          is_active: true, category_id,
         });
       }
       onClose();
@@ -94,6 +98,13 @@ function AddCommitmentModal({ kind, onClose, onSave }) {
           <input type="number" inputMode="numeric" min="0" max={kind === 'recurring' && frequency === 'weekly' ? 6 : 31} value={day} onChange={e => setDay(e.target.value)} />
         </div>
       )}
+      <div className="form-group">
+        <label>Category (used when it auto-logs as an expense)</label>
+        <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+          <option value="">Uncategorized</option>
+          {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+        </select>
+      </div>
       <button className="btn-primary" onClick={save} disabled={!valid || saving}>
         {saving ? 'Saving…' : 'Save'}
       </button>
@@ -166,7 +177,7 @@ export function CommitmentsTab() {
       </div>
 
       <Section
-        title="Bills" sub="Rent, electricity, phone — due on a fixed day" addLabel="Bill"
+        title="Bills" sub="Rent, electricity, phone — auto-logged as an expense on the due day" addLabel="Bill"
         items={bills}
         onAdd={() => setAdding('bill')}
         onDelete={(id) => handleDelete('bill', id)}
@@ -186,7 +197,7 @@ export function CommitmentsTab() {
       />
 
       <Section
-        title="EMIs" sub="Loan payments — the coach wants these under 30% of income" addLabel="EMI"
+        title="EMIs" sub="Auto-logged monthly on the start date's day — keep these under 30% of income" addLabel="EMI"
         items={emis}
         onAdd={() => setAdding('emi')}
         onDelete={(id) => handleDelete('emi', id)}

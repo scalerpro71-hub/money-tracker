@@ -28,7 +28,7 @@ const SECTIONS = [
     feats: [
       { name: 'Activity', text: 'Every entry — filter, edit, delete. Log income here too (salary, refunds, cashback); your savings rate needs both sides.' },
       { name: 'Budgets', text: 'Monthly limits per category. Set once — they feed the Home ring and the coach\'s advice.' },
-      { name: 'Commitments', text: 'EMIs (with %-of-income tracking, target under 30%), bills, and subscriptions that can auto-log themselves each month.' },
+      { name: 'Commitments', text: 'EMIs (with %-of-income tracking, target under 30%), bills, and subscriptions. All of them auto-log themselves as expenses on their due day, in the category you pick — add once, counted forever.' },
       { name: 'Import — most people miss this', text: 'Upload a bank statement (CSV/Excel — HDFC, ICICI, SBI, Axis, Kotak and more) and weeks of transactions land at once, auto-categorized.' },
     ],
     callout: { emoji: '⚡', title: 'The + button works from every screen', text: 'Don\'t navigate anywhere to log — hit +, type the amount, done in 5 seconds. Low friction is the whole game.' },
@@ -67,7 +67,7 @@ const DONT_MISS = [
   ['Log income, not just spending', 'The + button has an Income mode. Savings rate is wrong without it.'],
   ['The worst-year calculator', 'On every Explore page — fear shrinks when the worst case is a number you\'ve seen.'],
   ['Pre-filled logging', '"Log it" on a plan step and "Start this" on an option open the form already set up.'],
-  ['Recurring auto-log', 'Subscriptions under Commitments log themselves monthly. Never forget Netflix again.'],
+  ['Commitments auto-log', 'Bills, EMIs and subscriptions log themselves as expenses on their due day. Never forget rent or Netflix again.'],
   ['Install it as an app', 'Use "Add to Home Screen" on your phone — PaisaCoach opens full-screen like a native app.'],
 ];
 
