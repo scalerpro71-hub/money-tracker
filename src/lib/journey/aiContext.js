@@ -1,9 +1,12 @@
 import { localDateStr } from '../dateUtils';
+import { evaluatePlan } from './planCriteria';
 
 /** Compact JSON the mentor sees with every chat message. Small on purpose -
     round numbers, top-3s only - so tokens stay cheap and answers stay focused. */
 export function buildCoachContext(snapshot, journey, profile) {
   const s = snapshot;
+  const planSteps = evaluatePlan(s);
+  const planCurrent = planSteps.find(st => st.status === 'current');
   return {
     month: {
       income: Math.round(s.monthlyIncome),
@@ -30,6 +33,11 @@ export function buildCoachContext(snapshot, journey, profile) {
       invested: Math.round(s.invested),
       sipPerMonth: s.sipMonthly,
       types: s.investmentTypes,
+    },
+    starterPlan: {
+      currentStep: planCurrent ? `${planCurrent.order} of ${planSteps.length}: ${planCurrent.title}` : 'all core steps done',
+      stepsDone: planSteps.filter(st => st.status === 'done').length,
+      suggestedAmount: planCurrent?.amount ?? null,
     },
     commitments: {
       emiPerMonth: Math.round(s.activeEmiTotal),

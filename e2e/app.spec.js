@@ -38,10 +38,40 @@ test('journey map lists all seven levels with locks', async ({ page }) => {
   await expect(page.getByText('Complete Level 2 to unlock')).toBeVisible();
 });
 
-test('invest tab is gated before Level 5', async ({ page }) => {
+test('invest lands on the starter plan with no gate', async ({ page }) => {
   await mockBackend(page);
   await page.goto('/invest');
-  await expect(page.getByText('Investing unlocks at Level 5')).toBeVisible();
+  await expect(page.getByText('Your starter plan')).toBeVisible();
+  await expect(page.getByText('Investing unlocks at Level 5')).not.toBeVisible();
+  // fixture user has the cushion funded past 1 month, so the SIP step is current
+  await expect(page.getByText('Step 2 of 5: Start a small index-fund SIP')).toBeVisible();
+  await expect(page.getByText('you are here')).toBeVisible();
+});
+
+test('plan step opens the log-investment modal preset to SIP', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/invest?tab=plan');
+  await page.getByRole('button', { name: 'Log my first SIP' }).click();
+  await expect(page.getByText('Log an investment')).toBeVisible();
+  await expect(page.getByText('Monthly SIP amount')).toBeVisible();
+});
+
+test('explore lists all nine options and opens a detail page', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/invest?tab=explore');
+  await expect(page.locator('a[href^="/invest/options/"]')).toHaveCount(9);
+  await page.getByText('Index fund SIP', { exact: true }).click();
+  await expect(page).toHaveURL(/\/invest\/options\/index-sip/);
+  await expect(page.getByText('The fear, measured')).toBeVisible();
+  await expect(page.getByText('How to start (in India)')).toBeVisible();
+});
+
+test('ask coach prefills the chat input from an option page', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/invest/options/index-sip');
+  await page.getByRole('button', { name: 'Ask coach about this' }).click();
+  await expect(page).toHaveURL(/\/coach/);
+  await expect(page.locator('.chat-input')).toHaveValue(/index fund SIP/);
 });
 
 test('lesson player runs a quiz to completion', async ({ page }) => {

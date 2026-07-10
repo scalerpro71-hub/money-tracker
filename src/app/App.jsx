@@ -13,6 +13,7 @@ const MoneyPage = lazy(() => import('../features/money/MoneyPage').then(m => ({ 
 const LearnPage = lazy(() => import('../features/learn/LearnPage').then(m => ({ default: m.LearnPage })));
 const LessonPage = lazy(() => import('../features/learn/LessonPage').then(m => ({ default: m.LessonPage })));
 const InvestPage = lazy(() => import('../features/invest/InvestPage').then(m => ({ default: m.InvestPage })));
+const OptionPage = lazy(() => import('../features/invest/OptionPage').then(m => ({ default: m.OptionPage })));
 const CoachPage = lazy(() => import('../features/coach/CoachPage').then(m => ({ default: m.CoachPage })));
 const SettingsPage = lazy(() => import('../features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
@@ -87,6 +88,7 @@ export default function App() {
             <Route path="learn" element={<LearnPage />} />
             <Route path="learn/:levelId/:lessonId" element={<LessonPage />} />
             <Route path="invest" element={<InvestPage />} />
+            <Route path="invest/options/:optionId" element={<OptionPage />} />
             <Route path="coach" element={<CoachPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

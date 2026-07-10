@@ -1,0 +1,62 @@
+/* The starter plan — five steps from "scared to start" to calmly diversified.
+   Prose lives here; every number and completion check lives in
+   lib/journey/planCriteria.js, computed from the finance snapshot. */
+
+export const PLAN_STEPS = [
+  {
+    id: 'cushion',
+    order: 1,
+    emoji: '🛡️',
+    title: 'Build a 1-month cushion',
+    why: 'Investing without a cushion is how beginners get burned: one emergency forces you to sell at the worst possible moment. One month of expenses parked safe makes every later step calm instead of scary.',
+    criteria: 'plan_cushion',
+    optionId: 'liquid-fund',
+    cta: { kind: 'goals', label: 'Fund the goal' },
+    coachQuestion: 'What is the fastest realistic way for me to finish my 1-month emergency cushion?',
+  },
+  {
+    id: 'first-sip',
+    order: 2,
+    emoji: '🌱',
+    title: 'Start a small index-fund SIP',
+    why: "The goal isn't returns yet — it's crossing the line from reader to owner, with an amount so small that fear has nothing to grab. A broad index fund SIP is the classic first step: no stock-picking, no timing, just the habit.",
+    criteria: 'plan_first_sip',
+    optionId: 'index-sip',
+    cta: { kind: 'log-investment', presetType: 'sip', label: 'Log my first SIP' },
+    coachQuestion: 'I want to start my first index fund SIP. Walk me through picking one and what could go wrong.',
+  },
+  {
+    id: 'automate',
+    order: 3,
+    emoji: '🔁',
+    title: 'Automate it and survive 3 months',
+    why: 'The first three months are where investors are made or broken. Auto-debit removes the monthly decision, and surviving your first red month teaches you more than any lesson can.',
+    criteria: 'plan_automate',
+    optionId: 'index-sip',
+    cta: { kind: 'portfolio', label: 'View portfolio' },
+    coachQuestion: "How do I make sure I don't panic and stop my SIP in a bad month?",
+  },
+  {
+    id: 'diversify',
+    order: 4,
+    emoji: '🧩',
+    title: 'Add a second engine',
+    why: "Once the SIP habit is boring (that's good), add something that doesn't move with the stock market — gold, PPF or an FD. Diversification is the only free lunch in investing.",
+    criteria: 'plan_diversify',
+    optionId: null,
+    cta: { kind: 'explore', label: 'Explore options' },
+    coachQuestion: 'Which second instrument fits me best — gold, PPF or an FD? Compare them for my situation.',
+  },
+  {
+    id: 'stocks',
+    order: 5,
+    emoji: '📈',
+    title: 'Only now: consider direct stocks',
+    optional: true,
+    why: 'Direct stocks are the reward for the groundwork, not the starting point. With the base built, a small capped position lets you learn by owning — without betting the plan on one company.',
+    criteria: 'plan_stocks',
+    optionId: 'stocks',
+    cta: { kind: 'log-investment', presetType: 'stock', label: 'Log a stock' },
+    coachQuestion: 'How do I buy my first individual stock sensibly without wrecking my plan?',
+  },
+];

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { useJourney } from '../../lib/journey/useJourney';
 import { buildCoachContext, buildWeeklyMetrics, lastWeekStart } from '../../lib/journey/aiContext';
 import { callAiChat, generateWeeklyReview } from '../../lib/ai';
@@ -137,6 +138,19 @@ export function CoachPage() {
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
   const scrollRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  /* "Ask coach" deep links prefill the input (never auto-send) and clear the
+     navigation state so a refresh doesn't re-prime it. */
+  useEffect(() => {
+    const ask = location.state?.ask;
+    if (ask) {
+      setInput(ask);
+      navigate('.', { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const userName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 

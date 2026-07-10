@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router';
 import { useJourney } from '../../lib/journey/useJourney';
+import { evaluatePlan } from '../../lib/journey/planCriteria';
 import { useOpenAdd } from '../../app/shell/AppShell';
 import { Icon } from '../../components/layout/Icon';
 import { Spinner } from '../../components/layout/Spinner';
@@ -23,6 +24,7 @@ export function HomePage() {
   }
 
   const budgetPct = s.totalBudget > 0 ? Math.round((s.monthSpend / s.totalBudget) * 100) : null;
+  const planCurrent = s.monthlyIncome > 0 ? evaluatePlan(s).find(st => st.status === 'current') : null;
 
   return (
     <div className="dash">
@@ -89,6 +91,29 @@ export function HomePage() {
           <Icon name="chevR" size={18} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
         </div>
       </Link>
+
+      {/* INVESTING PLAN NUDGE — the current step of the starter plan */}
+      {planCurrent && (
+        <Link to="/invest?tab=plan" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="card pad rise btn-lift" style={{ '--d': '90ms', marginTop: 12, display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, border: '1px solid var(--hair)', display: 'grid', placeItems: 'center', fontSize: 22 }}>
+              {planCurrent.emoji}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--accent)' }}>
+                Investing plan · step {planCurrent.order} of 5
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em', marginTop: 3 }}>
+                {planCurrent.title}
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', fontWeight: 650, marginTop: 2 }}>
+                About {cur(planCurrent.amount)} {planCurrent.amountCap} — sized from your numbers
+              </div>
+            </div>
+            <Icon name="chevR" size={18} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
+          </div>
+        </Link>
+      )}
 
       {/* CHARTS ROW */}
       <div className="grid-2" style={{ marginTop: 18 }}>
