@@ -22,6 +22,7 @@ const PAGE_TITLES = {
   '/invest': 'Invest',
   '/coach': 'Coach',
   '/settings': 'Settings',
+  '/guide': 'How to use PaisaCoach',
 };
 
 const AddSheetCtx = createContext(() => {});

@@ -74,6 +74,15 @@ test('ask coach prefills the chat input from an option page', async ({ page }) =
   await expect(page.locator('.chat-input')).toHaveValue(/index fund SIP/);
 });
 
+test('guide page renders from the settings link', async ({ page }) => {
+  await mockBackend(page);
+  await page.goto('/settings');
+  await page.getByRole('link', { name: 'How to use PaisaCoach' }).click();
+  await expect(page).toHaveURL(/\/guide/);
+  await expect(page.getByText('Your first 15 minutes')).toBeVisible();
+  await expect(page.getByText('Easy to miss')).toBeVisible();
+});
+
 test('lesson player runs a quiz to completion', async ({ page }) => {
   await mockBackend(page);
   await page.goto('/learn/l1/l1-01');

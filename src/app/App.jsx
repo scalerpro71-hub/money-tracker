@@ -16,6 +16,7 @@ const InvestPage = lazy(() => import('../features/invest/InvestPage').then(m => 
 const OptionPage = lazy(() => import('../features/invest/OptionPage').then(m => ({ default: m.OptionPage })));
 const CoachPage = lazy(() => import('../features/coach/CoachPage').then(m => ({ default: m.CoachPage })));
 const SettingsPage = lazy(() => import('../features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const GuidePage = lazy(() => import('../features/guide/GuidePage').then(m => ({ default: m.GuidePage })));
 
 function LoadingScreen() {
   return (
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="invest/options/:optionId" element={<OptionPage />} />
             <Route path="coach" element={<CoachPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="guide" element={<GuidePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { useAuthCtx } from '../../app/auth-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useProfile, useUpdateProfile, useCategories, useCategoryMutations, useExpenses } from '../../lib/queries';
@@ -157,6 +158,12 @@ export function SettingsPage() {
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
           Switch to {theme === 'dark' ? 'light' : 'dark'} mode
         </button>
+      </Section>
+
+      <Section title="Help" sub="The full feature map — first 15 minutes, every tab, easy-to-miss features">
+        <Link to="/guide" className="btn-ghost" style={{ textDecoration: 'none' }}>
+          <Icon name="book" size={16} />How to use PaisaCoach
+        </Link>
       </Section>
 
       <Section title="Your data" sub="Your data is yours — take it anywhere, anytime">
