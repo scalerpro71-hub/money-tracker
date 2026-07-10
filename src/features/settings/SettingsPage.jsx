@@ -37,12 +37,16 @@ export function SettingsPage() {
   const [income, setIncome] = useState('');
   const [payday, setPayday] = useState(1);
   const [newCat, setNewCat] = useState('');
+  const [termCover, setTermCover] = useState('');
+  const [healthCover, setHealthCover] = useState('');
 
   useEffect(() => {
     if (!profile) return;
     setName(profile.full_name || '');
     setIncome(profile.monthly_income || '');
     setPayday(profile.payday_day || 1);
+    setTermCover(profile.term_cover ?? '');
+    setHealthCover(profile.health_cover ?? '');
   }, [profile]);
 
   async function saveProfile() {
@@ -124,6 +128,34 @@ export function SettingsPage() {
             </select>
           </div>
         </div>
+      </Section>
+
+      <Section title="Protection" sub="Insurance is step zero of a financial plan — the coach checks these against your income">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Term life cover (0 if none)</label>
+            <input type="number" inputMode="numeric" min="0" value={termCover} onChange={e => setTermCover(e.target.value)} placeholder="e.g. 10000000" />
+          </div>
+          <div className="form-group">
+            <label>Health cover (0 if none)</label>
+            <input type="number" inputMode="numeric" min="0" value={healthCover} onChange={e => setHealthCover(e.target.value)} placeholder="e.g. 500000" />
+          </div>
+        </div>
+        <button
+          className="btn-accent" style={{ padding: '10px 18px', fontSize: 14 }}
+          onClick={async () => {
+            try {
+              await updateProfile.mutateAsync({
+                term_cover: termCover === '' ? null : Number(termCover),
+                health_cover: healthCover === '' ? null : Number(healthCover),
+              });
+              toast('Protection saved');
+            } catch (err) { toast(err.message, 'error'); }
+          }}
+          disabled={updateProfile.isPending}
+        >
+          Save protection
+        </button>
       </Section>
 
       <Section title="Categories" sub="Labels for your spending — deleting one never deletes transactions">

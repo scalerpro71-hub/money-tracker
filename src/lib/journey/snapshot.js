@@ -221,6 +221,9 @@ export function buildSnapshot({
     liabilitiesTotal,
     liquidTotal,
     runwayMonths,
+    /* null = never answered, 0 = answered "no cover" */
+    termCover: profile?.term_cover == null ? null : Number(profile.term_cover),
+    healthCover: profile?.health_cover == null ? null : Number(profile.health_cover),
     netWorth: assetsTotal + portfolioValue - liabilitiesTotal,
   };
 }

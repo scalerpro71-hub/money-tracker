@@ -136,6 +136,63 @@ function StepCard({ step, snapshot, onSwitchTab }) {
   );
 }
 
+function ProtectionCheck({ snapshot }) {
+  const annualIncome = snapshot.monthlyIncome * 12;
+  if (!(annualIncome > 0)) return null;
+
+  const { termCover, healthCover } = snapshot;
+  const unanswered = termCover == null && healthCover == null;
+  const termTarget = annualIncome * 10;
+  const termOk = (termCover ?? 0) >= termTarget;
+  const healthOk = (healthCover ?? 0) >= 500000;
+
+  const rows = unanswered ? [] : [
+    {
+      ok: termOk,
+      label: 'Term life cover',
+      detail: termOk
+        ? `${cur(termCover)} — at least 10× your yearly income. Solid.`
+        : `${termCover ? cur(termCover) : 'None'} — aim for ~${cur(termTarget)} (10–15× yearly income). Pure term plans are surprisingly cheap.`,
+    },
+    {
+      ok: healthOk,
+      label: 'Health cover',
+      detail: healthOk
+        ? `${cur(healthCover)} — clears the ₹5L floor. Good.`
+        : `${healthCover ? cur(healthCover) : 'None'} — one hospital stay can erase years of savings. ₹5L is the sensible minimum.`,
+    },
+  ];
+
+  return (
+    <div className="card pad" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 18 }}>☂️</span>
+        <div className="eyebrow">Before the plan: protection check</div>
+      </div>
+      {unanswered ? (
+        <>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+            Insurance is step zero — it's what stops one bad month from undoing every step below.
+            Tell the coach what cover you have (0 is a valid answer).
+          </div>
+          <Link to="/settings" className="more-link" style={{ display: 'inline-block', marginTop: 8 }}>
+            Add cover in Settings →
+          </Link>
+        </>
+      ) : (
+        rows.map(r => (
+          <div key={r.label} style={{ display: 'flex', gap: 10, padding: '7px 0', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 14, flexShrink: 0, color: r.ok ? 'var(--pos, #16a34a)' : '#d97706' }}>{r.ok ? '✓' : '▲'}</span>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--ink)' }}>{r.label}:</strong> {r.detail}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function PlanTab({ snapshot, onSwitchTab }) {
   const steps = evaluatePlan(snapshot);
   const done = steps.filter(s => s.status === 'done').length;
@@ -157,6 +214,8 @@ export function PlanTab({ snapshot, onSwitchTab }) {
           The amounts are sized from your own income and spending.
         </div>
       </div>
+
+      <ProtectionCheck snapshot={snapshot} />
 
       {steps.map(step => (
         <StepCard key={step.id} step={step} snapshot={snapshot} onSwitchTab={onSwitchTab} />
