@@ -7,6 +7,7 @@ import {
   useCategories,
 } from '../../lib/queries';
 import { useToast } from '../../components/layout/Toast';
+import { Icon } from '../../components/layout/Icon';
 import { cur, fmtK } from '../../lib/formatUtils';
 import { todayStr } from '../../lib/dateUtils';
 
@@ -17,16 +18,17 @@ function monthsLeft(emi) {
   return Math.max(0, emi.tenure_months - elapsed);
 }
 
-function AddCommitmentModal({ kind, onClose, onSave }) {
+function AddCommitmentModal({ kind, initial, onClose, onSave }) {
   const { data: categories = [] } = useCategories();
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [day, setDay] = useState(1);
-  const [frequency, setFrequency] = useState('monthly');
-  const [principal, setPrincipal] = useState('');
-  const [tenure, setTenure] = useState('');
-  const [startDate, setStartDate] = useState(todayStr());
-  const [categoryId, setCategoryId] = useState('');
+  const editing = !!initial;
+  const [name, setName] = useState(initial?.name || '');
+  const [amount, setAmount] = useState(initial?.amount ?? initial?.emi_amount ?? '');
+  const [day, setDay] = useState(initial?.due_day ?? initial?.day_of_month ?? initial?.day_of_week ?? 1);
+  const [frequency, setFrequency] = useState(initial?.frequency || 'monthly');
+  const [principal, setPrincipal] = useState(initial?.principal || '');
+  const [tenure, setTenure] = useState(initial?.tenure_months || '');
+  const [startDate, setStartDate] = useState(initial?.start_date || todayStr());
+  const [categoryId, setCategoryId] = useState(initial?.category_id || '');
   const [saving, setSaving] = useState(false);
 
   const valid = name.trim() && Number(amount) > 0 &&
@@ -54,7 +56,9 @@ function AddCommitmentModal({ kind, onClose, onSave }) {
     }
   }
 
-  const titles = { bill: 'Add bill', emi: 'Add EMI', recurring: 'Add recurring expense' };
+  const titles = editing
+    ? { bill: 'Edit bill', emi: 'Edit EMI', recurring: 'Edit recurring expense' }
+    : { bill: 'Add bill', emi: 'Add EMI', recurring: 'Add recurring expense' };
   return (
     <Modal title={titles[kind]} onClose={onClose}>
       <div className="form-group">
@@ -106,13 +110,13 @@ function AddCommitmentModal({ kind, onClose, onSave }) {
         </select>
       </div>
       <button className="btn-primary" onClick={save} disabled={!valid || saving}>
-        {saving ? 'Saving…' : 'Save'}
+        {saving ? 'Saving…' : editing ? 'Save changes' : 'Save'}
       </button>
     </Modal>
   );
 }
 
-function Section({ title, sub, items, onAdd, onDelete, renderRow, addLabel }) {
+function Section({ title, sub, items, onAdd, onEdit, onDelete, renderRow, addLabel }) {
   return (
     <div className="card pad" style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: items.length ? 6 : 0 }}>
@@ -125,6 +129,9 @@ function Section({ title, sub, items, onAdd, onDelete, renderRow, addLabel }) {
       {items.map(item => (
         <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: '1px solid var(--hair)' }}>
           {renderRow(item)}
+          <button className="icon-btn" style={{ width: 26, height: 26, flexShrink: 0 }} aria-label="Edit" onClick={() => onEdit(item)}>
+            <Icon name="edit" size={12} />
+          </button>
           <button className="icon-btn" style={{ width: 26, height: 26, flexShrink: 0 }} aria-label="Delete" onClick={() => onDelete(item.id)}>×</button>
         </div>
       ))}
@@ -136,11 +143,18 @@ export function CommitmentsTab() {
   const { data: bills = [] } = useBills();
   const { data: emis = [] } = useEmis();
   const { data: recurring = [] } = useRecurring();
+  const { data: categories = [] } = useCategories();
   const billMut = useBillMutations();
   const emiMut = useEmiMutations();
   const recurringMut = useRecurringMutations();
-  const [adding, setAdding] = useState(null); // 'bill' | 'emi' | 'recurring'
+  const [modal, setModal] = useState(null); // { kind: 'bill' | 'emi' | 'recurring', initial? }
   const toast = useToast();
+
+  const catById = Object.fromEntries(categories.map(c => [c.id, c]));
+  const catLabel = (id) => {
+    const c = catById[id];
+    return c ? `${c.icon} ${c.name}` : null;
+  };
 
   const activeEmis = emis.filter(e => monthsLeft(e) > 0);
   const monthlyTotal =
@@ -156,9 +170,16 @@ export function CommitmentsTab() {
     catch (err) { toast(err.message, 'error'); }
   }
 
-  async function handleAdd(row) {
-    try { await mutations[adding].add.mutateAsync(row); toast('Added'); }
-    catch (err) { toast(err.message, 'error'); throw err; }
+  async function handleSave(row) {
+    try {
+      if (modal.initial) {
+        await mutations[modal.kind].update.mutateAsync({ id: modal.initial.id, ...row });
+        toast('Updated');
+      } else {
+        await mutations[modal.kind].add.mutateAsync(row);
+        toast('Added');
+      }
+    } catch (err) { toast(err.message, 'error'); throw err; }
   }
 
   return (
@@ -179,7 +200,8 @@ export function CommitmentsTab() {
       <Section
         title="Bills" sub="Rent, electricity, phone — auto-logged as an expense on the due day" addLabel="Bill"
         items={bills}
-        onAdd={() => setAdding('bill')}
+        onAdd={() => setModal({ kind: 'bill' })}
+        onEdit={(b) => setModal({ kind: 'bill', initial: b })}
         onDelete={(id) => handleDelete('bill', id)}
         renderRow={(b) => (
           <>
@@ -189,7 +211,9 @@ export function CommitmentsTab() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 750 }}>{b.name}</div>
-              {!b.is_active && <div style={{ fontSize: 11.5, color: 'var(--ink-4)', fontWeight: 700 }}>Paused</div>}
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontWeight: 650, marginTop: 1 }}>
+                {catLabel(b.category_id) || 'Uncategorized'}{!b.is_active && ' · paused'}
+              </div>
             </div>
             <div className="num" style={{ fontSize: 14.5, fontWeight: 700 }}>{cur(b.amount)}</div>
           </>
@@ -199,7 +223,8 @@ export function CommitmentsTab() {
       <Section
         title="EMIs" sub="Auto-logged monthly on the start date's day — keep these under 30% of income" addLabel="EMI"
         items={emis}
-        onAdd={() => setAdding('emi')}
+        onAdd={() => setModal({ kind: 'emi' })}
+        onEdit={(e) => setModal({ kind: 'emi', initial: e })}
         onDelete={(id) => handleDelete('emi', id)}
         renderRow={(e) => {
           const left = monthsLeft(e);
@@ -209,6 +234,7 @@ export function CommitmentsTab() {
                 <div style={{ fontSize: 14, fontWeight: 750 }}>{e.name}</div>
                 <div style={{ fontSize: 12, color: left > 0 ? 'var(--ink-3)' : 'var(--pos)', fontWeight: 650, marginTop: 1 }}>
                   {left > 0 ? `${left} months to go` : 'Paid off 🎉'}
+                  {catLabel(e.category_id) ? ` · ${catLabel(e.category_id)}` : ''}
                 </div>
               </div>
               <div className="num" style={{ fontSize: 14.5, fontWeight: 700 }}>{cur(e.emi_amount)}<span style={{ fontSize: 11, color: 'var(--ink-3)' }}>/mo</span></div>
@@ -220,14 +246,16 @@ export function CommitmentsTab() {
       <Section
         title="Subscriptions & recurring" sub="Auto-logged as expenses when due" addLabel="Recurring"
         items={recurring}
-        onAdd={() => setAdding('recurring')}
+        onAdd={() => setModal({ kind: 'recurring' })}
+        onEdit={(r) => setModal({ kind: 'recurring', initial: r })}
         onDelete={(id) => handleDelete('recurring', id)}
         renderRow={(r) => (
           <>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 750 }}>{r.name}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 650, marginTop: 1 }}>
-                {r.frequency === 'weekly' ? 'Weekly' : `Monthly · day ${r.day_of_month}`}{!r.is_active && ' · paused'}
+                {r.frequency === 'weekly' ? 'Weekly' : `Monthly · day ${r.day_of_month}`}
+                {catLabel(r.category_id) ? ` · ${catLabel(r.category_id)}` : ''}{!r.is_active && ' · paused'}
               </div>
             </div>
             <div className="num" style={{ fontSize: 14.5, fontWeight: 700 }}>{cur(r.amount)}</div>
@@ -235,8 +263,8 @@ export function CommitmentsTab() {
         )}
       />
 
-      {adding && (
-        <AddCommitmentModal kind={adding} onClose={() => setAdding(null)} onSave={handleAdd} />
+      {modal && (
+        <AddCommitmentModal kind={modal.kind} initial={modal.initial} onClose={() => setModal(null)} onSave={handleSave} />
       )}
     </div>
   );

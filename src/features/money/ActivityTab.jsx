@@ -164,6 +164,11 @@ export function ActivityTab() {
                     </div>
                     <button
                       className="icon-btn" style={{ width: 28, height: 28, marginLeft: 6, flexShrink: 0 }}
+                      aria-label="Edit"
+                      onClick={e => { e.stopPropagation(); setEditingExpense(txn); }}
+                    ><Icon name="edit" size={12} /></button>
+                    <button
+                      className="icon-btn" style={{ width: 28, height: 28, flexShrink: 0 }}
                       aria-label="Delete"
                       onClick={e => { e.stopPropagation(); handleDelete(txn.id); }}
                     >×</button>
