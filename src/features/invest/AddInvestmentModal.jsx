@@ -17,6 +17,7 @@ export function AddInvestmentModal({ initial, preset, onClose }) {
   const [value, setValue] = useState(initial?.current_value || '');
   const [monthly, setMonthly] = useState(initial?.monthly_amount || preset?.monthly_amount || '');
   const [startDate, setStartDate] = useState(initial?.start_date || todayStr());
+  const [reason, setReason] = useState(initial?.reason || '');
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -29,6 +30,7 @@ export function AddInvestmentModal({ initial, preset, onClose }) {
         current_value: Number(value) || Number(invested),
         monthly_amount: type === 'sip' ? Number(monthly) || null : null,
         start_date: startDate,
+        reason: reason.trim() || null,
       };
       if (editing) {
         await update.mutateAsync({ id: initial.id, ...row });
@@ -81,6 +83,16 @@ export function AddInvestmentModal({ initial, preset, onClose }) {
       <div className="form-group">
         <label>Started on</label>
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+      </div>
+      <div className="form-group">
+        <label>Why are you buying this?</label>
+        <textarea
+          value={reason} onChange={e => setReason(e.target.value)} rows={2}
+          placeholder="e.g. Long-term wealth, 10+ year horizon. I won't touch it in a crash."
+        />
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, lineHeight: 1.5, marginTop: 4 }}>
+          Your future self reads this when markets fall. One honest sentence is enough.
+        </div>
       </div>
       <button className="btn-primary" onClick={save} disabled={saving || !name.trim() || !(Number(invested) > 0)}>
         {saving ? 'Saving…' : editing ? 'Save changes' : 'Log investment'}

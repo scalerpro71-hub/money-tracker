@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import { useInvestments, useInvestmentMutations } from '../../lib/queries';
 import { useToast } from '../../components/layout/Toast';
 import { Icon } from '../../components/layout/Icon';
@@ -127,6 +128,11 @@ export function PortfolioTab({ snapshot }) {
                     <div className="inv-sub">
                       {inv.monthly_amount ? `${cur(inv.monthly_amount)}/mo · ` : ''}invested {cur(Math.round(inv.invested_amount))}
                     </div>
+                    {inv.reason && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, fontStyle: 'italic', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        “{inv.reason}”
+                      </div>
+                    )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div className="num" style={{ fontSize: 14.5, fontWeight: 700 }}>{cur(Math.round(currentValue(inv)))}</div>
@@ -142,6 +148,19 @@ export function PortfolioTab({ snapshot }) {
           </div>
         </div>
       ))}
+
+      <Link to="/invest/steady" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <div className="card pad btn-lift" style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+          <div style={{ fontSize: 24, flexShrink: 0 }}>🧘</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 800 }}>Markets down? Read this before you do anything</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>
+              Your reasons, your timelines, and what every crash so far has in common.
+            </div>
+          </div>
+          <Icon name="chevR" size={18} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
+        </div>
+      </Link>
 
       <div className="lp-disclaimer" style={{ marginTop: 18 }}>
         Values update only when you edit them — PaisaCoach doesn't fetch live prices, execute

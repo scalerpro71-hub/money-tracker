@@ -14,6 +14,7 @@ const LearnPage = lazy(() => import('../features/learn/LearnPage').then(m => ({ 
 const LessonPage = lazy(() => import('../features/learn/LessonPage').then(m => ({ default: m.LessonPage })));
 const InvestPage = lazy(() => import('../features/invest/InvestPage').then(m => ({ default: m.InvestPage })));
 const OptionPage = lazy(() => import('../features/invest/OptionPage').then(m => ({ default: m.OptionPage })));
+const SteadyPage = lazy(() => import('../features/invest/SteadyPage').then(m => ({ default: m.SteadyPage })));
 const CoachPage = lazy(() => import('../features/coach/CoachPage').then(m => ({ default: m.CoachPage })));
 const SettingsPage = lazy(() => import('../features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const GuidePage = lazy(() => import('../features/guide/GuidePage').then(m => ({ default: m.GuidePage })));
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="learn/:levelId/:lessonId" element={<LessonPage />} />
             <Route path="invest" element={<InvestPage />} />
             <Route path="invest/options/:optionId" element={<OptionPage />} />
+            <Route path="invest/steady" element={<SteadyPage />} />
             <Route path="coach" element={<CoachPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="guide" element={<GuidePage />} />
