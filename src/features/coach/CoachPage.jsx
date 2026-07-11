@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { useJourney } from '../../lib/journey/useJourney';
 import { buildCoachContext, buildWeeklyMetrics, lastWeekStart } from '../../lib/journey/aiContext';
 import { callAiChat, generateWeeklyReview } from '../../lib/ai';
-import { useProfile, useExpenses, useWeeklyReviews, useMarkReviewRead } from '../../lib/queries';
+import { useProfile, useExpenses, useCategories, useWeeklyReviews, useMarkReviewRead } from '../../lib/queries';
 import { useAuthCtx } from '../../app/auth-context';
 import { Icon } from '../../components/layout/Icon';
 import { Spinner } from '../../components/layout/Spinner';
@@ -133,6 +133,7 @@ function WeeklyReviews({ snapshot, journey }) {
 export function CoachPage() {
   const journey = useJourney();
   const { data: profile } = useProfile();
+  const { data: categories = [] } = useCategories();
   const { user } = useAuthCtx();
   const [messages, setMessages] = useState(loadChat);
   const [input, setInput] = useState('');
@@ -178,7 +179,7 @@ export function CoachPage() {
     setMessages(nextMessages);
     setThinking(true);
     try {
-      const context = buildCoachContext(journey.snapshot, journey, profile);
+      const context = buildCoachContext(journey.snapshot, journey, profile, categories);
       const reply = await callAiChat(message, context, nextMessages.slice(-12));
       setMessages(m => [...m, { role: 'assistant', content: reply }]);
     } catch {

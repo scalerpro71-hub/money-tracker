@@ -2,21 +2,41 @@ import { localDateStr } from '../dateUtils';
 import { evaluatePlan } from './planCriteria';
 
 /** Compact JSON the mentor sees with every chat message. Small on purpose -
-    round numbers, top-3s only - so tokens stay cheap and answers stay focused. */
-export function buildCoachContext(snapshot, journey, profile) {
+    round numbers, top-3s only - so tokens stay cheap and answers stay focused.
+    Every field here is defined in the ai-chat system prompt's data dictionary;
+    keep the two in sync when renaming or adding fields. */
+export function buildCoachContext(snapshot, journey, profile, categories = []) {
   const s = snapshot;
   const planSteps = evaluatePlan(s);
   const planCurrent = planSteps.find(st => st.status === 'current');
+  const categoryName = id =>
+    categories.find(c => c.id === id)?.name
+    ?? s.topCategories.find(c => c.id === id)?.name
+    ?? 'Unknown';
+  const spentInCategory = id => Math.round(s.topCategories.find(c => c.id === id)?.total ?? 0);
   return {
+    today: s.today,
     month: {
       income: Math.round(s.monthlyIncome),
       spent: Math.round(s.monthSpend),
-      leftToSpend: Math.round(s.spendable),
+      upcomingCommitmentsDue: Math.round(s.upcomingCommitments),
+      safeLeftThisMonth: Math.round(s.safeMonthLeft),
+      safePerDayRemaining: Math.round(s.safeToSpendToday),
       savingsRatePct: s.currentSavingsRate,
       daysLeft: s.daysLeft,
       avgDailySpend: s.avgDailySpend,
       topCategories: s.topCategories.slice(0, 3).map(c => ({ name: c.name, total: Math.round(c.total) })),
     },
+    budgets: s.monthBudgets.slice(0, 8).map(b => ({
+      category: categoryName(b.category_id),
+      limit: Math.round(Number(b.limit_amount)),
+      spentSoFar: spentInCategory(b.category_id),
+    })),
+    recentMonths: s.monthHistory.map(m => ({
+      month: m.key,
+      spent: Math.round(m.spend),
+      savingsRatePct: m.savingsRate,
+    })),
     habits: {
       loggingStreakDays: s.loggingStreak,
       totalEntries: s.entryCount,
@@ -27,6 +47,12 @@ export function buildCoachContext(snapshot, journey, profile) {
       emergencyFundSaved: Math.round(s.efCurrent),
       emergencyFundMonths: Number(s.efMonthsCovered.toFixed(1)),
       monthlyExpenseBaseline: s.monthlyExpenseBaseline,
+      liquidSavings: Math.round(s.liquidTotal),
+      runwayMonths: Number(s.runwayMonths.toFixed(1)),
+    },
+    protection: {
+      termCoverAmount: s.termCover,
+      healthCoverAmount: s.healthCover,
     },
     investing: {
       portfolioValue: Math.round(s.portfolioValue),
@@ -98,6 +124,7 @@ export function buildWeeklyMetrics(expenses, snapshot) {
     prevWeekSpend: Math.round(sum(prevRows)),
     transactionCount: weekRows.length,
     daysLogged: new Set(weekRows.map(e => e.date)).size,
+    prevWeekDaysLogged: new Set(prevRows.map(e => e.date)).size,
     topCategory: topCategory ? { name: topCategory[0], total: Math.round(topCategory[1]) } : null,
     monthlyIncome: Math.round(snapshot.monthlyIncome),
     savingsRatePct: snapshot.currentSavingsRate,

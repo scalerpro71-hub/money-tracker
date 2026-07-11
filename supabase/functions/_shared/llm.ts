@@ -20,7 +20,7 @@ function extractOpenAiText(data: Record<string, unknown>) {
   return '';
 }
 
-async function completeOpenAi(system: string, messages: Msg[], maxTokens: number) {
+async function completeOpenAi(system: string, messages: Msg[], maxTokens: number, effort: string) {
   const key = Deno.env.get('OPENAI_API_KEY');
   if (!key) throw new Error('OPENAI_API_KEY is not configured');
   const model = Deno.env.get('LLM_MODEL') ?? 'gpt-5-mini';
@@ -32,7 +32,7 @@ async function completeOpenAi(system: string, messages: Msg[], maxTokens: number
       model,
       instructions: system,
       input: messages,
-      reasoning: { effort: 'low' },
+      reasoning: { effort },
       max_output_tokens: maxTokens,
     }),
   });
@@ -80,8 +80,9 @@ async function completeAnthropic(system: string, messages: Msg[], maxTokens: num
   return text;
 }
 
-export function complete(system: string, messages: Msg[], maxTokens = 800) {
+/* effort only affects the OpenAI reasoning path; Anthropic ignores it. */
+export function complete(system: string, messages: Msg[], maxTokens = 800, effort: 'low' | 'medium' = 'low') {
   return provider() === 'anthropic'
     ? completeAnthropic(system, messages, maxTokens)
-    : completeOpenAi(system, messages, maxTokens);
+    : completeOpenAi(system, messages, maxTokens, effort);
 }
